@@ -42,8 +42,6 @@ public class DiscoAPIPlugin : BasePlugin
         harmony.PatchAll(typeof(DiscoAPIPlugin));
         harmony.PatchAll(typeof(Patches.DialoguePatches));
         AddUnityListener(DialogueBundleLoader.bundleWasLoaded, DiscoRunner.OnDialogueBundleLoad);
-
-        DiscoRunner.Register(new Transgener());
     }
 
     public void AddUnityListener(UnityEvent evt, System.Action action) => evt.AddListener(action);
