@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>DiscoAPI</AssemblyName>
+    <Description>Modding API for Disco Elysium</Description>
+    <Version>0.0.1</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.samboy.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+    <RootNamespace>DiscoAPI</RootNamespace>
+    <Nullable>enable</Nullable>
+    <!-- <RuntimeIdentifier>windows-x64</RuntimeIdentifier> -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- <Reference Include="DiscoAPIUnity">
+      <HintPath>./lib/DiscoAPIUnity.dll</HintPath>
+    </Reference> -->
+    <Reference Include="Assembly-CSharp">
+      <!-- <HintPath>./lib/Assembly-CSharp.dll</HintPath> -->
+    </Reference>
+    <Reference Include="UnityEngine">
+      <!-- <HintPath>./lib/UnityEngine.dll</HintPath> -->
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <!-- <HintPath>./lib/UnityEngine.CoreModule.dll</HintPath> -->
+    </Reference>
+    <Reference Include="IL2CPPmscorlib">
+      <!-- <HintPath>./lib/IL2CPPmscorlib.dll</HintPath> -->
+    </Reference>
+    <Reference Include="PixelCrushers">
+      <!-- <HintPath>./lib/PixelCrushers.dll</HintPath> -->
+    </Reference>
+    <Reference Include="DialogueSystem">
+      <!-- <HintPath>./lib/DialogueSystem.dll</HintPath> -->
+    </Reference>
+    <Reference Include="FeldMigration">
+      <!-- <HintPath>./lib/FeldMigration.dll</HintPath> -->
+    </Reference>
+    <Reference Include="PageSystem" />
+  </ItemGroup>
+</Project>

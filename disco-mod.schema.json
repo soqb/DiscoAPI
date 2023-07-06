@@ -1,0 +1,213 @@
+{
+    "$id": "https://github.com/soqb/DiscoAPI/tree/main/disco-mod.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "a mod using the Disco Elysium Modding API",
+    "type": "object",
+    "required": [
+        "guid",
+        "name"
+    ],
+    "$defs": {
+        "assetref": {
+            "type": "object",
+            "description": "a reference to an asset",
+            "oneOf": [
+                {
+                    "required": [
+                        "id"
+                    ],
+                    "properties": {
+                        "source": {
+                            "title": "where the asset comes from",
+                            "description": "where the asset comes from, either \"disco\" for vanilla assets, or a mod's guid; if left blank, will be the defining mod",
+                            "type": "string"
+                        },
+                        "id": {
+                            "description": "the specific descriptor of the asset",
+                            "oneOf": [
+                                {
+                                    "description": "the numeric id of the asset",
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                {
+                                    "description": "the textual id of the asset",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z.-][A-Za-z.-0-9]*:)?(?:[A-Za-z.-][A-Za-z.-0-9]*|[0-9]+)$"
+                }
+            ]
+        },
+        "lineref": {
+            "type": "object",
+            "description": "a reference to a line of dialogue",
+            "anyOf": [
+                {
+                    "properties": {
+                        "conversation": {
+                            "$ref": "#/$defs/assetref"
+                        },
+                        "line": {
+                            "description": "the numeric id of the dialogue line within a conversation",
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                },
+                {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z.-][A-Za-z.-0-9]*:)?(?:[A-Za-z.-][A-Za-z.-0-9]*|[0-9]+)#[0-9]*$"
+                }
+            ]
+        }
+    },
+    "properties": {
+        "guid": {
+            "description": "the globally-unique identifier for the mod",
+            "type": "string"
+        },
+        "name": {
+            "description": "the display name for the mod",
+            "type": "string"
+        },
+        "dialogue": {
+            "description": "dialogue-related mod configuration",
+            "type": "object",
+            "properties": {
+                "insertions": {
+                    "type": "object",
+                    "properties": {
+                        "links": {
+                            "description": "links that are inserted in existing conversations",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "description": "a link between two dialogue lines",
+                                "required": [
+                                    "source",
+                                    "target"
+                                ],
+                                "properties": {
+                                    "source": {
+                                        "$ref": "#/$defs/lineref"
+                                    },
+                                    "target": {
+                                        "$ref": "#/$defs/lineref"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "additions": {
+                    "type": "object",
+                    "properties": {
+                        "conversations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "description": "one of the conversations had between actors",
+                                "required": [
+                                    "lines"
+                                ],
+                                "properties": {
+                                    "speaker": {
+                                        "$ref": "#/$defs/assetref"
+                                    },
+                                    "listener": {
+                                        "$ref": "#/$defs/assetref"
+                                    },
+                                    "lines": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "description": "a line of dialogue",
+                                            "required": [
+                                                "text"
+                                            ],
+                                            "properties": {
+                                                "speaker": {
+                                                    "$ref": "#/$defs/assetref"
+                                                },
+                                                "listener": {
+                                                    "$ref": "#/$defs/assetref"
+                                                },
+                                                "text": {
+                                                    "description": "the text spoken",
+                                                    "type": "string"
+                                                },
+                                                "conditions": {
+                                                    "description": "conditions for the dialogue line to be selectable",
+                                                    "type": "string"
+                                                },
+                                                "sequence": {
+                                                    "description": "a cutscene sequence to play while the line is spoken",
+                                                    "type": "string"
+                                                },
+                                                "menu-sequence": {
+                                                    "description": "a cutscene sequence to play while the line is shown in the response menu",
+                                                    "type": "string"
+                                                },
+                                                "links": {
+                                                    "description": "dialogue lines to repsond with",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/$defs/lineref"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "actors": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "description": "the definition of an actor",
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "the actor's name"
+                                    },
+                                    "conversation": {
+                                        "$ref": "#/$defs/assetref"
+                                    }
+                                }
+                            }
+                        },
+                        "variables": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "description": "variables at the root of the mod's scope",
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "the name of the variable"
+                                    },
+                                    "conversation": {
+                                        "$ref": "#/$defs/assetref"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

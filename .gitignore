@@ -1,0 +1,7 @@
+/bin/
+/obj/
+/lib/
+/build.sh
+/.decompiled/
+/cpp2il_out/
+*.log
