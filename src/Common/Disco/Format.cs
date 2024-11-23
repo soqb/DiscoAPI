@@ -87,7 +87,6 @@ public class DiscoSerializer
 
 	class DiscoSourceFormat
 	{
-		public DiscoSourceMode mode;
 		public string? guid;
 		public string? name;
 		public string? description;
@@ -136,7 +135,6 @@ public class DiscoSerializer
 
 		DiscoSourceFormat dsf = new()
 		{
-			mode = DiscoSourceMode.Reference,
 			guid = src.Guid,
 			name = src.DisplayName,
 			description = src.Description,

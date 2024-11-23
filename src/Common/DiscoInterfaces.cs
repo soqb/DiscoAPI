@@ -1,19 +1,10 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using DiscoAPI.Common.Dialogue;
 
 namespace DiscoAPI.Common;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum DiscoSourceMode
-{
-    Reference,
-    Mutable,
-}
-
 public interface IDiscoSource
 {
-    public DiscoSourceMode Mode { get; }
     public string Guid { get; }
     public string? DisplayName { get; }
     public string? Description { get; }

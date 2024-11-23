@@ -15,9 +15,6 @@ public class Conversation : Asset
     [JsonIgnore]
     public List<Line> lines;
 
-    [JsonPropertyName("lines")]
-    private int lineCount => lines.Count;
-
     public Conversation(string id, List<Line> lines) : base(id)
     {
         this.lines = lines;

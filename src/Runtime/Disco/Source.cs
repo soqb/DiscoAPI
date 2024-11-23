@@ -10,8 +10,6 @@ public class DiscoSource : IDiscoSource
 {
     public ManualLogSource log;
 
-    public DiscoSourceMode Mode => DiscoSourceMode.Mutable;
-
     public string Guid { get; init; }
     public string? DisplayName { get; init; }
     public string? Description { get; init; }

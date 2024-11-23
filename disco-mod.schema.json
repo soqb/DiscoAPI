@@ -5,8 +5,7 @@
     "type": "object",
     "required": [
         "guid",
-        "name",
-        "mode"
+        "name"
     ],
     "$defs": {
         "assetref": {
@@ -77,11 +76,6 @@
         "name": {
             "description": "the display name for the source",
             "type": "string"
-        },
-        "mode": {
-            "description": "what kind of source this is",
-            "type": "string",
-            "pattern": "reference|mod"
         },
         "description": {
             "description": "a description of the source's purpose and behavior",
