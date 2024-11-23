@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using DiscoAPI.Runtime;
 using DiscoAPI.Common.Dialogue;
 
+// An example blatantly ripped from a blog by `thedeliaishere` on tumblr:
+// (https://www.tumblr.com/thedeliaishere/721024362812211200/young-woman-actually-detective-im-a?source=share).
+
 // We implement the DiscoProvider interface in order to register mods.
 public class Transgener : DiscoProvider
 {
