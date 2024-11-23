@@ -1,0 +1,6 @@
+{
+    "omnisharp.useModernNet": true,
+    "files.exclude": {
+        "**/*.meta": true,
+    }
+}

@@ -1,0 +1,181 @@
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="config.targets"/>
+    
+    <PropertyGroup>
+        <BepInExInterop>$(DiscoElysium)/BepInEx/interop</BepInExInterop>
+        <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
+        <OutputFolder Condition="'$(OutputFolder)' == ''">$(DiscoElysium)/BepInEx/plugins</OutputFolder>
+    </PropertyGroup>
+
+    <!--References to Disco Elysium dependencies-->
+    <ItemGroup Condition="'$(NoUnamangedAssemblies)' != 'true'">
+        <Reference Include="$(BepInExInterop)/AmplifyTexture.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Assembly-CSharp.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Assembly-CSharp-firstpass.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Coffee.SoftMaskForUGUI_Demo.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Coffee.SoftMaskForUGUI.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/com.rlabrecque.steamworks.net.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/ConditionChecker.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/DialogueSystem.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/DialogueSystemSupportI2.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/DiscoGlobals.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/DotNetZip.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/DOTweeb.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/DOTween.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/EpicOnlineService.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/FeldMigration.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/FullSerializer.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/GalaxyCSharp.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/HashDepot.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppI18N.CJK.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppI18N.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppI18N.MidEast.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppI18N.Other.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppI18N.Rare.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppI18N.West.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppMono.Posix.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppMono.Security.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2Cppmscorlib.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Configuration.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Core.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Data.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Drawing.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Memory.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Numerics.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Runtime.CompilerServices.Unsafe.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Runtime.Serialization.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Windows.Forms.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Xml.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Il2CppSystem.Xml.Linq.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/InControl.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/InControl.Examples.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/l2Localization.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/MasterAudio.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/MethodAddressToToken.db" Private="false"/>
+        <Reference Include="$(BepInExInterop)/MethodXrefScanCache.db" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Newtonsoft.Json.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/ObjectPooler.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Ookii.Dialogs.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/PageSystem.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/PixelCrushers.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/RootMotion.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/StandaloneFileBrowser.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/TwitchIntegration.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Unity.Addressables.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.AccessibilityModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.AIModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.AndroidJNIModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.AnimationModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ARModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.AssetBundleModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.AudioModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ClothModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ClusterInputModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ClusterRendererModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.CoreModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.CrashReportingModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.DirectorModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.DSPGraphModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.GameCenterModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.GIModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.GridModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.HotReloadModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ImageConversionModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.IMGUIModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.InputLegacyModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.InputModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.JSONSerializeModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.LocalizationModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ParticleSystemModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.PerformanceReportingModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.Physics2DModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.PhysicsModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ProfilerModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.ScreenCaptureModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.SharedInternalsModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.SpriteMaskModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.SpriteShapeModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.StreamingModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.SubstanceModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.SubsystemsModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.TerrainModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.TerrainPhysicsModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.TextCoreModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.TextRenderingModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.TilemapModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.TLSModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UI.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UIElementsModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UIElementsNativeModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UIModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UmbraModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UNETModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityAnalyticsModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityConnectModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityCurlModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityTestProtocolModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityWebRequestAssetBundleModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityWebRequestAudioModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityWebRequestModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityWebRequestTextureModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.UnityWebRequestWWWModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.VehiclesModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.VFXModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.VideoModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.VirtualTexturingModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.VRModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.WindModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/UnityEngine.XRModule.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Unity.InputSystem.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Unity.ResourceManager.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Unity.TextMeshPro.dll" Private="false"/>
+        <Reference Include="$(BepInExInterop)/Unity.Timeline.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/0Harmony.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/AsmResolver.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/AsmResolver.DotNet.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/AsmResolver.PE.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/AsmResolver.PE.File.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/AssetRipper.CIL.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/AssetRipper.Primitives.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/BepInEx.Core.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/BepInEx.Preloader.Core.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/BepInEx.Unity.Common.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/BepInEx.Unity.IL2CPP.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Cpp2IL.Core.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Disarm.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/dobby.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Gee.External.Capstone.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Iced.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Il2CppInterop.Common.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Il2CppInterop.Generator.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Il2CppInterop.HarmonySupport.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Il2CppInterop.Runtime.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/LibCpp2IL.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Mono.Cecil.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Mono.Cecil.Mdb.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Mono.Cecil.Pdb.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/Mono.Cecil.Rocks.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/MonoMod.RuntimeDetour.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/MonoMod.Utils.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/SemanticVersioning.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/StableNameDotNet.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/WasmDisassembler.dll" Private="false"/>
+    </ItemGroup>
+
+    <Target Name="MoveDllToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
+        <Message Text="Copying $(ProjectName).dll to $(OutputFolder) Folder..." Importance="High"/>
+
+        <Copy SourceFiles="$(TargetDir)$(TargetName).dll"
+              DestinationFiles="$(OutputFolder)/$(ProjectName).dll"/>
+    </Target>
+    <Target Name="MoveXmlToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(ProjectName).xml')">
+        <Message Text="Copying $(ProjectName).xml to $(OutputFolder) Folder..." Importance="High"/>
+
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).xml"
+              DestinationFiles="$(OutputFolder)/$(ProjectName).xml"/>
+    </Target>
+</Project>
+

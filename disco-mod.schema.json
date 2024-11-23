@@ -1,0 +1,248 @@
+{
+    "$id": "https://github.com/soqb/DiscoAPI/tree/main/disco-mod.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "a mod source or reference bank using the Disco Elysium Modding API",
+    "type": "object",
+    "required": [
+        "guid",
+        "name",
+        "mode"
+    ],
+    "$defs": {
+        "assetref": {
+            "description": "a reference to an asset",
+            "oneOf": [
+                {
+                    "type": "object",
+                    "required": [
+                        "id"
+                    ],
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "title": "where the asset comes from",
+                            "description": "either \"disco\" for vanilla assets, or a source's guid; if omitted or left blank, the defining source"
+                        },
+                        "id": {
+                            "description": "the specific descriptor of the asset",
+                            "oneOf": [
+                                {
+                                    "description": "the numeric id of the asset",
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                {
+                                    "description": "the textual id of the asset",
+                                    "type": "string",
+                                    "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*:)?(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                }
+            ]
+        },
+        "lineref": {
+            "description": "a reference to a line of dialogue",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "conversation": {
+                            "$ref": "#/$defs/assetref"
+                        },
+                        "line": {
+                            "description": "the numeric id of the dialogue line within a conversation",
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                },
+                {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*:)?(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)#[0-9]+$"
+                }
+            ]
+        }
+    },
+    "properties": {
+        "guid": {
+            "description": "the globally-unique identifier for the source",
+            "type": "string"
+        },
+        "name": {
+            "description": "the display name for the source",
+            "type": "string"
+        },
+        "mode": {
+            "description": "what kind of source this is",
+            "type": "string",
+            "pattern": "reference|mod"
+        },
+        "description": {
+            "description": "a description of the source's purpose and behavior",
+            "type": "string"
+        },
+        "authors": {
+            "description": "the authors of the source",
+            "type": "array",
+            "items": {
+                "description": "one of the authors of the source",
+                "type": "string"
+            }
+        },
+        "updates": {
+            "type": "object",
+            "properties": {
+                "links": {
+                    "description": "links that are inserted in existing conversations",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "description": "a link between two dialogue lines",
+                        "required": [
+                            "source",
+                            "target"
+                        ],
+                        "properties": {
+                            "source": {
+                                "description": "the line to link the target from",
+                                "$ref": "#/$defs/lineref"
+                            },
+                            "target": {
+                                "description": "the line for the source to link to",
+                                "$ref": "#/$defs/lineref"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "assets": {
+            "type": "object",
+            "properties": {
+                "conversations": {
+                    "type": "array",
+                    "description": "a group of dialogue lines; conceptually organised in a branching tree, but technically linear with links between lines",
+                    "items": {
+                        "type": "object",
+                        "description": "one of the conversations had between actors",
+                        "required": [
+                            "lines"
+                        ],
+                        "properties": {
+                            "speaker": {
+                                "$ref": "#/$defs/assetref"
+                            },
+                            "listener": {
+                                "$ref": "#/$defs/assetref"
+                            },
+                            "lines": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "description": "a line of dialogue",
+                                    "required": [
+                                        "text"
+                                    ],
+                                    "properties": {
+                                        "speaker": {
+                                            "description": "who delivers the line",
+                                            "$ref": "#/$defs/assetref"
+                                        },
+                                        "listener": {
+                                            "description": "who receives the line",
+                                            "$ref": "#/$defs/assetref"
+                                        },
+                                        "text": {
+                                            "description": "the text spoken",
+                                            "type": "string"
+                                        },
+                                        "conditions": {
+                                            "description": "conditions for the dialogue line to be selectable",
+                                            "type": "string"
+                                        },
+                                        "sequence": {
+                                            "description": "a cutscene sequence to play while the line is spoken",
+                                            "type": "string"
+                                        },
+                                        "menu-sequence": {
+                                            "description": "a cutscene sequence to play while the line is shown in the response menu",
+                                            "type": "string"
+                                        },
+                                        "links": {
+                                            "description": "dialogue lines to follow",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/$defs/lineref"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "description": "the definition of an actor",
+                        "type": "object",
+                        "required": [
+                            "name"
+                        ],
+                        "properties": {
+                            "name": {
+                                "description": "the actor's name",
+                                "type": "string"
+                            },
+                            "id": {
+                                "description": "the short, unique name of the actor, used instead of the name to reference them as an asset.",
+                                "type": "string",
+                                "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                            },
+                            "description": {
+                                "description": "a description of the actor",
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "variables": {
+                    "description": "variables at the root of the source's scope",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "description": "a variable",
+                        "required": [
+                            "name"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "the name of the variable"
+                            },
+                            "type": {
+                                "description": "the type of the variable",
+                                "oneOf": [
+                                    "text",
+                                    "number",
+                                    "boolean",
+                                    "files",
+                                    "localisation",
+                                    "actor",
+                                    "item",
+                                    "location"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

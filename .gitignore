@@ -1,0 +1,6 @@
+/bin/
+/obj/
+/*.sh
+*.log
+*.meta
+/config.targets
