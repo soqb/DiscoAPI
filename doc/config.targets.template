@@ -1,6 +1,13 @@
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
+
+        <!-- NECESSARY FOR RUNTIME BUILDS -->
         <DiscoElysium>PATH TO DISCO ELYSIUM HERE</DiscoElysium>
+        
+        <!-- NECESSARY FOR EDITOR BUILDS -->
+        <Unity2020>PATH TO UNITY 2020</Unity2020>
+        <UnityProject>PATH TO A UNITY PROJECT WITH RELEVANT PACKAGES</UnityProject>
+        
     </PropertyGroup>
 </Project>
 

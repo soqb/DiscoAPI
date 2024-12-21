@@ -1,12 +1,11 @@
 using System;
 using System.Collections;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using DiscoAPI.Common.Dialogue;
 
 namespace DiscoAPI.Common.Format;
 
-public class AssetRefFormat<T> : JsonConverter<T> where T : AssetRef
+public class AssetRefFormat<T> : JsonConverter
 {
 	public delegate T RefFactory(string source, AssetId id);
 
@@ -23,9 +22,15 @@ public class AssetRefFormat<T> : JsonConverter<T> where T : AssetRef
 		return maker(comps[0], (AssetIdString)comps[1]);
 	}
 
-	public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override void WriteJson(JsonWriter writer, object? ass, JsonSerializer serializer)
 	{
-		if (reader.TokenType == JsonTokenType.StartObject)
+		if (ass == null) writer.WriteNull();
+		else writer.WriteValue(ass?.ToString());
+	}
+
+	public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+	{
+		if (reader.TokenType == JsonToken.StartObject)
 		{
 			reader.Read();
 
@@ -33,26 +38,26 @@ public class AssetRefFormat<T> : JsonConverter<T> where T : AssetRef
 			AssetId? id = null;
 			while (source == null || id == null)
 			{
-				if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException();
-				string prop = reader.GetString()!;
+				if (reader.TokenType != JsonToken.PropertyName) throw new JsonException();
+				string prop = reader.ReadAsString()!;
 
 				if (prop == "source" && source == null)
 				{
-					if (reader.TokenType == JsonTokenType.String)
+					if (reader.TokenType == JsonToken.String)
 					{
-						source = reader.GetString();
+						source = reader.ReadAsString();
 					}
 					else throw new JsonException();
 				}
 				else if (prop == "id" && id == null)
 				{
-					if (reader.TokenType == JsonTokenType.Number)
+					if (reader.TokenType == JsonToken.Integer)
 					{
-						id = (AssetIdInt)reader.GetInt32()!;
+						id = (AssetIdInt)reader.ReadAsInt32()!;
 					}
-					else if (reader.TokenType == JsonTokenType.String)
+					else if (reader.TokenType == JsonToken.String)
 					{
-						id = (AssetIdString)reader.GetString()!;
+						id = (AssetIdString)reader.ReadAsString()!;
 					}
 					else throw new JsonException();
 				}
@@ -61,17 +66,14 @@ public class AssetRefFormat<T> : JsonConverter<T> where T : AssetRef
 
 			return maker(source, id);
 		}
-		else if (reader.TokenType == JsonTokenType.String)
+		else if (reader.TokenType == JsonToken.String)
 		{
-			return FromString(reader.GetString()!);
+			return FromString(reader.ReadAsString()!);
 		}
 		else throw new JsonException();
 	}
 
-	public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
-	{
-		writer.WriteStringValue($"{value.sourceGuid}:{value.id}");
-	}
+	public override bool CanConvert(Type objectType) => objectType == typeof(T);
 }
 
 public class DiscoSerializer
@@ -94,12 +96,11 @@ public class DiscoSerializer
 		public AssetsFormat? assets;
 	}
 
-	public static JsonSerializerOptions Options()
+	public static JsonSerializerSettings Settings()
 	{
-		JsonSerializerOptions opts = new()
+		JsonSerializerSettings opts = new()
 		{
-			DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-			IncludeFields = true,
+			NullValueHandling = NullValueHandling.Ignore,
 		};
 
 		opts.Converters.Add(new AssetRefFormat<ActorRef>((src, id) => throw new Exception()));
@@ -109,25 +110,28 @@ public class DiscoSerializer
 		return opts;
 	}
 
-	public static T DeserializeSource<T>(SourceFactory<T> factory, ref Utf8JsonReader reader) where T : IDiscoSource
+	public static T DeserializeSource<T>(SourceFactory<T> factory, JsonReader reader) where T : IDiscoSource
 	{
-		var d1 = JsonSerializer.Deserialize<DiscoSourceFormat>(ref reader, Options());
+		var izer = JsonSerializer.Create(Settings());
+		var d1 = izer.Deserialize<DiscoSourceFormat>(reader);
 
 		if (d1 == null || d1.guid == null) throw new JsonException("expected an object with a \"guid\" field");
 
 		var source = factory(d1.guid);
 		if (d1.assets != null)
 		{
-			if (d1.assets.actors != null) foreach (Asset asset in d1.assets.actors) source.Dialogue.Add(asset);
-			if (d1.assets.variables != null) foreach (Asset asset in d1.assets.variables) source.Dialogue.Add(asset);
-			if (d1.assets.conversations != null) foreach (Asset asset in d1.assets.conversations) source.Dialogue.Add(asset);
+			if (d1.assets.actors != null) foreach (Asset? asset in d1.assets.actors) source.Dialogue.Add(asset!);
+			if (d1.assets.variables != null) foreach (Asset? asset in d1.assets.variables) source.Dialogue.Add(asset!);
+			if (d1.assets.conversations != null) foreach (Asset? asset in d1.assets.conversations) source.Dialogue.Add(asset!);
 		}
 
 		return source;
 	}
 
-	public static void SerializeSource(Utf8JsonWriter writer, IDiscoSource src)
+	public static void SerializeSource(JsonWriter writer, IDiscoSource src)
 	{
+		var izer = JsonSerializer.Create(Settings());
+
 		AssetsFormat assets = new();
 		assets.actors = src.Dialogue.AssetsByType(AssetType.Actor);
 		assets.conversations = src.Dialogue.AssetsByType(AssetType.Conversation);
@@ -142,6 +146,7 @@ public class DiscoSerializer
 			assets = assets,
 		};
 
-		JsonSerializer.Serialize<DiscoSourceFormat>(writer, dsf, Options());
+
+		izer.Serialize(writer, dsf);
 	}
 }

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace DiscoAPI.Common.Dialogue;
 
@@ -13,7 +13,7 @@ public class Line
     /// <summary>
     /// Extra information relevant to the line for example an <c>ActiveCheck</c>.
     /// </summary>
-    public DialogueNode? node;
+    public DialogueNode node = new EmptyDialogueNode();
     /// <summary>
     /// The actor speaking the line.
     /// </summary>

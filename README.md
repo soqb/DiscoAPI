@@ -10,7 +10,7 @@ Please help if you can.
 - Please follow [The BepInEx installation instructions (Il2Cpp version)](https://docs.bepinex.dev/v6.0.0-pre.1/articles/user_guide/installation/index.html) and ensure that you have run the game with it at least once.
 - Clone this repository.
 - Copy `doc/config.targets.template` to `config.targets` and edit as necessary.
-- Build the project with `dotnet build`.
+- Build the project with `dotnet build Runtime.sln`.
   * This will automatically copy the compiled plugin to the correct folder, overwriting any old version present.
 - Launch the game!
 

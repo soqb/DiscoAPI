@@ -1,8 +1,8 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace DiscoAPI.Common.Dialogue;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
 public enum FieldType
 {
     Text = 0,
@@ -23,7 +23,7 @@ public class Variable : Asset
     public override AssetRef Ref => new VariableRef(this);
 
     public FieldType type;
-    [JsonPropertyName("value")]
+    [JsonProperty("value")]
     public string initialValue;
 
     public Variable(string id, FieldType type, string initialValue) : base(id)

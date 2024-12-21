@@ -1,15 +1,14 @@
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="config.targets"/>
-    
     <PropertyGroup>
         <BepInExInterop>$(DiscoElysium)/BepInEx/interop</BepInExInterop>
         <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
-        <OutputFolder Condition="'$(OutputFolder)' == ''">$(DiscoElysium)/BepInEx/plugins</OutputFolder>
+        <BepInExPlugins>$(DiscoElysium)/BepInEx/plugins</BepInExPlugins>
+        <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPlugins)/DCA</OutputFolder>
     </PropertyGroup>
 
     <!--References to Disco Elysium dependencies-->
     <ItemGroup Condition="'$(NoUnamangedAssemblies)' != 'true'">
-        <Reference Include="$(BepInExInterop)/AmplifyTexture.dll" Private="false"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="compile" />
         <Reference Include="$(BepInExInterop)/Assembly-CSharp.dll" Private="false"/>
         <Reference Include="$(BepInExInterop)/Assembly-CSharp-firstpass.dll" Private="false"/>
         <Reference Include="$(BepInExInterop)/Coffee.SoftMaskForUGUI_Demo.dll" Private="false"/>
@@ -54,7 +53,7 @@
         <Reference Include="$(BepInExInterop)/MasterAudio.dll" Private="false"/>
         <Reference Include="$(BepInExInterop)/MethodAddressToToken.db" Private="false"/>
         <Reference Include="$(BepInExInterop)/MethodXrefScanCache.db" Private="false"/>
-        <Reference Include="$(BepInExInterop)/Newtonsoft.Json.dll" Private="false"/>
+        <!-- <Reference Include="$(BepInExInterop)/Newtonsoft.Json.dll" Private="false"/> -->
         <Reference Include="$(BepInExInterop)/ObjectPooler.dll" Private="false"/>
         <Reference Include="$(BepInExInterop)/Ookii.Dialogs.dll" Private="false"/>
         <Reference Include="$(BepInExInterop)/PageSystem.dll" Private="false"/>

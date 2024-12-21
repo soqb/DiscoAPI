@@ -5,6 +5,7 @@ namespace DiscoAPI.Common.Dialogue;
 
 public interface DialogueNodeVisitor
 {
+    public void Empty(EmptyDialogueNode ck);
     public void Passive(PassiveCheck ck);
     public void Active(ActiveCheck ck);
     public void Cost(CostCheck ck);
@@ -13,6 +14,11 @@ public interface DialogueNodeVisitor
 public interface DialogueNode
 {
     public void Visit(DialogueNodeVisitor vtr);
+}
+
+public class EmptyDialogueNode : DialogueNode
+{
+    public void Visit(DialogueNodeVisitor vtr) => vtr.Empty(this);
 }
 
 [Serializable]

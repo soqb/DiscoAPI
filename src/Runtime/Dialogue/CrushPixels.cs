@@ -187,6 +187,8 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 		if (ck.speakOnFailure) fields.Set("Antipassive", true);
 		fields.Set("Actor", source.Manager.mapping.SkillToActorID(ck.skill));
 	}
+
+	public void Empty(EmptyDialogueNode ck) { }
 }
 
 public class PixelsToDisco

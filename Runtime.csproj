@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="config.targets"/>
+    <Import Project="disco.targets"/>
+
+    <PropertyGroup>
+        <Version>0.0.1</Version>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>DiscoAPI</AssemblyName>
+        <Description>Modding API for Disco Elysium (separate runtime components only)</Description>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>DiscoAPI</RootNamespace>
+        <DefineConstants>RUNTIME</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="src/Common/**/*.cs" />
+        <Compile Include="src/Runtime/**/*.cs" />
+        <None Include="src/Editor/**/*.cs" />
+    </ItemGroup>
+</Project>
