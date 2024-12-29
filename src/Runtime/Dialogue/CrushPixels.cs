@@ -131,7 +131,7 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 		fields.Set("check_target", FieldType.Text, "0x0000000000000000");
 
 		if (ck.modifiers.Count > 10)
-			source.LogWarning($"more than 10 modifiers found for a check in {parentConv} @ {fields.id}; some will be ignored");
+			source.Log.LogWarning($"more than 10 modifiers found for a check in {parentConv} @ {fields.id}; some will be ignored");
 
 		for (int i = 1; i <= 10; i++)
 		{

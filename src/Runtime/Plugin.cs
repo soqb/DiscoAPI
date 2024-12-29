@@ -1,5 +1,4 @@
-﻿using System;
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
@@ -37,8 +36,6 @@ public class DiscoAPIPlugin : BasePlugin
         AddUnityListener(DialogueBundleLoader.bundleWasLoaded, DiscoRunner.OnDialogueBundleLoad);
 
         FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad, -100);
-
-        DiscoRunner.Register(new Transgener());
     }
 
     public void AddUnityListener(UnityEvent evt, System.Action action) => evt.AddListener(action);

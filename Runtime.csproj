@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <ModPath>DiscoAPI</ModPath>
+    </PropertyGroup>
+    
     <Import Project="../config.targets"/>
     <Import Project="../disco.targets"/>
 

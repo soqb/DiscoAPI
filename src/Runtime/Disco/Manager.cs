@@ -5,6 +5,7 @@ using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Common.Assets;
 using System;
+using BepInEx.Logging;
 
 namespace DiscoAPI.Runtime;
 
@@ -28,7 +29,7 @@ public class DiscoManager : IDiscoManager
     {
         Assets = new(this);
 
-        DiscoSource disco = new(this, "disco", true);
+        DiscoSource disco = new(this, "disco", true, Logger.CreateLogSource("disco"));
         sourcesByGuid.Add("disco", 0);
     }
 
@@ -37,14 +38,14 @@ public class DiscoManager : IDiscoManager
     /// </summary>
     public DiscoSource Disco => linearSources[0];
 
-    public DiscoSource CreateSource(string guid)
+    public DiscoSource CreateSource(DiscoPlugin plugin)
     {
-        if (sourcesByGuid.ContainsKey(guid))
-            return this[guid];
+        if (sourcesByGuid.ContainsKey(plugin.Guid))
+            return this[plugin.Guid];
 
-        DiscoSource source = new(this, guid, false);
+        DiscoSource source = new(this, plugin.Guid, false, plugin.Log);
 
-        sourcesByGuid.Add(guid, linearSources.Count);
+        sourcesByGuid.Add(plugin.Guid, linearSources.Count);
         linearSources.Add(source);
         return source;
     }

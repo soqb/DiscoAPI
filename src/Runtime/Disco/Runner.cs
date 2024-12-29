@@ -9,13 +9,13 @@ public static class DiscoRunner
     public static ModWorld? world;
 
     public static DiscoManager manager = new();
-    private static List<(DiscoProvider, DiscoSource)> plugins = new();
-    public static void Register(DiscoProvider plugin)
+    private static List<DiscoPlugin> plugins = new();
+    public static void Register(DiscoPlugin plugin)
     {
         DiscoAPIPlugin.Instance.Log.LogInfo($"registered plugin \"{plugin.Guid}\"");
-        var source = manager.CreateSource(plugin.Guid);
-        plugins.Add((plugin, source));
-        GuardHook(source, plugin.OnRegister);
+        var source = manager.CreateSource(plugin);
+        plugins.Add(plugin);
+        GuardHook(plugin, plugin.OnRegister);
     }
 
     private static bool alreadyLoadedDialogue = false;
@@ -28,10 +28,10 @@ public static class DiscoRunner
 
         manager.OnDialogueBundleLoad();
 
-        foreach (var (plugin, source) in plugins)
+        foreach (var plugin in plugins)
         {
-            source.LogInfo("initializing dialogue..");
-            GuardHook(source, plugin.OnDialogueBundleLoad);
+            plugin.Log.LogInfo("initializing dialogue..");
+            GuardHook(plugin, plugin.OnDialogueBundleLoad);
         }
 
         // Several vanilla methods use initialDatabase, but they should really be using the master database.
@@ -45,21 +45,21 @@ public static class DiscoRunner
         var w = SingletonComponent<global::World>.Singleton;
         if (world == null && w != null) world = new(w);
 
-        foreach (var (plugin, source) in plugins)
+        foreach (var plugin in plugins)
         {
-            GuardHook(source, plugin.OnSceneLoad);
+            GuardHook(plugin, plugin.OnSceneLoad);
         }
     }
 
-    public static void GuardHook(DiscoSource source, Action<DiscoSource> hook)
+    public static void GuardHook(DiscoPlugin plugin, Action hook)
     {
         try
         {
-            hook(source);
+            hook();
         }
         catch (Exception e)
         {
-            source.log.LogError(e);
+            plugin.Log.LogError(e);
         }
     }
 }

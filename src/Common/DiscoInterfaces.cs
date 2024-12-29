@@ -14,12 +14,6 @@ public interface IDiscoSource
     public IAssetSource Assets { get; }
 
     public void InsertLink(Link link);
-
-    public void LogWarning(string message);
-    public void LogInfo(string message);
-    public void LogDebug(string message);
-    public void LogError(string message);
-    public void LogFatal(string message);
 }
 
 public interface IDiscoManager

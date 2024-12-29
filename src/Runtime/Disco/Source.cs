@@ -9,8 +9,7 @@ namespace DiscoAPI.Runtime;
 
 public class DiscoSource : IDiscoSource
 {
-    public ManualLogSource log;
-
+    public ManualLogSource Log { get; }
     public string Guid { get; }
     public string? DisplayName { get; }
     public string? Description { get; }
@@ -23,38 +22,31 @@ public class DiscoSource : IDiscoSource
 
     private Dictionary<LineRef, int> linksAdded = new();
 
-    public DiscoSource(DiscoManager manager, string guid, bool isDisco)
+    public DiscoSource(DiscoManager manager, string guid, bool isDisco, ManualLogSource log)
     {
         Guid = guid;
         Manager = manager;
         Assets = isDisco ? AssetSource.CreateDisco(this) : AssetSource.Create(this);
 
-        log = new ManualLogSource(guid);
-        BepInEx.Logging.Logger.Sources.Add(log);
+        Log = log;
     }
-
-    public void LogWarning(string? message) => log.LogWarning(message ?? "null");
-    public void LogInfo(string? message) => log.LogInfo(message ?? "null");
-    public void LogDebug(string? message) => log.LogDebug(message ?? "null");
-    public void LogError(string? message) => log.LogError(message ?? "null");
-    public void LogFatal(string? message) => log.LogFatal(message ?? "null");
 
     public void InsertLink(Link link)
     {
         if (link.from != null)
         {
-            LogInfo($"inserting link from {link.from} to {link.to}");
+            Log.LogInfo($"inserting link from {link.from} to {link.to}");
             var from = Manager.Dialogue.pcDatabase.GetDialogueEntry(link.from.conversation.ResolveId(Manager), link.from.lineID);
             from.outgoingLinks.Add(Manager.Assets.crusher.Crush(this, link));
             linksAdded.TryGetValue(link.from, out int count);
             linksAdded[link.from] = count + 1;
 
             if (Manager.Dialogue.pcDatabase.GetDialogueEntry(link.to.conversation.ResolveId(Manager), link.to.lineID) == null)
-                LogWarning($"link inserted to a non-existant destination ({link.to})");
+                Log.LogWarning($"link inserted to a non-existant destination ({link.to})");
         }
         else
         {
-            LogWarning("could not insert link because its source was null");
+            Log.LogWarning("could not insert link because its source was null");
         }
     }
 }
