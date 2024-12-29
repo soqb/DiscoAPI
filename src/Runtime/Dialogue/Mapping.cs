@@ -1,58 +1,58 @@
 using System;
 using System.Collections.Generic;
+using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Runtime.Dialogue;
 
 public class DialogueMapping
 {
     private DialogueManager manager;
-    public Dictionary<SkillType, string> articySkillIDs = new();
+    public Dictionary<AssetRef, string> articySkillIds = new();
     public Dictionary<Difficulty, int> reverseArticyDifficultyMap = new();
 
-    private SkillType? NameToSkillType(string name)
+    private AssetRef? NameToSkillRef(string name)
     {
         return name switch
         {
-            "Authority" => SkillType.Authority,
-            "Composure" => SkillType.Composure,
-            "Conceptualization" => SkillType.Conceptualization,
-            "Half Light" => SkillType.HalfLight,
-            "Drama" => SkillType.Drama,
-            "Electrochemistry" => SkillType.Electrochemistry,
-            "Empathy" => SkillType.Empathy,
-            "Endurance" => SkillType.Endurance,
-            "Esprit de Corps" => SkillType.EspritDeCorps,
-            "Hand/Eye Coordination" => SkillType.HandEyeCoordination,
-            "Inland Empire" => SkillType.InlandEmpire,
-            "Interfacing" => SkillType.Interfacing,
-            "Logic" => SkillType.Logic,
-            "Pain Threshold" => SkillType.PainThreshold,
-            "Perception" => SkillType.Perception,
-            "Perception (Hearing)" => SkillType.Hearing,
-            "Perception (Sight)" => SkillType.Sight,
-            "Perception (Smell)" => SkillType.Smell,
-            "Perception (Taste)" => SkillType.Taste,
-            "Physical Instrument" => SkillType.PhysicalInstrument,
-            "Reaction Speed" => SkillType.ReactionSpeed,
-            "Rhetoric" => SkillType.Rhetoric,
-            "Savoir Faire" => SkillType.SavoirFaire,
-            "Shivers" => SkillType.Shivers,
-            "Suggestion" => SkillType.Suggestion,
-            "Encyclopedia" => SkillType.Encyclopedia,
-            "Visual Calculus" => SkillType.VisualCalculus,
-            "Volition" => SkillType.Volition,
+            "Authority" => Skills.Authority,
+            "Composure" => Skills.Composure,
+            "Conceptualization" => Skills.Conceptualization,
+            "Half Light" => Skills.HalfLight,
+            "Drama" => Skills.Drama,
+            "Electrochemistry" => Skills.Electrochemistry,
+            "Empathy" => Skills.Empathy,
+            "Endurance" => Skills.Endurance,
+            "Esprit de Corps" => Skills.EspritDeCorps,
+            "Hand/Eye Coordination" => Skills.HandEyeCoordination,
+            "Inland Empire" => Skills.InlandEmpire,
+            "Interfacing" => Skills.Interfacing,
+            "Logic" => Skills.Logic,
+            "Pain Threshold" => Skills.PainThreshold,
+            "Perception" => Skills.Perception,
+            "Perception (Hearing)" => Skills.Hearing,
+            "Perception (Sight)" => Skills.Sight,
+            "Perception (Smell)" => Skills.Smell,
+            "Perception (Taste)" => Skills.Taste,
+            "Physical Instrument" => Skills.PhysicalInstrument,
+            "Reaction Speed" => Skills.ReactionSpeed,
+            "Rhetoric" => Skills.Rhetoric,
+            "Savoir Faire" => Skills.SavoirFaire,
+            "Shivers" => Skills.Shivers,
+            "Suggestion" => Skills.Suggestion,
+            "Encyclopedia" => Skills.Encyclopedia,
+            "Visual Calculus" => Skills.VisualCalculus,
+            "Volition" => Skills.Volition,
             _ => null,
         };
     }
     public DialogueMapping(DialogueManager manager)
     {
         this.manager = manager;
-        // TODO: memoize
         // for some reason, ARTICY_ID_TO_SKILL_TYPE just doesn't contain the correct data.
         foreach (var entry in ArticyBridge.ARTICY_ID_TO_SKILL_NAME)
         {
-            var type = NameToSkillType(entry.value);
-            if (type != null) articySkillIDs.TryAdd((SkillType)type, entry.key);
+            var skill = NameToSkillRef(entry.value);
+            if (skill != null) articySkillIds.TryAdd(skill, entry.key);
         }
 
         for (int i = 0; i < ArticyBridge.ArticyDifficultyIdToDifficulty.Count; i++)
@@ -65,11 +65,11 @@ public class DialogueMapping
 
     public int DifficultyToArticy(Difficulty difficulty) => reverseArticyDifficultyMap[difficulty];
 
-    public int SkillToActorID(SkillType skill)
+    public int SkillToActorID(AssetRef skill)
     {
         var actorName = ArticyBridge.ARTICY_ID_TO_SKILL_NAME[SkillToArticyId(skill)];
         return manager.pcDatabase.GetActor(actorName).id;
     }
 
-    public string SkillToArticyId(SkillType skill) => articySkillIDs[skill];
+    public string SkillToArticyId(AssetRef skill) => articySkillIds[skill];
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
@@ -7,8 +8,6 @@ public class Conversation : Asset
 {
     [JsonIgnore]
     public override AssetType Type => AssetType.Conversation;
-    [JsonIgnore]
-    public override AssetRef Ref => new ConversationRef(this);
 
     public string? name;
     public string? description;

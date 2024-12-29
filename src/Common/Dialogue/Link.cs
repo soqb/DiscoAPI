@@ -1,19 +1,21 @@
+using DiscoAPI.Common.Assets;
+
 namespace DiscoAPI.Common.Dialogue;
 
 public record LineRef
 {
-    public ConversationRef conversation;
+    public AssetRef conversation;
     public int lineID;
 
-    public LineRef(ConversationRef conversation, int lineID)
+    public LineRef(AssetRef conversation, int lineID)
     {
         this.conversation = conversation;
         this.lineID = lineID;
     }
     public LineRef(string source, int conversationID, int lineID)
-        : this(new(source, conversationID), lineID) { }
+        : this(new(AssetType.Conversation, source, conversationID), lineID) { }
     public LineRef(IDiscoSource source, int conversationID, int lineID)
-        : this(new(source.Guid, conversationID), lineID) { }
+        : this(new(AssetType.Conversation, source.Guid, conversationID), lineID) { }
 
     public override string ToString() => $"{conversation}#{lineID}";
 }

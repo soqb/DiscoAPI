@@ -8,7 +8,7 @@ public class DebugUtils
     /// <summary>
     /// Print the combined C# and Il2CPP stacktraces.
     /// </summary>
-    public static void PrintStackTrace()
+    public static string StackTrace()
     {
         StringBuilder result = new();
 
@@ -25,7 +25,7 @@ public class DebugUtils
             result.AppendLine($"   at {method?.DeclaringType?.ReflectedType?.FullName ?? method?.DeclaringType?.FullName}.{method?.Name}");
         }
 
-        DiscoAPIPlugin.Instance.Log.LogDebug(result);
+        return result.ToString();
     }
 
 }

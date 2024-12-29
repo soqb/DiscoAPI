@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="config.targets"/>
-    <Import Project="disco.targets"/>
+    <Import Project="../config.targets"/>
+    <Import Project="../disco.targets"/>
 
     <PropertyGroup>
         <Version>0.0.1</Version>

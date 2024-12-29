@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
@@ -19,8 +20,6 @@ public class Variable : Asset
 {
     [JsonIgnore]
     public override AssetType Type => AssetType.Variable;
-    [JsonIgnore]
-    public override AssetRef Ref => new VariableRef(this);
 
     public FieldType type;
     [JsonProperty("value")]

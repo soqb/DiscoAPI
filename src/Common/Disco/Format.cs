@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using Newtonsoft.Json;
-using DiscoAPI.Common.Dialogue;
+using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Format;
 
@@ -103,9 +103,9 @@ public class DiscoSerializer
 			NullValueHandling = NullValueHandling.Ignore,
 		};
 
-		opts.Converters.Add(new AssetRefFormat<ActorRef>((src, id) => throw new Exception()));
-		opts.Converters.Add(new AssetRefFormat<VariableRef>((src, id) => throw new Exception()));
-		opts.Converters.Add(new AssetRefFormat<ConversationRef>((src, id) => throw new Exception()));
+		opts.Converters.Add(new AssetRefFormat<AssetRef>((src, id) => throw new Exception()));
+		// opts.Converters.Add(new AssetRefFormat<VariableRef>((src, id) => throw new Exception()));
+		// opts.Converters.Add(new AssetRefFormat<ConversationRef>((src, id) => throw new Exception()));
 
 		return opts;
 	}
@@ -120,9 +120,9 @@ public class DiscoSerializer
 		var source = factory(d1.guid);
 		if (d1.assets != null)
 		{
-			if (d1.assets.actors != null) foreach (Asset? asset in d1.assets.actors) source.Dialogue.Add(asset!);
-			if (d1.assets.variables != null) foreach (Asset? asset in d1.assets.variables) source.Dialogue.Add(asset!);
-			if (d1.assets.conversations != null) foreach (Asset? asset in d1.assets.conversations) source.Dialogue.Add(asset!);
+			if (d1.assets.actors != null) foreach (Asset? asset in d1.assets.actors) source.Assets.Add(asset!);
+			if (d1.assets.variables != null) foreach (Asset? asset in d1.assets.variables) source.Assets.Add(asset!);
+			if (d1.assets.conversations != null) foreach (Asset? asset in d1.assets.conversations) source.Assets.Add(asset!);
 		}
 
 		return source;
@@ -133,9 +133,9 @@ public class DiscoSerializer
 		var izer = JsonSerializer.Create(Settings());
 
 		AssetsFormat assets = new();
-		assets.actors = src.Dialogue.AssetsByType(AssetType.Actor);
-		assets.conversations = src.Dialogue.AssetsByType(AssetType.Conversation);
-		assets.variables = src.Dialogue.AssetsByType(AssetType.Variable);
+		assets.actors = src.Assets.actors;
+		assets.conversations = src.Assets.conversations;
+		assets.variables = src.Assets.variables;
 
 		DiscoSourceFormat dsf = new()
 		{

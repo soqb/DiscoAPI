@@ -12,18 +12,13 @@ public class DialogueManager : IDialogueManager
     IDiscoManager IDialogueManager.Parent => this.Parent;
 
     public DialogueMapping mapping;
-    public PC.DialogueDatabase pcDatabase = null!; // this is properly initialised in `EnsureInitialized`.
+    public PC.DialogueDatabase pcDatabase = null!; // this is properly initialised in `DiscoManager.OnDialogueBundleLoaded`.
     public Dictionary<string, PC.Asset> fakeArticyIDToAssetCache = new();
 
     public DialogueManager(DiscoManager parent)
     {
         Parent = parent;
         mapping = new(this);
-    }
-    public void EnsureInitialized()
-    {
-        pcDatabase = PC.DialogueManager.MasterDatabase;
-        pcDatabase.SyncAll();
     }
 
     public static T FindAssetByID<T>(Il2CppSystem.Collections.Generic.List<T> assets, int searchID) where T : PC.Asset
@@ -65,7 +60,7 @@ public class DialogueManager : IDialogueManager
         for (int i = startIdx; i < startIdx + sliceLength; i++)
         {
             if (i % 100 == 0)
-            callback(list[i]);
+                callback(list[i]);
         }
     }
 }

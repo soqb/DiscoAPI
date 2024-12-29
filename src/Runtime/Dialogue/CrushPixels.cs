@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using PC = PixelCrushers.DialogueSystem;
 
@@ -6,44 +7,36 @@ namespace DiscoAPI.Runtime.Dialogue;
 
 public class DiscoToPixels
 {
-	DialogueSource source;
-	DiscoManager Manager => source.Parent.Manager;
-
-	public DiscoToPixels(DialogueSource source)
-	{
-		this.source = source;
-	}
-
-	public PC.Link Crush(Link link)
+	public PC.Link Crush(DiscoSource source, Link link)
 	{
 		var pcLink = new PC.Link();
 		pcLink.isConnector = true;
 		if (link.from != null)
 		{
-			pcLink.originConversationID = link.from.conversation.CrushedId(Manager);
+			pcLink.originConversationID = link.from.conversation.ResolveId(source.Manager);
 			pcLink.originDialogueID = link.from.lineID;
 		}
-		pcLink.destinationConversationID = link.to.conversation.CrushedId(Manager);
+		pcLink.destinationConversationID = link.to.conversation.ResolveId(source.Manager);
 		pcLink.destinationDialogueID = link.to.lineID;
 
 		return pcLink;
 	}
-	public PC.DialogueEntry Crush(Line line, AssetRef parentConv)
+	public PC.DialogueEntry Crush(DiscoSource source, Line line, AssetRef parentConv)
 	{
 		var pcEntry = new PC.DialogueEntry();
-		pcEntry.conversationID = parentConv.CrushedId(Manager);
+		pcEntry.conversationID = parentConv.ResolveId(source.Manager);
 		pcEntry.id = line.internalID;
 		pcEntry.fields = new();
 		pcEntry.conditionsString = line.condition ?? "";
 		pcEntry.userScript = line.script ?? "";
-		pcEntry.ActorID = line.speaker?.CrushedId(Manager) ?? 0;
+		pcEntry.ActorID = line.speaker?.ResolveId(source.Manager) ?? 0;
 		// NB: currentDialogueText is usually the same, *except* for the fact it won't create a new field when necessary...
 		pcEntry.DialogueText = line.text;
 		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{line.internalID}";
 		if (line.sequence != null) pcEntry.Sequence = line.sequence;
 		if (line.sequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
 		foreach (var link in line.links)
-			pcEntry.outgoingLinks.Add(Crush(link));
+			pcEntry.outgoingLinks.Add(Crush(source, link));
 
 
 		if (line.node != null)
@@ -59,7 +52,7 @@ public class DiscoToPixels
 		return pcEntry;
 	}
 
-	public PC.Conversation Crush(Conversation conv)
+	public PC.Conversation Crush(DiscoSource source, Conversation conv)
 	{
 		var pcConv = new PC.Conversation();
 		pcConv.fields = new();
@@ -70,23 +63,26 @@ public class DiscoToPixels
 		var handle = conv.Ref;
 		foreach (var line in conv.lines)
 		{
-			pcConv.dialogueEntries.Add(Crush(line, handle));
+			pcConv.dialogueEntries.Add(Crush(source, line, handle));
 		}
 
 
 		return pcConv;
 	}
 
-	public PC.Actor Crush(Actor actor)
+	public PC.Actor Crush(DiscoSource source, Actor actor)
 	{
 		var pcActor = new PC.Actor();
 		pcActor.fields = new();
 		pcActor.Name = actor.displayName;
+		pcActor.textureName = actor.portraitName;
+		pcActor.fields.Add(new PC.Field("short_description", "PLACEHOLDER DESCRIPTION", PC.FieldType.Text));
+		pcActor.fields.Add(new PC.Field("LongDescription", "PLACEHOLDER LONG DESCRIPTION", PC.FieldType.Text));
 
 		return pcActor;
 	}
 
-	public PC.Variable Crush(Variable var)
+	public PC.Variable Crush(DiscoSource source, Variable var)
 	{
 		var pcVar = new PC.Variable();
 		pcVar.fields = new();
@@ -97,15 +93,23 @@ public class DiscoToPixels
 
 		return pcVar;
 	}
+
+	public PC.Asset Crush(DiscoSource source, Asset asset) => asset.Type switch
+	{
+		AssetType.Actor => Crush(source, (Actor)asset),
+		AssetType.Conversation => Crush(source, (Conversation)asset),
+		AssetType.Variable => Crush(source, (Variable)asset),
+		_ => throw new System.NotSupportedException("expected an actor, conversation or varaible"),
+	};
 }
 
 public class EditFieldsForDialogue : DialogueNodeVisitor
 {
 	public FieldEditor fields;
-	public DialogueSource source;
+	public DiscoSource source;
 	public AssetRef parentConv;
 
-	public EditFieldsForDialogue(FieldEditor fields, DialogueSource source, AssetRef parentConv)
+	public EditFieldsForDialogue(FieldEditor fields, DiscoSource source, AssetRef parentConv)
 	{
 		this.fields = fields;
 		this.source = source;
@@ -114,20 +118,20 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 
 	public void Active(ActiveCheck ck)
 	{
-		int ArticyDifficulty(DialogueSource source)
-			=> source.Manager.mapping.DifficultyToArticy(ck.difficulty);
+		int ArticyDifficulty(DiscoSource source)
+			=> source.Manager.Dialogue.mapping.DifficultyToArticy(ck.difficulty);
 
-		fields.Set("Conversant", FieldType.Actor, source.Manager.mapping.SkillToActorID(ck.skill).ToString());
+		fields.Set("Conversant", FieldType.Actor, source.Manager.Dialogue.mapping.SkillToActorID(ck.skill).ToString());
 		fields.Set("FlagName", FieldType.Text, $"{source.Guid}.checks.{ck.id}");
-		source.Add(new Variable($"checks.{ck.id}", false));
+		source.Assets.Add(new Variable($"checks.{ck.id}", false));
 
-		fields.Set("SkillType", FieldType.Text, source.Manager.mapping.SkillToArticyId(ck.skill));
+		fields.Set("SkillType", FieldType.Text, source.Manager.Dialogue.mapping.SkillToArticyId(ck.skill));
 		// These two fields are required for all checks but do nothing AFAICT.
 		fields.Set("Articy Id", FieldType.Text, "0x0000000000000000");
 		fields.Set("check_target", FieldType.Text, "0x0000000000000000");
 
 		if (ck.modifiers.Count > 10)
-			source.Parent.LogWarning($"more than 10 modifiers found for a check in {parentConv} @ {fields.id}; some will be ignored");
+			source.LogWarning($"more than 10 modifiers found for a check in {parentConv} @ {fields.id}; some will be ignored");
 
 		for (int i = 1; i <= 10; i++)
 		{
@@ -137,7 +141,7 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 				var modifier = ck.modifiers[i];
 
 				string varName = $"modifier.{parentConv.id}.{fields.id}.{modifier.id}";
-				source.Add(new Variable(varName, FieldType.Boolean));
+				source.Assets.Add(new Variable(varName, FieldType.Boolean));
 				variable = $"{source.Guid}.{varName}";
 
 				value = modifier.delta.ToString();
@@ -181,11 +185,11 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 
 	public void Passive(PassiveCheck ck)
 	{
-		int ArticyDifficulty(DialogueSource source) => source.Manager.mapping.DifficultyToArticy(ck.difficulty);
+		int ArticyDifficulty(DiscoSource source) => source.Manager.Dialogue.mapping.DifficultyToArticy(ck.difficulty);
 
 		fields.Set("DifficultyPass", ArticyDifficulty(source));
 		if (ck.speakOnFailure) fields.Set("Antipassive", true);
-		fields.Set("Actor", source.Manager.mapping.SkillToActorID(ck.skill));
+		fields.Set("Actor", source.Manager.Dialogue.mapping.SkillToActorID(ck.skill));
 	}
 
 	public void Empty(EmptyDialogueNode ck) { }
@@ -193,22 +197,10 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 
 public class PixelsToDisco
 {
-	DialogueSource source;
-	DiscoManager Manager => source.Parent.Manager;
-
-	public PixelsToDisco(DialogueSource source)
-	{
-		this.source = source;
-	}
-
 	public string NameOf(PC.Asset asset)
 	{
 		if (asset.Name == null) return asset.id.ToString();
-
-		string name = asset.Name;
-		if (name.StartsWith(source.Guid + "."))
-			name = name.Substring(source.Guid.Length + 1)!;
-		return name;
+		else return asset.Name;
 	}
 
 	public Variable Uncrush(PC.Variable variable) => new Variable(
@@ -228,4 +220,18 @@ public class PixelsToDisco
 		return cv;
 	}
 	public Line Uncrush(int i, PC.DialogueEntry entry) => new Line(i, entry.currentDialogueText);
+
+	public Asset Uncrush(PC.Asset ass)
+	{
+		bool TryCast<T>(out T casted) where T : class
+		{
+			casted = (ass as T)!;
+			return ass is T;
+		}
+
+		if (TryCast<PC.Actor>(out var actor)) return Uncrush(actor);
+		else if (TryCast<PC.Conversation>(out var conversation)) return Uncrush(conversation);
+		else if (TryCast<PC.Variable>(out var variable)) return Uncrush(variable);
+		else throw new System.NotSupportedException("expected an actor, conversation or varaible");
+	}
 }

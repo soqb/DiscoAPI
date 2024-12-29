@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
@@ -8,7 +9,6 @@ public interface IDialogueSource
     public string Guid => Parent.Guid;
     public IDialogueManager Manager => Parent.Manager.Dialogue;
     public void Add(Asset asset);
-    public void InsertLink(Link link);
     public IEnumerable<Asset> AssetsByType(AssetType type);
 }
 

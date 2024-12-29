@@ -1,15 +1,21 @@
+using System;
 using System.Collections.Generic;
+using Voidforge;
 
 namespace DiscoAPI.Runtime;
 
-public class DiscoRunner
+public static class DiscoRunner
 {
+    public static ModWorld? world;
+
     public static DiscoManager manager = new();
-    private static List<DiscoProvider> plugins = new();
+    private static List<(DiscoProvider, DiscoSource)> plugins = new();
     public static void Register(DiscoProvider plugin)
     {
         DiscoAPIPlugin.Instance.Log.LogInfo($"registered plugin \"{plugin.Guid}\"");
-        plugins.Add(plugin);
+        var source = manager.CreateSource(plugin.Guid);
+        plugins.Add((plugin, source));
+        GuardHook(source, plugin.OnRegister);
     }
 
     private static bool alreadyLoadedDialogue = false;
@@ -20,21 +26,12 @@ public class DiscoRunner
         if (alreadyLoadedDialogue) return;
         alreadyLoadedDialogue = true;
 
-        manager.EnsureInitialized();
-        // try
-        // {
-        //     BundleLoader.LoadBundle(Path.Join(Application.dataPath, "..", "BepInEx", "discoPlugins", "mod"));
-        // }
-        // finally
-        // {
-        //     Application.Quit(0);
-        // }
-        // Dumps.DiscoDumper.FullDump(manager.Disco);
-        foreach (var plugin in plugins)
+        manager.OnDialogueBundleLoad();
+
+        foreach (var (plugin, source) in plugins)
         {
-            var source = manager.CreateSource(plugin.Guid);
             source.LogInfo("initializing dialogue..");
-            plugin.OnDialogueBundleLoad(source);
+            GuardHook(source, plugin.OnDialogueBundleLoad);
         }
 
         // Several vanilla methods use initialDatabase, but they should really be using the master database.
@@ -43,11 +40,26 @@ public class DiscoRunner
 
     public static void OnSceneLoad()
     {
-        manager.EnsureInitialized();
-        foreach (var plugin in plugins)
+        DiscoAPIPlugin.Instance.Log.LogInfo("scene loaded..");
+
+        var w = SingletonComponent<global::World>.Singleton;
+        if (world == null && w != null) world = new(w);
+
+        foreach (var (plugin, source) in plugins)
         {
-            var source = manager.CreateSource(plugin.Guid);
-            plugin.OnSceneLoad(source);
+            GuardHook(source, plugin.OnSceneLoad);
+        }
+    }
+
+    public static void GuardHook(DiscoSource source, Action<DiscoSource> hook)
+    {
+        try
+        {
+            hook(source);
+        }
+        catch (Exception e)
+        {
+            source.log.LogError(e);
         }
     }
 }

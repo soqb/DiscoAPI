@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DiscoAPI.Runtime;
 using DiscoAPI.Common.Dialogue;
+using DiscoAPI.Common.Assets;
 
 // An example blatantly ripped from a blog by `thedeliaishere` on tumblr:
 // (https://www.tumblr.com/thedeliaishere/721024362812211200/young-woman-actually-detective-im-a?source=share).
@@ -23,19 +24,19 @@ public class Transgener : DiscoProvider
         // which is managed by the PixelCrushers.DialogueSystem library.
         // Anything that can talk is an actor, from Tequila Sunset to the Nightwatchman's Booth.
         Actor woman = new Actor("young-trans-woman", "Young Woman");
-        trans.Dialogue.Add(woman);
+        trans.Assets.Add(woman);
 
 
         // We get a reference to the vanilla dialogue through the `Disco` property.
         // This lets us easily reference vanilla actors (like Empathy) and conversations.
         DiscoSource disco = trans.Manager.Disco;
 
-        ActorRef harry = new(disco, 396);
-        ActorRef kim = new(disco, 395);
+        AssetRef harry = new(AssetType.Actor, disco, 396);
+        AssetRef kim = new(AssetType.Actor, disco, 395);
 
         // We setup another asset, this time a variable to use in the conversation later.
         Variable elchemCheck = new Variable("fuck-trans-women", false);
-        trans.Dialogue.Add(elchemCheck);
+        trans.Assets.Add(elchemCheck);
 
         // We create a list of dialogue lines which we will later put into a conversation.
         Line[] lines = new[] {
@@ -44,7 +45,7 @@ public class Transgener : DiscoProvider
             new Line(0, "Actually, detective, I'm a woman.") {
                 // The speaker is the actor who says the line.
                 // Once we've added the actor, we can turn it into an ActorRef and use it in this line here.
-                speaker = woman,
+                speaker = woman.Ref,
                 links = {
                     // `links` is a list of references to the next lines of dialogue that can be spoken.
                     // Here, we just reference the next line.
@@ -58,14 +59,14 @@ public class Transgener : DiscoProvider
                 // If this check is failed, the game will simply not speak the line and carry on.
                 //
                 // The `PassiveCheck` node automatically sets the value of the speaker.  
-                node = new PassiveCheck(SkillType.Empathy, Difficulty.Easy),
+                node = new PassiveCheck(Skills.Empathy, Difficulty.Easy),
                 links = { new(trans, 0, 2) },
             },
             new(2, "You feel a pit in your stomach. You did something wrong, but you don't know what.") {
                 // We can also give passive checks the additonal `speakOnFailure = true` property,
                 // which dictates that they will be spoken when the check is failed.
                 // If you want separate success and fail dialogue, you will need two separate lines.
-                node = new PassiveCheck(SkillType.Composure, Difficulty.Formidable) {
+                node = new PassiveCheck(Skills.Composure, Difficulty.Formidable) {
                     speakOnFailure = true,
                 },
                 // We can also give lines a script to run when spoken.
@@ -75,11 +76,11 @@ public class Transgener : DiscoProvider
                 links = { new(trans, 0, 3) },
             },
             new(3, "Her way of dressing, the feminine name, yet deep voice - it should have been clear to you sooner. She's transgender.") {
-                node = new PassiveCheck(SkillType.Logic, Difficulty.Trivial),
+                node = new PassiveCheck(Skills.Logic, Difficulty.Trivial),
                 links = { new(trans, 0, 4) },
             },
             new(4, "Almost imperceptible, the lieutenant anxiously twitches his eyebrow.") {
-                node = new PassiveCheck(SkillType.EspritDeCorps, Difficulty.Formidable),
+                node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Formidable),
                 links = {
                     // If and only if *all* the speakers of the currently linked-to lines are Tequila Sunset
                     // (the actor with id "disco:396"), then the response menu will be shown to the player.
@@ -101,7 +102,7 @@ public class Transgener : DiscoProvider
                 },
             },
             new(7, "A transgender person is someone who does not identify with the gender they were assigned at birth. Oftentimes they will dress conforming to their desired gender roles, change their names, and seek medical intervention to, \"transition.\"") {
-                node = new PassiveCheck(SkillType.Encyclopedia, Difficulty.Trivial),
+                node = new PassiveCheck(Skills.Encyclopedia, Difficulty.Trivial),
                 links = {
                     new(trans, 0, 8),
                     new(trans, 0, 9),
@@ -126,11 +127,11 @@ public class Transgener : DiscoProvider
                 links = { new(trans, 0, 0) },
             },
             new(12, "Just as Mazov dared to challenge the established order of capitalism, so too do others challenge the order of things such as sex and gender.") {
-                node = new PassiveCheck(SkillType.Rhetoric, Difficulty.Trivial),
+                node = new PassiveCheck(Skills.Rhetoric, Difficulty.Trivial),
                 links = { new(trans, 0, 13) },
             },
             new(13, "IT'S BEEN SO LONG SINCE WE'VE FELT THE TOUCH OF A WOMAN. WHO CARES IF SHE USED TO BE A MAN? HAVE SEX WITH HER NOW! ITS WHAT A REAL MAN WOULD DO!") {
-                node = new PassiveCheck(SkillType.Electrochemistry, Difficulty.Trivial),
+                node = new PassiveCheck(Skills.Electrochemistry, Difficulty.Trivial),
                 // We want to skip the next few passive checks completely if this one fails.
                 // So if this one succeeds, we set the value of that variable to true.
                 // The string interpolation resolves to an id unique to that variable.
@@ -145,27 +146,27 @@ public class Transgener : DiscoProvider
             new(14, "Don't do that. It's clear now, you upset her for accidentally calling her a man. Just apologize.") {
                 // Here we set the condition, indexing into the Lua map `Variable` which contains the values of all variables.
                 condition = $"Variable[\"{elchemCheck}\"]",
-                node = new PassiveCheck(SkillType.Empathy, Difficulty.Trivial),
+                node = new PassiveCheck(Skills.Empathy, Difficulty.Trivial),
                 links = { new(trans, 0, 15) },
             },
             new(15, "Profusely.") {
-                node = new PassiveCheck(SkillType.Composure, Difficulty.Medium) {
+                node = new PassiveCheck(Skills.Composure, Difficulty.Medium) {
                     speakOnFailure = true,
                 },
                 links = { new(trans, 0, 16) },
             },
             new(16, "It's important to be a good ally.") {
-                node = new PassiveCheck(SkillType.EspritDeCorps, Difficulty.Medium),
+                node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Medium),
                 links = { new(trans, 0, 17) },
             },
             new(17, "Make a real show of it, sire!") {
-                node = new PassiveCheck(SkillType.Drama, Difficulty.Medium),
+                node = new PassiveCheck(Skills.Drama, Difficulty.Medium),
                 links = { new(trans, 0, 18) },
             },
             // In order for this line to act as a "hub", a landing page for other lines
             // that line 13 can link to, we give it no actual content.
             new(18, null) {
-                speaker = new(disco, 401),
+                speaker = new(AssetType.Actor, disco, 401),
                 links = {
                     new(trans, 0, 19),
                     new(trans, 0, 20),
@@ -195,14 +196,14 @@ public class Transgener : DiscoProvider
                 node = new ActiveCheck(
                     "apologize-to-young-woman",
                     ActiveCheck.Kind.AlwaysFail,
-                    SkillType.Drama,
+                    Skills.Drama,
                     Difficulty.Legendary
                 ),
                 links = { new(trans, 0, 23) },
             },
             new(23, "You try and come up with the words to convey your apology to the young woman, but you come up blank. It's hard to fit \"transgender\" into iambic pentameter, as it turns out.") {
                 // disco:401 is the id for Drama.
-                speaker = new(disco, 401),
+                speaker = new(AssetType.Actor, disco, 401),
                 links = {
                     new(trans, 0, 24),
                     new(trans, 0, 26),
@@ -216,15 +217,15 @@ public class Transgener : DiscoProvider
                 links = { new(trans, 0, 25) },
             },
             new(25, "Shit, the lieutenant is onto us. We have to say something soon, or we could lose him.") {
-                speaker = new(disco, 408),
+                speaker = new(AssetType.Actor, disco, 408),
                 links = { new(trans, 0, 26) },
             },
             new(26, "Don't worry, we can still salvage this. Anyone have any ideas?") {
-                node = new PassiveCheck(SkillType.Composure, Difficulty.Trivial),
+                node = new PassiveCheck(Skills.Composure, Difficulty.Trivial),
                 links = { new(trans, 0, 27) },
             },
             new(27, "Let me handle this.") {
-                node = new PassiveCheck(SkillType.Volition, Difficulty.Heroic) {
+                node = new PassiveCheck(Skills.Volition, Difficulty.Heroic) {
                     speakOnFailure = true,
                 },
                 links = {
@@ -249,13 +250,14 @@ public class Transgener : DiscoProvider
         };
 
         // We add the conversation to the source as with other assets.
-        trans.Dialogue.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
+        trans.Assets.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
 
-        // And, finally, we insert a link (between conversations) to allow it to be spoken.
-        // The `from` line is the root of Kim's main dialogue tree.
-        trans.Dialogue.InsertLink(new Link(
-            from: new(disco, 29, 343),
-            to: new(trans, 0, 30)
-        ));
+        // FIXME: BROKEN !!!
+        // // And, finally, we insert a link (between conversations) to allow it to be spoken.
+        // // The `from` line is the root of Kim's main dialogue tree.
+        // trans.InsertLink(new Link(
+        //     from: new(disco, 29, 343),
+        //     to: new(trans, 0, 30)
+        // ));
     }
 }

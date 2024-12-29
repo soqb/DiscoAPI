@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DiscoAPI.Common.Assets;
 using Newtonsoft.Json;
 
 namespace DiscoAPI.Common.Dialogue;
@@ -17,7 +18,7 @@ public class Line
     /// <summary>
     /// The actor speaking the line.
     /// </summary>
-    public ActorRef? speaker;
+    public AssetRef? speaker;
     /// <summary>
     /// The contents of this dialogue line; what is spoken.
     /// </summary>

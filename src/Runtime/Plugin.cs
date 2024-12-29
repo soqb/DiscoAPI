@@ -1,4 +1,5 @@
-﻿using BepInEx;
+﻿using System;
+using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
@@ -27,16 +28,22 @@ public class DiscoAPIPlugin : BasePlugin
 
     public override void Load()
     {
+        BepInEx.Logging.Logger.Sources.Add(mockUnityLogger);
+
         harmony.PatchAll(typeof(DiscoAPIPlugin));
         harmony.PatchAll(typeof(Patches.DialoguePatches));
+        harmony.PatchAll(typeof(Patches.PagesPatches));
+        harmony.PatchAll(typeof(Patches.CharacterPatches));
         AddUnityListener(DialogueBundleLoader.bundleWasLoaded, DiscoRunner.OnDialogueBundleLoad);
+
+        FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad, -100);
 
         DiscoRunner.Register(new Transgener());
     }
 
     public void AddUnityListener(UnityEvent evt, System.Action action) => evt.AddListener(action);
 
-    // This patch makes debugging much friendlier since DE suppresses errors to avoid crashes.
+    // This patch makes debugging much friendlier since BepInEx chooses to ignoer stacktraces...
     [HarmonyPatch(typeof(BepInEx.Unity.IL2CPP.Logging.IL2CPPUnityLogSource), nameof(BepInEx.Unity.IL2CPP.Logging.IL2CPPUnityLogSource.UnityLogCallback))]
     [HarmonyPostfix]
     private static void UnityErrorStacktrace(string exception, LogType type)
@@ -52,4 +59,11 @@ public class DiscoAPIPlugin : BasePlugin
                 break;
         }
     }
+
+    // [HarmonyPatch(typeof(Il2CppSystem.Exception), nameof(Il2CppSystem.Exception.Init))]
+    // [HarmonyPostfix]
+    // private static void OnExceptionInit()
+    // {
+    //     mockUnityLogger.LogError(DebugUtils.StackTrace());
+    // }
 }
