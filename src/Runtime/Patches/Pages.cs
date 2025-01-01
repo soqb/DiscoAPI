@@ -35,10 +35,10 @@ public static class PagesPatches
 	// [HarmonyPrefix]
 	// private static void OnLoadSkillPortraitAsync(SkillPortraitPanel __instance)
 	// {
-	// 	// DiscoAPIPlugin.Instance.Log.LogInfo($"nb that there are {CharacterSheet.reverseIndex.Count} sheets.");
+	// 	DiscoAPIPlugin.Instance.Log.LogInfo($"nb that there are {CharacterSheet.reverseIndex.Count} sheets.");
 
-	// 	// PixelCrushers.DialogueSystem.Actor actor = CharacterSheetTooltip.ActorFromModifiable(__instance.currentSkill);
-	// 	// DiscoAPIPlugin.Instance.Log.LogInfo($"{__instance.currentSkill.skillType} is about to load '{actor?.Name ?? "noone"}'");
+	// 	PixelCrushers.DialogueSystem.Actor actor = CharacterSheetTooltip.ActorFromModifiable(__instance.currentSkill);
+	// 	DiscoAPIPlugin.Instance.Log.LogInfo($"{__instance.currentSkill.skillType} is about to load '{actor?.Name ?? "noone"}'");
 	// }
 
 	private static bool IsExcluded(SM.SkillType type) => type switch
@@ -53,19 +53,55 @@ public static class PagesPatches
 		_ => false,
 	};
 
+	[HarmonyPatch(typeof(CharacterSheetInfoPanel), nameof(CharacterSheetInfoPanel.ShowSkill))]
+	[HarmonyPrefix]
+	private static bool OnShowSkill(CharacterSheetInfoPanel __instance, SM.Skill skill)
+	{
+		if (skill.skillType == SM.SkillType.NONE)
+		{
+			__instance.tabPanel.SetActive(false);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.OnSelectButtonClicked))]
+	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.OnPointerEnter))]
+	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.OnPointerExit))]
+	[HarmonyPrefix]
+	private static bool PrePointerEvent(SkillPortraitPanel __instance)
+	{
+		if (__instance.skill == SM.SkillType.NONE) return false;
+		else return true;
+	}
+
+	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.UpdateData))]
+	[HarmonyPrefix]
+	private static bool OnUpdateData(SkillPortraitPanel __instance)
+	{
+		if (__instance.skill == SM.SkillType.NONE)
+		{
+			__instance.isHovered = false;
+			__instance.isSelectHovered = false;
+			__instance.skillPortrayLabel.skillNumber.enabled = false;
+			__instance.UpdateSelectionVisuals();
+			return false;
+		}
+		else return true;
+	}
 
 	[HarmonyPatch(typeof(Charsheet.SkillPortrayConfigurator), nameof(Charsheet.SkillPortrayConfigurator.UpdateSkillPortraitPanelsContent))]
 	[HarmonyPrefix]
 	private static bool OnSkillConfiguratorUpdateSkillPortraitPanelsContent(Charsheet.SkillPortrayConfigurator __instance)
 	{
-		DiscoAPIPlugin.Instance.Log.LogDebug($"updating panels content. note there are {__instance.skillList.Length} skills.");
-
 		var skills = (SM.SkillType[])System.Enum.GetValues(typeof(SM.SkillType));
 		for (int i = 0; i < skills.Length; i++)
 		{
 			SM.SkillType skillType = skills[i];
 
-			// DiscoAPIPlugin.Instance.Log.LogInfo($" > ({i}) treating {skillType}");
 			if (IsExcluded(skillType)) continue;
 			SkillPortraitPanel? skillPortraitPanel = null;
 
@@ -73,7 +109,6 @@ public static class PagesPatches
 			{
 				if (sk.name == skillType.ToString())
 				{
-					// DiscoAPIPlugin.Instance.Log.LogInfo($"   * comparing with {sk.name}...");
 					skillPortraitPanel = sk;
 					break;
 				}
@@ -99,10 +134,13 @@ public static class PagesPatches
 					SM.SkillType.PERCEPTION => (SM.SkillType)44,
 					SM.SkillType.REACTION => (SM.SkillType)45,
 					SM.SkillType.SAVOIR_FAIRE => (SM.SkillType)46,
+					SM.SkillType.CONCEPTUALIZATION or SM.SkillType.VISUAL_CALCULUS
+					or SM.SkillType.ESPRIT_DE_CORPS or SM.SkillType.SUGGESTION
+					or SM.SkillType.SHIVERS or SM.SkillType.HALF_LIGHT
+					or SM.SkillType.INTERFACING or SM.SkillType.COMPOSURE => SM.SkillType.NONE,
 					_ => skillType,
 				};
 				SM.Skill skill = new SM.Skill(skillType, null);
-				DiscoAPIPlugin.Instance.Log.LogInfo($" > setting skill to {skill.skillType}...");
 				skillPortraitPanel.SetSkill(skill);
 			}
 		}

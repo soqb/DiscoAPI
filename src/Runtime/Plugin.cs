@@ -4,6 +4,7 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 namespace DiscoAPI.Runtime;
 
@@ -36,6 +37,8 @@ public class DiscoAPIPlugin : BasePlugin
         AddUnityListener(DialogueBundleLoader.bundleWasLoaded, DiscoRunner.OnDialogueBundleLoad);
 
         FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad, -100);
+
+        DiscoRunner.Register(new InherentProvider());
     }
 
     public void AddUnityListener(UnityEvent evt, System.Action action) => evt.AddListener(action);
@@ -56,11 +59,4 @@ public class DiscoAPIPlugin : BasePlugin
                 break;
         }
     }
-
-    // [HarmonyPatch(typeof(Il2CppSystem.Exception), nameof(Il2CppSystem.Exception.Init))]
-    // [HarmonyPostfix]
-    // private static void OnExceptionInit()
-    // {
-    //     mockUnityLogger.LogError(DebugUtils.StackTrace());
-    // }
 }

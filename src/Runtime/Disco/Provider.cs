@@ -1,4 +1,5 @@
 using BepInEx.Unity.IL2CPP;
+using DiscoAPI.Runtime.Assets;
 namespace DiscoAPI.Runtime;
 
 public interface IDiscoProvider
@@ -19,10 +20,11 @@ public class DiscoPlugin : BasePlugin, IDiscoProvider
 {
     public string Guid => Log.SourceName;
     public DiscoSource Source { get; }
+    public AssetSource Assets => Source.Assets;
 
     public DiscoPlugin()
     {
-        Source = new(DiscoRunner.manager, Guid, false, Log);
+        Source = DiscoRunner.manager.CreateSource(Guid, Log);
     }
 
     public virtual void OnRegister() { }

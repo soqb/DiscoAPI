@@ -251,7 +251,6 @@ public class AssetSource : IAssetSource
 		realVariables = tableFab.Make<PC.Variable, Variable>(this, Manager.variables);
 	}
 
-
 	public IAssetTable<Actor> actors => Manager.Parent.BundleGuard(realActors);
 	public IAssetTable<Conversation> conversations => Manager.Parent.BundleGuard(realConversations);
 	public IAssetTable<Variable> variables => Manager.Parent.BundleGuard(realVariables);
@@ -346,7 +345,6 @@ public class AssetManager : IAssetManager
 		realConversations = new PCArena<PC.Conversation, Conversation>(Parent.Dialogue, db.conversations);
 		realVariables = new PCArena<PC.Variable, Variable>(Parent.Dialogue, db.variables);
 	}
-
 
 	public IAssetArena<Actor> actors => Parent.BundleGuard(realActors);
 	public IAssetArena<Conversation> conversations => Parent.BundleGuard(realConversations);

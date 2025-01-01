@@ -6,6 +6,9 @@ using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Common.Assets;
 using System;
 using BepInEx.Logging;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.ResourceProviders;
+using Il2CppInterop.Runtime.Injection;
 
 namespace DiscoAPI.Runtime;
 
@@ -38,14 +41,14 @@ public class DiscoManager : IDiscoManager
     /// </summary>
     public DiscoSource Disco => linearSources[0];
 
-    public DiscoSource CreateSource(DiscoPlugin plugin)
+    public DiscoSource CreateSource(string guid, ManualLogSource log)
     {
-        if (sourcesByGuid.ContainsKey(plugin.Guid))
-            return this[plugin.Guid];
+        if (sourcesByGuid.ContainsKey(guid))
+            return this[guid];
 
-        DiscoSource source = new(this, plugin.Guid, false, plugin.Log);
+        DiscoSource source = new(this, guid, false, log);
 
-        sourcesByGuid.Add(plugin.Guid, linearSources.Count);
+        sourcesByGuid.Add(guid, linearSources.Count);
         linearSources.Add(source);
         return source;
     }
@@ -57,9 +60,15 @@ public class DiscoManager : IDiscoManager
 
     public void OnDialogueBundleLoad()
     {
+        // ClassInjector.RegisterTypeInIl2Cpp<Patches.LocalResourceProvider>();
+
         if (!WasBundleLoaded)
         {
             WasBundleLoaded = true;
+
+            // var prov = new Patches.LocalResourceProvider();
+            // gc.Add(prov);
+            // Addressables.ResourceManager.m_ResourceProviders.Add(new IResourceProvider(prov.Pointer));
 
             realDialogue = new DialogueManager(this);
             Dialogue.pcDatabase = PixelCrushers.DialogueSystem.DialogueManager.MasterDatabase;
@@ -68,8 +77,8 @@ public class DiscoManager : IDiscoManager
             Assets.OnDialogueBundleLoaded();
 
             foreach (var sc in linearSources) sc.Assets.OnDialogueBundleLoaded();
-
-            // DumpDiscoSources.FullDump();
         }
     }
+
+    private static List<object> gc = new List<object>();
 }

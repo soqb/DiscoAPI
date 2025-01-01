@@ -13,6 +13,7 @@ using BepInEx;
     "transgener example",
     "0.0.1"
 )]
+[BepInDependency(DiscoAPIPlugin.GUID)]
 [BepInProcess("disco.exe")]
 public class Transgener : DiscoPlugin
 {
@@ -31,7 +32,7 @@ public class Transgener : DiscoPlugin
         // which is managed by the PixelCrushers.DialogueSystem library.
         // Anything that can talk is an actor, from Tequila Sunset to the Nightwatchman's Booth.
         Actor woman = new Actor("young-trans-woman", "Young Woman");
-        Source.Assets.Add(woman);
+        Assets.Add(woman);
 
 
         // We get a reference to the vanilla dialogue through the `Disco` property.
@@ -43,7 +44,7 @@ public class Transgener : DiscoPlugin
 
         // We setup another asset, this time a variable to use in the conversation later.
         Variable elchemCheck = new Variable("fuck-trans-women", false);
-        Source.Assets.Add(elchemCheck);
+        Assets.Add(elchemCheck);
 
         // We create a list of dialogue lines which we will later put into a conversation.
         Line[] lines = new[] {
@@ -257,7 +258,7 @@ public class Transgener : DiscoPlugin
         };
 
         // We add the conversation to the source as with other assets.
-        Source.Assets.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
+        Assets.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
 
         // FIXME: BROKEN !!!
         // // And, finally, we insert a link (between conversations) to allow it to be spoken.

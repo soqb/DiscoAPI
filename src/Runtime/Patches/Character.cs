@@ -18,6 +18,7 @@ public static class CharacterPatches
 
 	private static string GetActorSkillName(SM.SkillType type)
 	{
+		if (type == SM.SkillType.NONE) return InherentProvider.DUMMY_NONE_SKILL;
 		if ((int)type <= Skill.VANILLA_MAX) return SM.Skill.actorSkillNames[(int)type];
 		else return ActorForSkill(type).displayName;
 	}
@@ -48,7 +49,7 @@ public static class CharacterPatches
 	[HarmonyPatch(typeof(CharacterSheetTooltip), nameof(CharacterSheetTooltip.ActorFromModifiable))]
 	[HarmonyPatch(new System.Type[] { typeof(SM.Modifiable) })]
 	[HarmonyPrefix]
-	private static bool OnActorFromMod(ref PC.Actor? __result, SM.Modifiable modifiable)
+	private static bool OnActorFromModifiable(ref PC.Actor? __result, SM.Modifiable modifiable)
 	{
 		string? skillOrAbilityName = GetSkillOrAbilityName(modifiable);
 		if (skillOrAbilityName == null)
@@ -121,13 +122,9 @@ public static class CharacterPatches
 	[HarmonyPostfix]
 	private static void OnRepopulateSheetLists(SM.CharacterSheet __instance)
 	{
-		DiscoAPIPlugin.Instance.Log.LogInfo($"repopulating sheet list");
-
 		int targetCount = Skills.Count + Skill.VANILLA_SKILL_PORTRAIT_COUNT - Skill.VANILLA_SKILL_COUNT;
 		SM.Skill[] ar = new SM.Skill[targetCount];
 		__instance.skills.CopyTo(ar, 0);
-
-		DiscoAPIPlugin.Instance.Log.LogInfo($" > skills has {__instance.skills.Count} but needs {targetCount}");
 
 		var sheet = CharacterSheet.GetForSM(__instance);
 		sheet.EnsureSkillsInstalled();
@@ -158,7 +155,6 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static void OnLabelConfiguratorLanguageChanged(Charsheet.SkillPortraitLabelsConfigurator __instance)
 	{
-		DiscoAPIPlugin.Instance.Log.LogInfo($"configurator language changed...");
 		for (int i = 0; i < __instance.labelsSettings.Length; i++)
 		{
 			var sco = __instance.labelsSettings[i].scriptable;
@@ -166,16 +162,29 @@ public static class CharacterPatches
 
 			if (preset.labelsSettings.Length != Skill.VANILLA_SKILL_PORTRAIT_COUNT) continue;
 
-			int settingCount = Skills.MaxId - Skill.VANILLA_MAX + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
+			int settingCount = Skills.MaxId - Skill.VANILLA_MAX + Skill.VANILLA_SKILL_PORTRAIT_COUNT + 1;
 			Charsheet.SkillPortraitLabelSettings[] settings = new Charsheet.SkillPortraitLabelSettings[settingCount];
 			preset.labelsSettings.CopyTo(settings, 0);
 
-			for (int j = Skill.VANILLA_MAX + 1; j <= Skills.MaxId; j++)
+			var old = settings[0]!;
+			for (int j = Skill.VANILLA_MAX + 1; j <= Skills.MaxId + 1; j++)
 			{
-				SM.SkillType skill = (SM.SkillType)j;
+				// kinda wierd sequence of events, but we also need a preset for NONE...
+				SM.SkillType skill;
+				string labelText;
+				if (j <= Skills.MaxId)
+				{
+					skill = (SM.SkillType)j;
+					labelText = Skills[j].displayName;
+				}
+				else
+				{
+					skill = SM.SkillType.NONE;
+					labelText = "";
+				}
 
-				var old = settings[0]!;
-				var now = new Charsheet.SkillPortraitLabelSettings()
+				int computed = j - Skill.VANILLA_MAX - 1 + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
+				settings[computed] = new Charsheet.SkillPortraitLabelSettings()
 				{
 					fontSize = old.fontSize,
 					labelOffset = old.labelOffset,
@@ -183,11 +192,9 @@ public static class CharacterPatches
 					lineSpace = old.lineSpace,
 					nameplateSize = old.nameplateSize,
 					textOffset = old.textOffset,
-					labelText = Skills[j].displayName,
+					labelText = labelText,
 					skill = skill,
 				};
-				int computed = j - Skill.VANILLA_MAX - 1 + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
-				settings[computed] = now;
 			}
 
 			// DiscoAPIPlugin.Instance.Log.LogInfo($" > preset looks like:");
@@ -197,7 +204,7 @@ public static class CharacterPatches
 			preset.labelsSettings = settings;
 		}
 
-		if (__instance.skillToPresetIndex.Count == Skills.Count - Skill.VANILLA_SKILL_COUNT + Skill.VANILLA_SKILL_PORTRAIT_COUNT)
+		if (__instance.skillToPresetIndex.Count == Skills.Count - Skill.VANILLA_SKILL_COUNT + Skill.VANILLA_SKILL_PORTRAIT_COUNT + 1)
 			return;
 
 		for (int j = Skill.VANILLA_MAX + 1; j <= Skills.MaxId; j++)
@@ -206,6 +213,8 @@ public static class CharacterPatches
 			int computed = j - Skill.VANILLA_MAX - 1 + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
 			__instance.skillToPresetIndex.Add(skill, computed);
 		}
+
+		__instance.skillToPresetIndex.Add(SM.SkillType.NONE, Skills.MaxId - Skill.VANILLA_MAX + Skill.VANILLA_SKILL_PORTRAIT_COUNT);
 	}
 }
 
