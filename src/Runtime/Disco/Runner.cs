@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
 using BepInEx.Logging;
-using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.SceneManagement;
-using Voidforge;
 
 namespace DiscoAPI.Runtime;
 
@@ -23,6 +19,8 @@ public static class DiscoRunner
         GuardHook("register", plugin, plugin.OnRegister);
     }
 
+    public static IDiscoProvider? GetPlugin(string guid) => plugins.Find(p => p.Guid == guid);
+
     private static bool alreadyLoadedDialogue = false;
     public static void OnDialogueBundleLoad()
     {
@@ -40,6 +38,8 @@ public static class DiscoRunner
 
         // Several vanilla methods use initialDatabase, but they should really be using the master database.
         DialogueBridgePixelCrushers.DialogueSystem.initialDatabase = manager.Dialogue.pcDatabase;
+
+        Voidforge.UpdateManager.normalEvent.Add((Il2CppSystem.Action)OnUpdate);
     }
 
     private static void OnMarshalledSceneLoad()
@@ -55,11 +55,21 @@ public static class DiscoRunner
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         DiscoAPIPlugin.Instance.Log.LogInfo($"scene '{sceneName}' loaded..");
 
-        var w = SingletonComponent<global::World>.Singleton;
+        var w = global::World.Singleton;
         if (w == null) return;
         if (world == null) world = new(w);
 
         world.MarshallSceneLoad(OnMarshalledSceneLoad);
+    }
+
+    public static void OnUpdate()
+    {
+        foreach (var plugin in plugins)
+        {
+            GuardHook("update", plugin, plugin.OnUpdate);
+        }
+
+        MainThreadExecutor.DequeueOnMainThread();
     }
 
     public static void GuardHook(string hookname, IDiscoProvider plugin, Action hook)

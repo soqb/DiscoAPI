@@ -70,12 +70,14 @@ public class DiscoToPixels
 		return pcConv;
 	}
 
+	public static string? EncodeTextureName(string source, string? name) => name == null ? null : $"\0EXTRA\0{source}\0{name}";
+
 	public PC.Actor Crush(DiscoSource source, Actor actor)
 	{
 		var pcActor = new PC.Actor();
 		pcActor.fields = new();
 		pcActor.Name = actor.displayName;
-		pcActor.textureName = actor.portraitName;
+		pcActor.textureName = EncodeTextureName(source.Guid, actor.portraitName);
 		pcActor.fields.Add(new PC.Field("short_description", "PLACEHOLDER DESCRIPTION", PC.FieldType.Text));
 		pcActor.fields.Add(new PC.Field("LongDescription", "PLACEHOLDER LONG DESCRIPTION", PC.FieldType.Text));
 
@@ -208,6 +210,23 @@ public class PixelsToDisco
 		(FieldType)variable.LookupInitialValueType(),
 		variable.InitialValue
 	);
+
+	public static bool TryDecodeTextureName(string? textureName, out string source, out string path)
+	{
+		if (textureName == null || !textureName.StartsWith("\0EXTRA\0"))
+		{
+			source = "";
+			path = "";
+			return false;
+		}
+
+		textureName = textureName.Substring(7);
+		int splitAt = textureName.IndexOf('\0');
+
+		source = textureName.Substring(0, splitAt);
+		path = textureName.Substring(splitAt + 1);
+		return true;
+	}
 
 	public Actor Uncrush(PC.Actor actor) => new Actor(NameOf(actor), actor.Name);
 	public Conversation Uncrush(PC.Conversation conversation)

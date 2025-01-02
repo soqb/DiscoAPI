@@ -3,6 +3,7 @@ using DiscoAPI.Runtime;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Common.Assets;
 using BepInEx;
+using System.IO;
 
 // An example blatantly ripped from a blog by `thedeliaishere` on tumblr:
 // (https://www.tumblr.com/thedeliaishere/721024362812211200/young-woman-actually-detective-im-a?source=share).
@@ -20,6 +21,8 @@ public class Transgener : DiscoPlugin
     // This is the globally-unique identifier for the mod.
     public const string GUID = "transgener-example";
 
+    public override string? Location => base.Location == null ? null : Path.Combine(base.Location, "examples", "trangener");
+
     // We override the virtual `OnDialogueBundleLoad` method which is run automatically
     // when the vanilla dialogue bundle has loaded but before it is postprocessed.
     public override void OnDialogueBundleLoad()
@@ -33,7 +36,6 @@ public class Transgener : DiscoPlugin
         // Anything that can talk is an actor, from Tequila Sunset to the Nightwatchman's Booth.
         Actor woman = new Actor("young-trans-woman", "Young Woman");
         Assets.Add(woman);
-
 
         // We get a reference to the vanilla dialogue through the `Disco` property.
         // This lets us easily reference vanilla actors (like Empathy) and conversations.

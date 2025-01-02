@@ -1,9 +1,8 @@
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using SM = Sunshine.Metric;
-using Voidforge;
+using DiscoAPI.Runtime.Dialogue;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -12,18 +11,11 @@ public static class PagesPatches
 
 	[HarmonyPatch(typeof(ActorsPortraitsBundleManager), nameof(ActorsPortraitsBundleManager.LoadPortraitSpriteAsync))]
 	[HarmonyPrefix]
-	private static bool OnLoadPortraitSpriteAsync(ref AsyncOperationHandle<Sprite> __result, string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite>> del)
+	private static bool OnLoadPortraitSpriteAsync(ref AsyncOperationHandle<Sprite?> __result, string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite?>> del)
 	{
-
-		if (textureName.StartsWith("EXTRA#"))
+		if (PixelsToDisco.TryDecodeTextureName(textureName, out string source, out string path))
 		{
-			textureName = textureName.Substring(6);
-			// pretty ham-fisted but works.
-			byte[] bytes = System.IO.File.ReadAllBytes("BepInEx/plugins/DCA/" + textureName);
-			Texture2D tex = new(0, 0, TextureFormat.RGB24, false);
-			ImageConversion.LoadImage(tex, bytes, false);
-			Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new(0.5f, 0.5f));
-			__result = Addressables.ResourceManager.CreateCompletedOperation<Sprite>(sprite, null);
+			__result = DiscoRunner.GetPlugin(source)!.Router.Portraits.Get(path);
 			__result.add_Completed(del);
 			return false;
 		}
@@ -145,9 +137,9 @@ public static class PagesPatches
 			}
 		}
 
-		if (SingletonComponent<CharsheetView>.Singleton != null)
+		if (CharsheetView.Singleton != null)
 		{
-			SingletonComponent<CharsheetView>.Singleton.UpdateSkillPortraitPanels(__instance.skillList);
+			CharsheetView.Singleton.UpdateSkillPortraitPanels(__instance.skillList);
 		}
 
 		return false;
