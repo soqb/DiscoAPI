@@ -1,4 +1,5 @@
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Common.Dialogue;
 using Il2CppInterop.Runtime.InteropTypes;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -22,31 +23,49 @@ public class EmptyAssetRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 
 public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 {
+	private AsyncOperationHandle<AssetBundle?> bundle;
+	private string aliasPrefix;
 
-	private AssetBundle bundle;
-
-	public AssetBundleRoute(AssetBundle bundle)
+	private static AsyncOperationHandle<AssetBundle?> HandleFromCreateRequest(AssetBundleCreateRequest req)
 	{
-		this.bundle = bundle;
+		return AssetUtils.SpoofHandle<AssetBundle>(complete =>
+		{
+			// req.add_completed((Action<AsyncOperation>)(_ => complete(req.assetBundle, null)));
+		});
+	}
+
+	public AssetBundleRoute(string? path, string? aliasPrefix)
+		: this(AssetBundle.LoadFromFileAsync(path), aliasPrefix) { }
+
+	public AssetBundleRoute(AssetBundleCreateRequest req, string? aliasPrefix)
+		: this(HandleFromCreateRequest(req), aliasPrefix) { }
+
+	public AssetBundleRoute(AsyncOperationHandle<AssetBundle?> handle, string? aliasPrefix)
+	{
+		bundle = handle;
+
+		// we don't want to have to unnecessarily unload & reload the bundle so we're just going to leak it.
+		bundle.InternalOp.IncrementReferenceCount();
+
+		this.aliasPrefix = aliasPrefix ?? "";
 	}
 
 	private void Execute(string path, AssetUtils.Complete<T> complete)
 	{
-		var req = bundle.LoadAssetAsync<T?>(path);
-		req.add_completed(
-			(Action<AsyncOperation>)(_ => complete(req.GetResult().TryCast<T?>(), null))
-		);
+		var req = bundle.Result!.LoadAssetAsync<T>(aliasPrefix + path);
+		req.add_completed((Action<AsyncOperation>)(_ => complete(req.GetResult().TryCast<T?>(), null)));
 	}
 
-	public AsyncOperationHandle<T?> Get(string path) => AssetUtils.SpoofHandle<T>(complete => Execute(path, complete));
+	public AsyncOperationHandle<T?> Get(string path)
+		=> AssetUtils.SpoofHandle<T>(complete => Execute(path, complete), bundle);
 }
 
-public abstract class LooseFileRouter<T> : IAssetRoute<T> where T : UnityEngine.Object
+public abstract class LooseFileRoute<T> : IAssetRoute<T> where T : UnityEngine.Object
 {
 	public string? location;
 	private Dictionary<string, AsyncOperationHandle<T?>> cache = new();
 
-	protected LooseFileRouter(string? location)
+	protected LooseFileRoute(string? location)
 	{
 		this.location = location;
 	}
@@ -83,9 +102,9 @@ public abstract class LooseFileRouter<T> : IAssetRoute<T> where T : UnityEngine.
 	}
 }
 
-public class LooseSpriteRouter : LooseFileRouter<Sprite>
+public class LooseSpriteRoute : LooseFileRoute<Sprite>
 {
-	public LooseSpriteRouter(string? location) : base(location) { }
+	public LooseSpriteRoute(string? location) : base(location) { }
 
 	public override Sprite? Parse(byte[] bytes)
 	{
@@ -97,8 +116,8 @@ public class LooseSpriteRouter : LooseFileRouter<Sprite>
 
 public interface IAssetRouter
 {
-	virtual IAssetRoute<Sprite> Portraits => new EmptyAssetRoute<Sprite>();
-	virtual IAssetRoute<AudioClip> ClipsForConversation(AssetRef conversation) => new EmptyAssetRoute<AudioClip>();
+	IAssetRoute<Sprite> Portraits => new EmptyAssetRoute<Sprite>();
+	IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation) => new EmptyAssetRoute<AudioClip>();
 }
 
 public class EmptyAssetRouter : IAssetRouter { }
@@ -121,13 +140,14 @@ public class MemoizedAssetRouter : IAssetRouter
 	private IAssetRoute<Sprite>? portraits;
 	public IAssetRoute<Sprite> Portraits => Guard(ref portraits, () => inner.Portraits);
 
-	private Dictionary<AssetRef, IAssetRoute<AudioClip>> clipsForConversation = new();
-	public IAssetRoute<AudioClip> ClipsForConversation(AssetRef conversation)
+	private Dictionary<AssetLocation<Conversation>, IAssetRoute<AudioClip>> clipsForConversation = new();
+	public IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation)
 	{
-		if (clipsForConversation.TryGetValue(conversation, out var route)) return route;
+		var location = conversation.Location;
+		if (clipsForConversation.TryGetValue(location, out var route)) return route;
 
 		var clips = inner.ClipsForConversation(conversation);
-		clipsForConversation.Add(conversation, clips);
+		clipsForConversation.Add(location, clips);
 		return clips;
 	}
 }

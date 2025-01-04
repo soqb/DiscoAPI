@@ -18,7 +18,7 @@ public class Line
     /// <summary>
     /// The actor speaking the line.
     /// </summary>
-    public AssetRef? speaker;
+    public IAssetRef<Actor>? speaker;
     /// <summary>
     /// The contents of this dialogue line; what is spoken.
     /// </summary>

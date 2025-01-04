@@ -3,10 +3,8 @@ using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
-public class Actor : Asset
+public class Actor : Asset, IAssetRef<Actor>
 {
-    [JsonIgnore]
-    public override AssetType Type => AssetType.Actor;
     [JsonProperty("name")]
     public string displayName;
 
@@ -18,4 +16,7 @@ public class Actor : Asset
         this.displayName = displayName;
     }
 
+    [JsonIgnore]
+    public new AssetLocation<Actor> Location => new(source, id);
+    Actor? IAssetRef<Actor>.Resolve(IDiscoManager mgr) => (Actor?)((IAssetRef)this).Resolve(mgr);
 }

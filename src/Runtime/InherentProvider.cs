@@ -18,7 +18,7 @@ public class InherentProvider : IDiscoProvider
 
 	private class InherentAssetRouter : IAssetRouter
 	{
-		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRouter(InherentProvider.Instance.Location);
+		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(InherentProvider.Instance.Location);
 	}
 
 	public string? Location { get; }

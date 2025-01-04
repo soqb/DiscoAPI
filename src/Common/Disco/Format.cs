@@ -5,27 +5,20 @@ using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Format;
 
-public class AssetRefFormat<T> : JsonConverter
+public class AssetRefFormat<T> : JsonConverter where T : Asset
 {
-	public delegate T RefFactory(string source, AssetId id);
+	public IAssetRef<T> FromParts(string source, AssetId id) => new AssetLocation<T>(source, id);
 
-	public RefFactory maker;
-
-	public AssetRefFormat(AssetRefFormat<T>.RefFactory maker)
-	{
-		this.maker = maker;
-	}
-
-	public T FromString(string asset)
+	public IAssetRef<T> FromString(string asset)
 	{
 		string[] comps = asset.Split(":");
-		return maker(comps[0], (AssetIdString)comps[1]);
+		return FromParts(comps[0], comps[1]);
 	}
 
 	public override void WriteJson(JsonWriter writer, object? ass, JsonSerializer serializer)
 	{
 		if (ass == null) writer.WriteNull();
-		else writer.WriteValue(ass?.ToString());
+		else writer.WriteValue(((IAssetRef<T>)ass).Location.ToString());
 	}
 
 	public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
@@ -53,18 +46,18 @@ public class AssetRefFormat<T> : JsonConverter
 				{
 					if (reader.TokenType == JsonToken.Integer)
 					{
-						id = (AssetIdInt)reader.ReadAsInt32()!;
+						id = reader.ReadAsInt32();
 					}
 					else if (reader.TokenType == JsonToken.String)
 					{
-						id = (AssetIdString)reader.ReadAsString()!;
+						id = reader.ReadAsString()!;
 					}
 					else throw new JsonException();
 				}
 				else throw new JsonException();
 			}
 
-			return maker(source, id);
+			return FromParts(source, id);
 		}
 		else if (reader.TokenType == JsonToken.String)
 		{
@@ -103,9 +96,11 @@ public class DiscoSerializer
 			NullValueHandling = NullValueHandling.Ignore,
 		};
 
-		opts.Converters.Add(new AssetRefFormat<AssetRef>((src, id) => throw new Exception()));
-		// opts.Converters.Add(new AssetRefFormat<VariableRef>((src, id) => throw new Exception()));
-		// opts.Converters.Add(new AssetRefFormat<ConversationRef>((src, id) => throw new Exception()));
+		opts.Converters.Add(new AssetRefFormat<Asset>());
+		opts.Converters.Add(new AssetRefFormat<Dialogue.Actor>());
+		opts.Converters.Add(new AssetRefFormat<Dialogue.Conversation>());
+		opts.Converters.Add(new AssetRefFormat<Dialogue.Variable>());
+		opts.Converters.Add(new AssetRefFormat<Skill>());
 
 		return opts;
 	}

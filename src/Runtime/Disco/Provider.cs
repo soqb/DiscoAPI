@@ -22,6 +22,21 @@ public interface IDiscoProvider
     virtual void OnUpdate() { }
 }
 
+public struct Location
+{
+    public string? path;
+
+    public Location(string? path)
+    {
+        this.path = path?.TrimEnd('/') ?? null;
+    }
+
+    public Location Get(string subpath) => path == null ? null : $"{path}/{subpath}";
+
+    public static implicit operator string?(Location l) => l.path;
+    public static implicit operator Location(string? path) => new(path);
+}
+
 public class DiscoPlugin : BasePlugin, IDiscoProvider
 {
     public string Guid => Source.Guid;
@@ -36,7 +51,7 @@ public class DiscoPlugin : BasePlugin, IDiscoProvider
         return string.Equals(Norm(a), Norm(b), cmp);
     }
 
-    public static string? GetLocationFromAssembly(Assembly assembly, ManualLogSource? log)
+    public static Location GetLocationFromAssembly(Assembly assembly, ManualLogSource? log)
     {
         string? path = Path.GetDirectoryName(assembly.Location);
         if (path == null)
@@ -62,7 +77,7 @@ public class DiscoPlugin : BasePlugin, IDiscoProvider
         return null;
     }
 
-    public virtual string? Location { get; }
+    public virtual Location Location { get; }
     public IAssetRouter Router { get; }
 
     public DiscoPlugin()

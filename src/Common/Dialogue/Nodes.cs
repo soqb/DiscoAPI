@@ -25,10 +25,10 @@ public class EmptyDialogueNode : DialogueNode
 [Serializable]
 public class PassiveCheck : DialogueNode
 {
-    public AssetRef skill;
+    public IAssetRef<Skill> skill;
     public Difficulty difficulty;
     public bool speakOnFailure = false;
-    public PassiveCheck(AssetRef skill, Difficulty difficulty)
+    public PassiveCheck(IAssetRef<Skill> skill, Difficulty difficulty)
     {
         this.skill = skill;
         this.difficulty = difficulty;
@@ -72,9 +72,9 @@ public class ActiveCheck : DialogueNode
     public string id;
     public Kind kind;
     public List<Modifier> modifiers = new();
-    public AssetRef skill;
+    public IAssetRef<Skill> skill;
     public Difficulty difficulty;
-    public ActiveCheck(string id, Kind kind, AssetRef skill, Difficulty difficulty)
+    public ActiveCheck(string id, Kind kind, IAssetRef<Skill> skill, Difficulty difficulty)
     {
         this.skill = skill;
         this.difficulty = difficulty;

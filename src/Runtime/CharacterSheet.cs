@@ -120,7 +120,7 @@ public class CharacterSheet
 	}
 
 	public SM.CharacterSheet sm;
-	public Dictionary<AssetRef, SM.Skill> skillMap = new();
+	public Dictionary<AssetLocation, SM.Skill> skillMap = new();
 
 	public CharacterSheet(SM.CharacterSheet sm)
 	{
@@ -134,9 +134,9 @@ public class CharacterSheet
 		for (int i = 0; i <= skills.MaxId; i++)
 		{
 			var sk = skills[i];
-			if (sk == null || skillMap.ContainsKey(sk.Ref)) continue;
+			if (sk == null || skillMap.ContainsKey(sk.Location)) continue;
 			var skill = i <= Skill.VANILLA_MAX ? sm.GetSkill((SM.SkillType)i) : new SM.Skill((SM.SkillType)i, sm);
-			skillMap.Add(skills[i].Ref, skill);
+			skillMap.Add(skills[i].Location, skill);
 		}
 	}
 }

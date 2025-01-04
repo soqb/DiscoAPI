@@ -7,10 +7,10 @@ namespace DiscoAPI.Runtime.Dialogue;
 public class DialogueMapping
 {
     private DialogueManager manager;
-    public Dictionary<AssetRef, string> articySkillIds = new();
+    private Dictionary<AssetLocation, string> articySkillIds = new();
     public Dictionary<Difficulty, int> reverseArticyDifficultyMap = new();
 
-    private AssetRef? NameToSkillRef(string name)
+    private IAssetRef<Skill>? NameToSkillRef(string name)
     {
         return name switch
         {
@@ -52,7 +52,7 @@ public class DialogueMapping
         foreach (var entry in ArticyBridge.ARTICY_ID_TO_SKILL_NAME)
         {
             var skill = NameToSkillRef(entry.value);
-            if (skill != null) articySkillIds.TryAdd(skill, entry.key);
+            if (skill != null) articySkillIds.TryAdd(skill.Location, entry.key);
         }
 
         for (int i = 0; i < ArticyBridge.ArticyDifficultyIdToDifficulty.Count; i++)
@@ -65,11 +65,11 @@ public class DialogueMapping
 
     public int DifficultyToArticy(Difficulty difficulty) => reverseArticyDifficultyMap[difficulty];
 
-    public int SkillToActorID(AssetRef skill)
+    public int SkillToActorID(IAssetRef<Skill> skill)
     {
         var actorName = ArticyBridge.ARTICY_ID_TO_SKILL_NAME[SkillToArticyId(skill)];
         return manager.pcDatabase.GetActor(actorName).id;
     }
 
-    public string SkillToArticyId(AssetRef skill) => articySkillIds[skill];
+    public string SkillToArticyId(IAssetRef<Skill> skill) => articySkillIds[skill.Location];
 }

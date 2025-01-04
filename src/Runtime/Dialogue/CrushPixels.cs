@@ -21,7 +21,7 @@ public class DiscoToPixels
 
 		return pcLink;
 	}
-	public PC.DialogueEntry Crush(DiscoSource source, Line line, AssetRef parentConv)
+	public PC.DialogueEntry Crush(DiscoSource source, Line line, IAssetRef<Conversation> parentConv)
 	{
 		var pcEntry = new PC.DialogueEntry();
 		pcEntry.conversationID = parentConv.ResolveId(source.Manager);
@@ -32,7 +32,7 @@ public class DiscoToPixels
 		pcEntry.ActorID = line.speaker?.ResolveId(source.Manager) ?? 0;
 		// NB: currentDialogueText is usually the same, *except* for the fact it won't create a new field when necessary...
 		pcEntry.DialogueText = line.text;
-		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{line.internalID}";
+		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.Location.id}#{line.internalID}";
 		if (line.sequence != null) pcEntry.Sequence = line.sequence;
 		if (line.sequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
 		foreach (var link in line.links)
@@ -60,10 +60,9 @@ public class DiscoToPixels
 		pcConv.Title = conv.id;
 		pcConv.dialogueEntries = new();
 
-		var handle = conv.Ref;
 		foreach (var line in conv.lines)
 		{
-			pcConv.dialogueEntries.Add(Crush(source, line, handle));
+			pcConv.dialogueEntries.Add(Crush(source, line, conv));
 		}
 
 
@@ -109,9 +108,9 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 {
 	public FieldEditor fields;
 	public DiscoSource source;
-	public AssetRef parentConv;
+	public IAssetRef<Conversation> parentConv;
 
-	public EditFieldsForDialogue(FieldEditor fields, DiscoSource source, AssetRef parentConv)
+	public EditFieldsForDialogue(FieldEditor fields, DiscoSource source, IAssetRef<Conversation> parentConv)
 	{
 		this.fields = fields;
 		this.source = source;
@@ -142,7 +141,7 @@ public class EditFieldsForDialogue : DialogueNodeVisitor
 			{
 				var modifier = ck.modifiers[i];
 
-				string varName = $"modifier.{parentConv.id}.{fields.id}.{modifier.id}";
+				string varName = $"modifier.{parentConv.Location.id}.{fields.id}.{modifier.id}";
 				source.Assets.Add(new Variable(varName, FieldType.Boolean));
 				variable = $"{source.Guid}.{varName}";
 

@@ -16,11 +16,8 @@ public enum FieldType
     Location = 7
 }
 
-public class Variable : Asset
+public class Variable : Asset, IAssetRef<Variable>
 {
-    [JsonIgnore]
-    public override AssetType Type => AssetType.Variable;
-
     public FieldType type;
     [JsonProperty("value")]
     public string initialValue;
@@ -40,5 +37,9 @@ public class Variable : Asset
     public Variable(string id, FieldType type)
         : this(id, type, "") { }
 
-    public override string ToString() => $"{sourceGuid}.{id}";
+    [JsonIgnore]
+    public new AssetLocation<Variable> Location => new(source, id);
+    Variable? IAssetRef<Variable>.Resolve(IDiscoManager mgr) => (Variable?)((IAssetRef)this).Resolve(mgr);
+
+    public override string ToString() => $"{source}.{id}";
 }

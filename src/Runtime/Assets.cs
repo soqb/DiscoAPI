@@ -27,7 +27,7 @@ class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset
 
 	public void Insert(U asset)
 	{
-		var src = dialogue.Parent[asset.sourceGuid!];
+		var src = dialogue.Parent[asset.source!];
 
 		var pcAsset = crusher.Crush(src, asset);
 		pcAsset.id = MaxId;
@@ -39,7 +39,7 @@ class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset
 			_ => throw new NotSupportedException(),
 		};
 
-		string fakeArticyID = $"{asset.sourceGuid}.${assetKind}.{asset.id}";
+		string fakeArticyID = $"{asset.source}.${assetKind}.{asset.id}";
 		pcAsset.fields.Add(new PC.Field(ArticyBridge.ARTICY_ID_FIELD, fakeArticyID, PC.FieldType.Text));
 		dialogue.fakeArticyIDToAssetCache.Add(fakeArticyID, pcAsset);
 
@@ -101,7 +101,7 @@ class EnumArena<T, U> : IAssetArena<U> where T : struct, System.Enum where U : A
 	private U DoRecover(int id)
 	{
 		U asset = recover.Invoke(Enum.Parse<T>(id.ToString()));
-		asset.sourceGuid = "disco";
+		asset.source = "disco";
 		return asset;
 	}
 }
@@ -180,7 +180,7 @@ class ModTable<T, U> : AssetTable<T, U> where U : Asset
 
 	public override void Insert(U asset)
 	{
-		asset.sourceGuid = parent.Guid;
+		asset.source = parent.Guid;
 		ids.Add(asset.id, count);
 
 		arena.Insert(asset);
@@ -314,13 +314,13 @@ public class AssetManager : IAssetManager
 		return new Skill(
 			type.ToString(),
 			name,
-			new(AssetType.Actor, "disco", name),
+			new AssetLocation<Actor>("disco", name),
 			Skill.AbilityFromSunshine(SM.Skill.GetAbility(type))
 		);
 	}
 
-	public int ResolveId(AssetRef ass) => Parent[ass.sourceGuid].Assets.ResolveId(ass.type, ass.id);
-	public Asset Resolve(AssetRef ass) => ass.type switch
+	public int ResolveId(AssetLocation ass) => Parent[ass.source].Assets.ResolveId(ass.type, ass.id);
+	public Asset Resolve(AssetLocation ass) => ass.type switch
 	{
 		AssetType.Actor => actors[ResolveId(ass)],
 		AssetType.Conversation => conversations[ResolveId(ass)],

@@ -21,7 +21,7 @@ public class Transgener : DiscoPlugin
     // This is the globally-unique identifier for the mod.
     public const string GUID = "transgener-example";
 
-    public override string? Location => base.Location == null ? null : Path.Combine(base.Location, "examples", "trangener");
+    public override Location Location => base.Location == null ? null : Path.Combine(base.Location!, "examples", "trangener");
 
     // We override the virtual `OnDialogueBundleLoad` method which is run automatically
     // when the vanilla dialogue bundle has loaded but before it is postprocessed.
@@ -41,8 +41,8 @@ public class Transgener : DiscoPlugin
         // This lets us easily reference vanilla actors (like Empathy) and conversations.
         DiscoSource disco = Source.Manager.Disco;
 
-        AssetRef harry = new(AssetType.Actor, disco, 396);
-        AssetRef kim = new(AssetType.Actor, disco, 395);
+        AssetLocation<Actor> harry = new(disco, 396);
+        AssetLocation<Actor> kim = new(disco, 395);
 
         // We setup another asset, this time a variable to use in the conversation later.
         Variable elchemCheck = new Variable("fuck-trans-women", false);
@@ -55,7 +55,7 @@ public class Transgener : DiscoPlugin
             new Line(0, "Actually, detective, I'm a woman.") {
                 // The speaker is the actor who says the line.
                 // Once we've added the actor, we can turn it into an ActorRef and use it in this line here.
-                speaker = woman.Ref,
+                speaker = woman.Location,
                 links = {
                     // `links` is a list of references to the next lines of dialogue that can be spoken.
                     // Here, we just reference the next line.
@@ -176,7 +176,7 @@ public class Transgener : DiscoPlugin
             // In order for this line to act as a "hub", a landing page for other lines
             // that line 13 can link to, we give it no actual content.
             new(18, null) {
-                speaker = new(AssetType.Actor, disco, 401),
+                speaker = new AssetLocation<Actor>(disco, 401),
                 links = {
                     new(Source, 0, 19),
                     new(Source, 0, 20),
@@ -213,7 +213,7 @@ public class Transgener : DiscoPlugin
             },
             new(23, "You try and come up with the words to convey your apology to the young woman, but you come up blank. It's hard to fit \"transgender\" into iambic pentameter, as it turns out.") {
                 // disco:401 is the id for Drama.
-                speaker = new(AssetType.Actor, disco, 401),
+                speaker = new AssetLocation<Actor>(disco, 401),
                 links = {
                     new(Source, 0, 24),
                     new(Source, 0, 26),
@@ -227,7 +227,7 @@ public class Transgener : DiscoPlugin
                 links = { new(Source, 0, 25) },
             },
             new(25, "Shit, the lieutenant is onto us. We have to say something soon, or we could lose him.") {
-                speaker = new(AssetType.Actor, disco, 408),
+                speaker = new AssetLocation<Actor>(disco, 401),
                 links = { new(Source, 0, 26) },
             },
             new(26, "Don't worry, we can still salvage this. Anyone have any ideas?") {

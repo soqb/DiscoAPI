@@ -27,7 +27,13 @@ public static class AssetUtils
 {
 	public delegate void Complete<T>(T? result, string? error);
 
+
 	public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute) where T : Il2CppObjectBase
+	{
+		return SpoofHandle<T>(execute, new AsyncOperationHandle());
+	}
+
+	public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute, AsyncOperationHandle dep) where T : Il2CppObjectBase
 	{
 		// please don't ask why this is like this.
 
@@ -44,15 +50,19 @@ public static class AssetUtils
 		op.IncrementReferenceCount();
 		op.m_UpdateCallbacks = op.m_RM.m_UpdateCallbacks;
 
-		void Complete(T? res, string? err)
+		void Execute()
 		{
-			bool success = string.IsNullOrEmpty(err);
-			if (!success) res = null;
-			op.Complete(res, success, err, false);
+			execute((res, err) =>
+			{
+				bool success = string.IsNullOrEmpty(err);
+				if (!success) res = null;
+				op.Complete(res, success, err, false);
+			});
+			op.HasExecuted = true;
 		}
 
-		execute(Complete);
-		op.HasExecuted = true;
+		if (dep.IsValid() && !dep.IsDone) dep.add_Completed((Action<AsyncOperationHandle>)(_ => Execute()));
+		else Execute();
 
 		return op.Handle;
 	}

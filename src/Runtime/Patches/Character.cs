@@ -11,16 +11,13 @@ public static class CharacterPatches
 {
 	private static IAssetArena<Skill> Skills => DiscoRunner.manager.Assets.skills;
 
-	private static Actor ActorForSkill(SM.SkillType st)
-	{
-		return ((Actor)DiscoRunner.manager.Assets.Resolve(Skills[(int)st].actor));
-	}
+	private static Actor? ActorForSkill(SM.SkillType st) => Skills[(int)st].actor.Resolve(DiscoRunner.manager);
 
-	private static string GetActorSkillName(SM.SkillType type)
+	private static string? GetActorSkillName(SM.SkillType type)
 	{
 		if (type == SM.SkillType.NONE) return InherentProvider.DUMMY_NONE_SKILL;
 		if ((int)type <= Skill.VANILLA_MAX) return SM.Skill.actorSkillNames[(int)type];
-		else return ActorForSkill(type).displayName;
+		else return ActorForSkill(type)?.displayName;
 	}
 
 	private static string? GetSkillOrAbilityName(SM.Modifiable modifiable)
@@ -39,7 +36,7 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static bool OnGetActorSkillName(ref string __result, SM.SkillType skillType)
 	{
-		__result = GetActorSkillName(skillType);
+		__result = GetActorSkillName(skillType)!;
 		return false;
 	}
 
@@ -101,7 +98,7 @@ public static class CharacterPatches
 		// DiscoAPIPlugin.Instance.Log.LogInfo($"getting skill value of {type}");
 		if ((int)type <= Skill.VANILLA_MAX) return true;
 
-		__result = CharacterSheet.GetForSM(__instance).skillMap[Skills[(int)type].Ref];
+		__result = CharacterSheet.GetForSM(__instance).skillMap[Skills[(int)type].Location];
 		return false;
 	}
 
@@ -114,7 +111,7 @@ public static class CharacterPatches
 
 		var sheet = CharacterSheet.GetForSM(__instance);
 		for (int i = Skill.VANILLA_MAX + 1; i <= Skills.MaxId; i++)
-			sheet.skillMap[Skills[i].Ref] = new((SM.SkillType)i, __instance);
+			sheet.skillMap[Skills[i].Location] = new((SM.SkillType)i, __instance);
 	}
 
 	// most methods don't use the skill fields, but instead a certain array so we update that when we need to:
@@ -132,7 +129,7 @@ public static class CharacterPatches
 		for (int i = Skill.VANILLA_MAX + 1; i <= Skills.MaxId; i++)
 		{
 			int idx = i - Skill.VANILLA_MAX - 1 + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
-			ar[i - Skill.VANILLA_MAX - 1 + Skill.VANILLA_SKILL_PORTRAIT_COUNT] = sheet.skillMap[Skills[i].Ref];
+			ar[i - Skill.VANILLA_MAX - 1 + Skill.VANILLA_SKILL_PORTRAIT_COUNT] = sheet.skillMap[Skills[i].Location];
 		}
 
 		__instance.skills = ar;

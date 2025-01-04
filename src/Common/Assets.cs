@@ -15,8 +15,8 @@ public interface IAssetManager
 {
 	public IDiscoManager Parent { get; }
 
-	public int ResolveId(AssetRef ass);
-	public Asset Resolve(AssetRef ass);
+	public int ResolveId(AssetLocation ass);
+	public Asset Resolve(AssetLocation ass);
 
 	public IAssetArena<Actor> actors { get; }
 	public IAssetArena<Conversation> conversations { get; }

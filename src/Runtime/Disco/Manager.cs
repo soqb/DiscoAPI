@@ -6,9 +6,6 @@ using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Common.Assets;
 using System;
 using BepInEx.Logging;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.ResourceProviders;
-using Il2CppInterop.Runtime.Injection;
 
 namespace DiscoAPI.Runtime;
 
@@ -60,15 +57,9 @@ public class DiscoManager : IDiscoManager
 
     public void OnDialogueBundleLoad()
     {
-        // ClassInjector.RegisterTypeInIl2Cpp<Patches.LocalResourceProvider>();
-
         if (!WasBundleLoaded)
         {
             WasBundleLoaded = true;
-
-            // var prov = new Patches.LocalResourceProvider();
-            // gc.Add(prov);
-            // Addressables.ResourceManager.m_ResourceProviders.Add(new IResourceProvider(prov.Pointer));
 
             realDialogue = new DialogueManager(this);
             Dialogue.pcDatabase = PixelCrushers.DialogueSystem.DialogueManager.MasterDatabase;

@@ -3,18 +3,36 @@ using Newtonsoft.Json;
 
 namespace DiscoAPI.Common.Assets;
 
-public abstract class Asset
+public abstract class Asset : IAssetRef
 {
-    public abstract AssetType Type { get; }
     [JsonIgnore]
-    public AssetRef Ref => new(this);
+    public AssetType Type => TypeOf(GetType());
+
     [JsonIgnore]
-    public string? sourceGuid;
+    public string? source;
     public string id;
     public Asset(string id)
     {
         this.id = id;
     }
+
+    Asset IAssetRef.Resolve(IDiscoManager mgr) => this;
+
+    [JsonIgnore]
+    public AssetLocation Location => new(Type, source, id);
+
+    public static AssetType TypeOf<T>() where T : Asset => TypeOf(typeof(T));
+
+    public static AssetType TypeOf(Type type)
+    {
+        if (type.IsAssignableTo(typeof(Dialogue.Actor))) return AssetType.Actor;
+        if (type.IsAssignableTo(typeof(Dialogue.Conversation))) return AssetType.Conversation;
+        if (type.IsAssignableTo(typeof(Dialogue.Variable))) return AssetType.Variable;
+        if (type.IsAssignableTo(typeof(Skill))) return AssetType.Skill;
+
+        throw new InvalidOperationException($"{type.FullName} is not a recognised asset type");
+    }
+
 }
 
 public enum AssetType
@@ -31,54 +49,90 @@ public interface LocalIdResolver<T>
     public T ResolveId(string id);
 }
 
-public interface AssetId
+interface IAssetId
 {
-    public T ResolveIn<T>(LocalIdResolver<T> resolver);
+    T ResolveIn<T>(LocalIdResolver<T> resolver);
 }
 
-public struct AssetIdInt : AssetId
+record struct AssetIdInt(int id) : IAssetId
 {
-    public int id;
-
     public T ResolveIn<T>(LocalIdResolver<T> resolver) => resolver.ResolveId(id);
 
-    public static implicit operator AssetIdInt(int id) => new AssetIdInt { id = id };
     public override string ToString() => id.ToString();
 }
 
-public struct AssetIdString : AssetId
+record struct AssetIdString(string id) : IAssetId
 {
-    public string id;
-
     public T ResolveIn<T>(LocalIdResolver<T> resolver) => resolver.ResolveId(id);
 
-    public static implicit operator AssetIdString(string id) => new AssetIdString { id = id };
     public override string ToString() => id.ToString();
 }
 
-public record AssetRef
+public class AssetId
 {
-    public string sourceGuid;
-    public AssetId id;
-    public AssetType type;
-    public AssetRef(AssetType type, string source, AssetId id)
+    private IAssetId inner;
+
+    private AssetId(IAssetId inner)
     {
-        this.type = type;
-        sourceGuid = source;
-        this.id = id;
-
-        if (sourceGuid == null || sourceGuid == "") throw new Exception($"an asset ref ({id}, {type}) was created without a source guid.");
+        this.inner = inner;
     }
-    public AssetRef(AssetType type, string source, int id)
-        : this(type, source, (AssetIdInt)id) { }
-    public AssetRef(AssetType type, string source, string id)
-        : this(type, source, (AssetIdString)id) { }
-    public AssetRef(Asset asset)
-        : this(asset.Type, asset.sourceGuid!, (AssetIdString)asset.id) { }
-    public AssetRef(AssetType type, IDiscoSource source, int id)
-        : this(type, source.Guid, (AssetIdInt)id) { }
-    public AssetRef(AssetType type, IDiscoSource source, string id)
-        : this(type, source.Guid, (AssetIdString)id) { }
 
-    public override string ToString() => $"{sourceGuid}:{id}";
+    public T ResolveIn<T>(LocalIdResolver<T> resolver) => inner.ResolveIn(resolver);
+
+    public static implicit operator AssetId(int id) => new(new AssetIdInt(id));
+    public static implicit operator AssetId(string id) => new(new AssetIdString(id));
+}
+
+public interface IAssetRef
+{
+    AssetType Type { get; }
+
+    Asset? Resolve(IDiscoManager mgr);
+    AssetLocation Location { get; }
+}
+
+public interface IAssetRef<T> : IAssetRef where T : Asset
+{
+    new T? Resolve(IDiscoManager mgr);
+    new AssetLocation<T> Location { get; }
+}
+
+public record AssetLocation : IAssetRef
+{
+    public AssetType type;
+    public string source;
+    public AssetId id;
+
+    AssetType IAssetRef.Type => type;
+
+    public AssetLocation(AssetType type, string? source, AssetId id)
+    {
+        if (source == null || source == "") throw new Exception($"an asset ref ({id}, {type}) was created without a source guid.");
+
+        this.type = type;
+        this.id = id;
+        this.source = source;
+    }
+
+    public AssetLocation(AssetType type, IDiscoSource source, AssetId id) : this(type, source.Guid, id) { }
+
+    AssetLocation IAssetRef.Location => new(this);
+    public Asset? Resolve(IDiscoManager mgr) => mgr.Assets.Resolve(this);
+
+    public override string ToString() => $"{source}:{id}";
+}
+
+public record AssetLocation<T> : AssetLocation, IAssetRef<T> where T : Asset
+{
+    public AssetLocation(string? source, AssetId id) : base(Asset.TypeOf<T>(), source, id) { }
+
+    public AssetLocation(IDiscoSource source, AssetId id) : this(source.Guid, id) { }
+
+    AssetLocation<T> IAssetRef<T>.Location => new(this);
+    AssetLocation IAssetRef.Location => new AssetLocation<T>(this);
+
+    public new T? Resolve(IDiscoManager mgr) => (T?)base.Resolve(mgr);
+    Asset? IAssetRef.Resolve(IDiscoManager mgr) => base.Resolve(mgr);
+
+    public override string ToString() => $"{source}:{id}";
 }
