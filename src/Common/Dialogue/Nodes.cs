@@ -1,10 +1,9 @@
-using System;
 using System.Collections.Generic;
 using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
-public interface DialogueNodeVisitor
+public interface IDialogueNodeVisitor
 {
     public void Empty(EmptyDialogueNode ck);
     public void Passive(PassiveCheck ck);
@@ -12,18 +11,17 @@ public interface DialogueNodeVisitor
     public void Cost(CostCheck ck);
 }
 
-public interface DialogueNode
+public interface IDialogueNode
 {
-    public void Visit(DialogueNodeVisitor vtr);
+    public void Visit(IDialogueNodeVisitor vtr);
 }
 
-public class EmptyDialogueNode : DialogueNode
+public class EmptyDialogueNode : IDialogueNode
 {
-    public void Visit(DialogueNodeVisitor vtr) => vtr.Empty(this);
+    public void Visit(IDialogueNodeVisitor vtr) => vtr.Empty(this);
 }
 
-[Serializable]
-public class PassiveCheck : DialogueNode
+public class PassiveCheck : IDialogueNode
 {
     public IAssetRef<Skill> skill;
     public Difficulty difficulty;
@@ -34,13 +32,11 @@ public class PassiveCheck : DialogueNode
         this.difficulty = difficulty;
     }
 
-    public void Visit(DialogueNodeVisitor vtr) => vtr.Passive(this);
+    public void Visit(IDialogueNodeVisitor vtr) => vtr.Passive(this);
 }
 
-[Serializable]
-public class ActiveCheck : DialogueNode
+public class ActiveCheck : IDialogueNode
 {
-    [Serializable]
     public enum Kind
     {
         White,
@@ -48,25 +44,16 @@ public class ActiveCheck : DialogueNode
         AlwaysFail,
         AlwaysSucceed,
     }
-    [Serializable]
-    public class Modifier
-    {
-        public Modifier(string id, int delta, string tooltip)
-        {
-            this.id = id;
-            this.delta = delta;
-            this.tooltip = tooltip;
-        }
 
+    public record Modifier(string id, int delta, string tooltip)
+    {
         /// <summary>
         /// The value of the modifier.
         /// <para>
         /// Note that a negative delta results in a positive bonus to the roll and vice versa.
         /// </para>
         /// </summary>
-        public int delta;
-        public string tooltip;
-        public string id;
+        public readonly int delta = delta;
     }
 
     public string id;
@@ -82,21 +69,21 @@ public class ActiveCheck : DialogueNode
         this.kind = kind;
     }
 
-    public void Visit(DialogueNodeVisitor vtr) => vtr.Active(this);
+    public void Visit(IDialogueNodeVisitor vtr) => vtr.Active(this);
 }
 
-[Serializable]
-public class CostCheck : DialogueNode
+public class CostCheck : IDialogueNode
 {
     /// <summary>
     /// Cost in centims (1/100 of a Reál).
     /// </summary>
     public int cost;
     public bool hideIfNotPayable = false;
+    public bool repeatable = false;
     public CostCheck(int price)
     {
         this.cost = price;
     }
 
-    public void Visit(DialogueNodeVisitor vtr) => vtr.Cost(this);
+    public void Visit(IDialogueNodeVisitor vtr) => vtr.Cost(this);
 }

@@ -1,0 +1,30 @@
+{
+    "$schema": "https://github.com/soqb/DiscoAPI/tree/trunk/disco-mod.schema.json",
+    "guid": "disco-example-mod",
+    "name": "A Disco Elysium Mod",
+    "assets": {
+        "conversations": [
+            {
+                "id": "babbling",
+                "lines": [
+                    {
+                        "speaker": {
+                            "id": 1
+                        },
+                        "text": "waha!",
+                        "links": [
+                            "disco:1#1"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "actors": [
+            {
+                "id": "old-guy",
+                "name": "Old Frail Man",
+                "description": "not a stalwart individual"
+            }
+        ]
+    }
+}

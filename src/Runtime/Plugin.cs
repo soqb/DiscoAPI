@@ -5,7 +5,6 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.LowLevel;
 
 namespace DiscoAPI.Runtime;
 
@@ -17,7 +16,7 @@ namespace DiscoAPI.Runtime;
 [BepInProcess("disco.exe")]
 public class DiscoAPIPlugin : BasePlugin
 {
-    public const string GUID = "io.github.soqb.disco-api";
+    public const string GUID = "discoapi";
     public static DiscoAPIPlugin Instance = null!;
     private static Harmony harmony = new Harmony(GUID);
     private static ManualLogSource mockUnityLogger = new ManualLogSource("Unity");
@@ -31,6 +30,8 @@ public class DiscoAPIPlugin : BasePlugin
 
     public override void Load()
     {
+        settings = new(Config);
+
         BepInEx.Logging.Logger.Sources.Add(mockUnityLogger);
 
         harmony.PatchAll(typeof(DiscoAPIPlugin));
@@ -40,11 +41,7 @@ public class DiscoAPIPlugin : BasePlugin
         harmony.PatchAll(typeof(Patches.MiscPatches));
         AddUnityListener(DialogueBundleLoader.bundleWasLoaded, DiscoRunner.OnDialogueBundleLoad);
 
-        FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad);
-
-        DiscoRunner.Register(new InherentProvider());
-
-        settings = new(Config);
+        DiscoRunner.OnLoad();
     }
 
     public void AddUnityListener(UnityEvent evt, System.Action action) => evt.AddListener(action);

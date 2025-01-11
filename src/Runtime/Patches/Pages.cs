@@ -15,7 +15,7 @@ public static class PagesPatches
 	{
 		if (PixelsToDisco.TryDecodeTextureName(textureName, out string source, out string path))
 		{
-			__result = DiscoRunner.GetPlugin(source)!.Router.Portraits.Get(path);
+			__result = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
 			__result.add_Completed(del);
 			return false;
 		}
@@ -32,18 +32,6 @@ public static class PagesPatches
 	// 	PixelCrushers.DialogueSystem.Actor actor = CharacterSheetTooltip.ActorFromModifiable(__instance.currentSkill);
 	// 	DiscoAPIPlugin.Instance.Log.LogInfo($"{__instance.currentSkill.skillType} is about to load '{actor?.Name ?? "noone"}'");
 	// }
-
-	private static bool IsExcluded(SM.SkillType type) => type switch
-	{
-		SM.SkillType.NONE
-		or SM.SkillType.CONVALESCENCE
-		or SM.SkillType.HEARING
-		or SM.SkillType.SIGHT
-		or SM.SkillType.SMELL
-		or SM.SkillType.TASTE
-		or SM.SkillType.ALT => true,
-		_ => false,
-	};
 
 	[HarmonyPatch(typeof(CharacterSheetInfoPanel), nameof(CharacterSheetInfoPanel.ShowSkill))]
 	[HarmonyPrefix]
@@ -94,7 +82,7 @@ public static class PagesPatches
 		{
 			SM.SkillType skillType = skills[i];
 
-			if (IsExcluded(skillType)) continue;
+			if (SkillUtils.IsExcludedFromPortraits(skillType)) continue;
 			SkillPortraitPanel? skillPortraitPanel = null;
 
 			foreach (var sk in __instance.skillList)

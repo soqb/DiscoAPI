@@ -3,7 +3,7 @@ using DiscoAPI.Runtime;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Common.Assets;
 using BepInEx;
-using System.IO;
+using BepInEx.Unity.IL2CPP;
 
 // An example blatantly ripped from a blog by `thedeliaishere` on tumblr:
 // (https://www.tumblr.com/thedeliaishere/721024362812211200/young-woman-actually-detective-im-a?source=share).
@@ -16,37 +16,56 @@ using System.IO;
 )]
 [BepInDependency(DiscoAPIPlugin.GUID)]
 [BepInProcess("disco.exe")]
-public class Transgener : DiscoPlugin
+public class Transgener : BasePlugin
 {
     // This is the globally-unique identifier for the mod.
     public const string GUID = "transgener-example";
 
-    public override Location Location => base.Location == null ? null : Path.Combine(base.Location!, "examples", "trangener");
+    // we also need to define and initialize a `DiscoSource`, our interface with the base game.
+    public DiscoSource source;
+    public Transgener()
+    {
+        source = DiscoRunner.SourceFromPlugin(this);
+    }
+
+    public override void Load()
+    {
+        DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
+    }
 
     // We override the virtual `OnDialogueBundleLoad` method which is run automatically
     // when the vanilla dialogue bundle has loaded but before it is postprocessed.
-    public override void OnDialogueBundleLoad()
+    public void OnDialogueBundleLoad()
     {
-        // We are given a `DiscoSource` based on our guid that is our interface into DE.
-        // We can get out a `AssetSource` which lets us add assets into the dialogue system.
-
-        // We create and add a new asset (in this case an actor).
-        // These assets are converted and placed in the base game's dialogue database
+        // We create an asset to represent our speaker.
+        // Dialogue assets (like this actor) are converted and placed in the base game's dialogue database
         // which is managed by the PixelCrushers.DialogueSystem library.
         // Anything that can talk is an actor, from Tequila Sunset to the Nightwatchman's Booth.
         Actor woman = new Actor("young-trans-woman", "Young Woman");
-        Assets.Add(woman);
+
+        // Now, we can register the asset so it will be properly interned and marshalled.
+        // We can use the `source` property which we are given based on our guid as our interface into DE.
+        // We can get out an `AssetSource` which lets us add assets into the dialogue system.
+        source.Add(woman);
 
         // We get a reference to the vanilla dialogue through the `Disco` property.
         // This lets us easily reference vanilla actors (like Empathy) and conversations.
-        DiscoSource disco = Source.Manager.Disco;
+        DiscoSource disco = source.Manager.Disco;
 
-        AssetLocation<Actor> harry = new(disco, 396);
-        AssetLocation<Actor> kim = new(disco, 395);
+        // `AssetLocation`s are a kind of `IAssetRef`:
+        // * `IAssetRef` is an interface which encapsulate runtime asset resolution.
+        // * Assets are themselves asset references (which resolve to themselves).
+        // * `AssetLocation` is another kind of asset reference, which use dynamic lookup.
+        // * Both `IAssetRef` and `AssetLocation` come in both generic (as below) and non-generic forms.
+        AssetLocation<Actor> harry = new(disco, "you");
+        AssetLocation<Actor> kim = new(disco, "kim-kitsuragi");
 
-        // We setup another asset, this time a variable to use in the conversation later.
+        // We setup another asset, this time a variable, to use in the following conversation.
         Variable elchemCheck = new Variable("fuck-trans-women", false);
-        Assets.Add(elchemCheck);
+        // Here we use the `Assets` property, which is a shorthand for `source.Assets`.
+        source.Add(elchemCheck);
+
+        LineRef line(int id) => new(source, "young-woman-is-transgender", id);
 
         // We create a list of dialogue lines which we will later put into a conversation.
         Line[] lines = new[] {
@@ -54,12 +73,15 @@ public class Transgener : DiscoPlugin
             // We should always *try* to make them sequential, but they must only be in ascending order. 
             new Line(0, "Actually, detective, I'm a woman.") {
                 // The speaker is the actor who says the line.
-                // Once we've added the actor, we can turn it into an ActorRef and use it in this line here.
-                speaker = woman.Location,
+                // Since we've added an actor, we can use them in this line here.
+                //
+                // The `speaker` field expects an `IAssetRef<Actor>` but since assets *are* asset references,
+                // we can just use `woman`.
+                speaker = woman,
                 links = {
                     // `links` is a list of references to the next lines of dialogue that can be spoken.
                     // Here, we just reference the next line.
-                    new Link(Source, 0, 1),
+                    line(1),
                 },
             },
             new(1, "She says it so insistently, as if arguing with you. You may have upset her.") {
@@ -70,7 +92,7 @@ public class Transgener : DiscoPlugin
                 //
                 // The `PassiveCheck` node automatically sets the value of the speaker.  
                 node = new PassiveCheck(Skills.Empathy, Difficulty.Easy),
-                links = { new(Source, 0, 2) },
+                links = { line(2) },
             },
             new(2, "You feel a pit in your stomach. You did something wrong, but you don't know what.") {
                 // We can also give passive checks the additonal `speakOnFailure = true` property,
@@ -83,11 +105,11 @@ public class Transgener : DiscoPlugin
                 // This is written in the Lua language and uses a custom list of functions.
                 // FAYDE.co.uk is a good resource for finding out how these functions are used.
                 script = "DamageVolition(1)",
-                links = { new(Source, 0, 3) },
+                links = { line(3) },
             },
             new(3, "Her way of dressing, the feminine name, yet deep voice - it should have been clear to you sooner. She's transgender.") {
                 node = new PassiveCheck(Skills.Logic, Difficulty.Trivial),
-                links = { new(Source, 0, 4) },
+                links = { line(4) },
             },
             new(4, "Almost imperceptible, the lieutenant anxiously twitches his eyebrow.") {
                 node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Formidable),
@@ -95,50 +117,50 @@ public class Transgener : DiscoPlugin
                     // If and only if *all* the speakers of the currently linked-to lines are Tequila Sunset
                     // (the actor with id "disco:396"), then the response menu will be shown to the player.
                     // If even one line is not spoken by the player, it will be read automatically.
-                    new(Source, 0, 5),
-                    new(Source, 0, 6),
+                    line(5),
+                    line(6),
                 },
             },
             new(5, "Transgender? What's that?") {
                 speaker = harry,
-                links = { new(Source, 0, 7) },
+                links = { line(7) },
             },
             new(6, "This doesn't have any bearing on the investigation.") {
                 speaker = harry,
                 links = {
                     // On dialogue options we don't care about for this *very specific* example,
                     // We just return to the beginning of the conversation.
-                    new(Source, 0, 0),
+                    line(0),
                 },
             },
             new(7, "A transgender person is someone who does not identify with the gender they were assigned at birth. Oftentimes they will dress conforming to their desired gender roles, change their names, and seek medical intervention to, \"transition.\"") {
                 node = new PassiveCheck(Skills.Encyclopedia, Difficulty.Trivial),
                 links = {
-                    new(Source, 0, 8),
-                    new(Source, 0, 9),
-                    new(Source, 0, 10),
-                    new(Source, 0, 11),
+                    line(8),
+                    line(9),
+                    line(10),
+                    line(11),
                 },
             },
             new(8, "Gender is rather bourgeois, anyway.") {
                 speaker = harry,
-                links = { new(Source, 0, 12) },
+                links = { line(12) },
             },
             new(9, "Why would any proud Revacholian discard their masculinity?") {
                 speaker = harry,
-                links = { new(Source, 0, 0) },
+                links = { line(0) },
             },
             new(10, "Changing your gender? That sounds like quite the hustle. Maybe we can learn a thing or two from this woman.") {
                 speaker = harry,
-                links = { new(Source, 0, 0) },
+                links = { line(0) },
             },
             new(11, "That's cool. I have no opinion on this one way or another.") {
                 speaker = harry,
-                links = { new(Source, 0, 0) },
+                links = { line(0) },
             },
             new(12, "Just as Mazov dared to challenge the established order of capitalism, so too do others challenge the order of things such as sex and gender.") {
                 node = new PassiveCheck(Skills.Rhetoric, Difficulty.Trivial),
-                links = { new(Source, 0, 13) },
+                links = { line(13) },
             },
             new(13, "IT'S BEEN SO LONG SINCE WE'VE FELT THE TOUCH OF A WOMAN. WHO CARES IF SHE USED TO BE A MAN? HAVE SEX WITH HER NOW! ITS WHAT A REAL MAN WOULD DO!") {
                 node = new PassiveCheck(Skills.Electrochemistry, Difficulty.Trivial),
@@ -149,52 +171,52 @@ public class Transgener : DiscoPlugin
                 links = {
                     // We set down two links here because if the condition on line 14 fails,
                     // We will "fall through" to line 18 and skip all the checks we need to.
-                    new(Source, 0, 14),
-                    new(Source, 0, 18),
+                    line(14),
+                    line(18),
                 },
             },
             new(14, "Don't do that. It's clear now, you upset her for accidentally calling her a man. Just apologize.") {
                 // Here we set the condition, indexing into the Lua map `Variable` which contains the values of all variables.
                 condition = $"Variable[\"{elchemCheck}\"]",
                 node = new PassiveCheck(Skills.Empathy, Difficulty.Trivial),
-                links = { new(Source, 0, 15) },
+                links = { line(15) },
             },
             new(15, "Profusely.") {
                 node = new PassiveCheck(Skills.Composure, Difficulty.Medium) {
                     speakOnFailure = true,
                 },
-                links = { new(Source, 0, 16) },
+                links = { line(16) },
             },
             new(16, "It's important to be a good ally.") {
                 node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Medium),
-                links = { new(Source, 0, 17) },
+                links = { line(17) },
             },
             new(17, "Make a real show of it, sire!") {
                 node = new PassiveCheck(Skills.Drama, Difficulty.Medium),
-                links = { new(Source, 0, 18) },
+                links = { line(18) },
             },
             // In order for this line to act as a "hub", a landing page for other lines
             // that line 13 can link to, we give it no actual content.
             new(18, null) {
                 speaker = new AssetLocation<Actor>(disco, 401),
                 links = {
-                    new(Source, 0, 19),
-                    new(Source, 0, 20),
-                    new(Source, 0, 21),
-                    new(Source, 0, 22),
+                    line(19),
+                    line(20),
+                    line(21),
+                    line(22),
                 },
             },
             new(19, "\"Oh, I didn't realize. I'm sorry.\"") {
                 speaker = harry,
-                links = { new(Source, 0, 0) },
+                links = { line(0) },
             },
             new(20, "\"I'm so sorry I'm so sorry I'll leave you alone forever now.\"") {
                 speaker = harry,
-                links = { new(Source, 0, 0) },
+                links = { line(0) },
             },
             new(21, "\"I haven't been a good representative of the RCM. We're here to help the people of Martinaise, no matter their identity. I'm sorry to have let you down.\"") {
                 speaker = harry,
-                links = { new(Source, 0, 0) },
+                links = { line(0) },
             },
             new(22, "Try and come up with an elaborate, heartfelt apology in the style of the turn of the century thespians.") {
                 speaker = harry,
@@ -209,43 +231,42 @@ public class Transgener : DiscoPlugin
                     Skills.Drama,
                     Difficulty.Legendary
                 ),
-                links = { new(Source, 0, 23) },
+                links = { line(23) },
             },
             new(23, "You try and come up with the words to convey your apology to the young woman, but you come up blank. It's hard to fit \"transgender\" into iambic pentameter, as it turns out.") {
-                // disco:401 is the id for Drama.
-                speaker = new AssetLocation<Actor>(disco, 401),
+                speaker = new AssetLocation<Actor>(disco, "drama"),
                 links = {
-                    new(Source, 0, 24),
-                    new(Source, 0, 26),
+                    line(24),
+                    line(26),
                 },
             },
             new(24, "\"Detective? You've been standing there for a whole minute. Are you okay?\"") {
                 // Conversations can be between as many people as you like!
-                // This is Kim, for example.
+                // We use kim here, for example.
                 speaker = kim,
                 condition = "IsKimHere()",
-                links = { new(Source, 0, 25) },
+                links = { line(25) },
             },
             new(25, "Shit, the lieutenant is onto us. We have to say something soon, or we could lose him.") {
-                speaker = new AssetLocation<Actor>(disco, 401),
-                links = { new(Source, 0, 26) },
+                speaker = new AssetLocation<Actor>(disco, "drama"),
+                links = { line(26) },
             },
             new(26, "Don't worry, we can still salvage this. Anyone have any ideas?") {
                 node = new PassiveCheck(Skills.Composure, Difficulty.Trivial),
-                links = { new(Source, 0, 27) },
+                links = { line(27) },
             },
             new(27, "Let me handle this.") {
                 node = new PassiveCheck(Skills.Volition, Difficulty.Heroic) {
                     speakOnFailure = true,
                 },
                 links = {
-                    new(Source, 0, 28),
+                    line(28),
                 },
             },
             new(28, "I'm so sorry, I'm so fucking sorry. I'm such a fucking failure. Do you want me to kill myself?") {
                 speaker = harry,
                 links = {
-                    new(Source, 0, 29),
+                    line(29),
                 },
             },
             new(29, null) {
@@ -254,20 +275,20 @@ public class Transgener : DiscoPlugin
             new(30, "Hey Kim! There's a young man over there. Wierd that we can't see them.") {
                 speaker = harry,
                 links = {
-                    new(Source, 0, 0),
+                    line(0),
                 }
             }
         };
 
         // We add the conversation to the source as with other assets.
-        Assets.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
+        source.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
 
         // FIXME: BROKEN !!!
-        // // And, finally, we insert a link (between conversations) to allow it to be spoken.
-        // // The `from` line is the root of Kim's main dialogue tree.
-        // trans.InsertLink(new Link(
-        //     from: new(disco, 29, 343),
-        //     to: new(trans, 0, 30)
-        // ));
+        // And, finally, we insert a link (between conversations) to allow it to be spoken.
+        // The `from` line is the root of Kim's main dialogue tree.
+        source.InsertLink(new Link(
+            from: new(disco, "29", 343),
+            to: new(source, "young-woman-is-transgender", 30)
+        ));
     }
 }

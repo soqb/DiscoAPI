@@ -2,13 +2,27 @@ using System;
 using System.Collections.Generic;
 using CollageMode;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Assets;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using SM = Sunshine.Metric;
+using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime;
 
+public static class LuaConsoleManager
+{
+	public static void AttachLuaConsole()
+	{
+		GameObject obj = new GameObject("luaconsolemgr");
+		GameObject.DontDestroyOnLoad(obj);
+
+		var console = obj.AddComponent<PC.LuaConsole>();
+		console.firstKey = KeyCode.LeftControl;
+		console.secondKey = KeyCode.Return;
+	}
+}
 public class Catalogue
 {
 	private CollageMode.OperationsSetCatalogue inner;
@@ -57,8 +71,7 @@ public class CollageCatalogueMarshall
 		SceneManager.UnloadScene(scn);
 	}
 
-	private Action<Scene, LoadSceneMode> WithFetchingAndCleanup(Action onceDone)
-	=> (scn, mode) =>
+	private Action<Scene, LoadSceneMode> WithFetchingAndCleanup(Action onceDone) => (scn, mode) =>
 	{
 		SceneManager.remove_sceneLoaded(queuedLoad);
 		queuedLoad = null;
@@ -129,14 +142,16 @@ public class CharacterSheet
 
 	public void EnsureSkillsInstalled()
 	{
-		var skills = DiscoRunner.manager.Assets.skills;
+		var skills = (EnumArena<SM.SkillType, Skill>)DiscoRunner.manager.Assets.GetArena<Skill>();
 
-		for (int i = 0; i <= skills.MaxId; i++)
+		for (int i = 0; i < skills.Count; i++)
 		{
 			var sk = skills[i];
 			if (sk == null || skillMap.ContainsKey(sk.Location)) continue;
-			var skill = i <= Skill.VANILLA_MAX ? sm.GetSkill((SM.SkillType)i) : new SM.Skill((SM.SkillType)i, sm);
-			skillMap.Add(skills[i].Location, skill);
+
+			var type = skills.GetRaw(i);
+			var skill = i < skills.baseCount ? sm.GetSkill(type) : new SM.Skill(type, sm);
+			skillMap.Add(sk.Location, skill);
 		}
 	}
 }

@@ -2,25 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using BepInEx.Logging;
-using BepInEx.Unity.IL2CPP;
-using DiscoAPI.Runtime.Assets;
 namespace DiscoAPI.Runtime;
-
-public interface IDiscoProvider
-{
-    /// <summary>
-    /// The globally-unique identifier for this plugin.
-    /// </summary>
-    string Guid { get; }
-    DiscoSource Source { get; }
-
-    IAssetRouter Router { get; }
-
-    virtual void OnRegister() { }
-    virtual void OnDialogueBundleLoad() { }
-    virtual void OnSceneLoad() { }
-    virtual void OnUpdate() { }
-}
 
 public struct Location
 {
@@ -28,30 +10,32 @@ public struct Location
 
     public Location(string? path)
     {
-        this.path = path?.TrimEnd('/') ?? null;
+        this.path = path?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) ?? null;
     }
 
-    public Location Get(string subpath) => path == null ? null : $"{path}/{subpath}";
+    public Location Get(string subpath) => path == null ? null : Path.Combine(path, subpath);
+    public Location Get(params string[] subpaths)
+    {
+        if (path == null) return null;
+
+        string all = path;
+        foreach (string p in subpaths) all = Path.Combine(all, p);
+        return all;
+    }
 
     public static implicit operator string?(Location l) => l.path;
     public static implicit operator Location(string? path) => new(path);
-}
-
-public class DiscoPlugin : BasePlugin, IDiscoProvider
-{
-    public string Guid => Source.Guid;
-    public DiscoSource Source { get; }
-    public AssetSource Assets => Source.Assets;
 
     internal static bool FullPathEq(string a, string b)
     {
+        // not perfect (it could never be..) but okay:
         string Norm(string x) => x.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         var cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return string.Equals(Norm(a), Norm(b), cmp);
     }
 
-    public static Location GetLocationFromAssembly(Assembly assembly, ManualLogSource? log)
+    public static Location GetFromAssembly(Assembly assembly, ManualLogSource? log)
     {
         string? path = Path.GetDirectoryName(assembly.Location);
         if (path == null)
@@ -77,32 +61,4 @@ public class DiscoPlugin : BasePlugin, IDiscoProvider
         return null;
     }
 
-    public virtual Location Location { get; }
-    public IAssetRouter Router { get; }
-
-    public DiscoPlugin()
-    {
-        string guid = BepInEx.MetadataHelper.GetMetadata(this).GUID;
-        Source = DiscoRunner.manager.CreateSource(guid, Log);
-        Location = DiscoPlugin.GetLocationFromAssembly(GetType().Assembly, Log);
-        Router = new MemoizedAssetRouter(GetRouter());
-
-        Log.LogInfo($"my location is {Location}");
-    }
-
-    public virtual IAssetRouter GetRouter() => new EmptyAssetRouter();
-
-    public virtual void OnRegister() { }
-    public virtual void OnDialogueBundleLoad() { }
-    public virtual void OnSceneLoad() { }
-    public virtual void OnUpdate() { }
-    void IDiscoProvider.OnRegister() => OnRegister();
-    void IDiscoProvider.OnDialogueBundleLoad() => OnDialogueBundleLoad();
-    void IDiscoProvider.OnSceneLoad() => OnSceneLoad();
-    void IDiscoProvider.OnUpdate() => OnUpdate();
-
-    public override void Load()
-    {
-        DiscoRunner.Register(this);
-    }
 }

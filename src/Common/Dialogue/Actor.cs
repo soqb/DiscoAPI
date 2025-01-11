@@ -3,7 +3,7 @@ using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
-public class Actor : Asset, IAssetRef<Actor>
+public record Actor : Asset, IAssetRef<Actor>
 {
     [JsonProperty("name")]
     public string displayName;

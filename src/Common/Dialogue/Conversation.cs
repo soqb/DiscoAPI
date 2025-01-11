@@ -4,13 +4,12 @@ using DiscoAPI.Common.Assets;
 
 namespace DiscoAPI.Common.Dialogue;
 
-public class Conversation : Asset, IAssetRef<Conversation>
+public record Conversation : Asset, IAssetRef<Conversation>
 {
     public string? name;
-    public string? description;
     [JsonIgnore]
     public List<Line> lines;
-
+    public string? description;
 
     public Conversation(string id, List<Line> lines) : base(id)
     {

@@ -65,7 +65,7 @@ public class DialogueMapping
 
     public int DifficultyToArticy(Difficulty difficulty) => reverseArticyDifficultyMap[difficulty];
 
-    public int SkillToActorID(IAssetRef<Skill> skill)
+    public int SkillToActorId(IAssetRef<Skill> skill)
     {
         var actorName = ArticyBridge.ARTICY_ID_TO_SKILL_NAME[SkillToArticyId(skill)];
         return manager.pcDatabase.GetActor(actorName).id;

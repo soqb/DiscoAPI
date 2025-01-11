@@ -1,6 +1,5 @@
-using System;
-using System.Collections.Generic;
 using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP;
 
 namespace DiscoAPI.Runtime;
 
@@ -11,46 +10,58 @@ public static class DiscoRunner
     public static ManualLogSource Log => DiscoAPIPlugin.Instance.Log;
 
     public static DiscoManager manager = new();
-    private static List<IDiscoProvider> plugins = new();
-    public static void Register(IDiscoProvider plugin)
+    public static DiscoSource? GetSource(string guid) => manager[guid];
+
+    internal static DiscoHook update = new("update");
+    internal static DiscoHook load = new("load");
+    internal static DiscoHook sceneLoad = new("scene-load");
+    internal static DiscoHook dialogueLoad = new("dialogue-load");
+
+    public static DiscoSource SourceFromPlugin(BasePlugin plugin) => SourceFromPlugin(plugin, new());
+    public static DiscoSource SourceFromPlugin(BasePlugin plugin, DiscoSource.Config cfg)
     {
-        Log.LogInfo($"registered plugin \"{plugin.Guid}\"");
-        plugins.Add(plugin);
-        GuardHook("register", plugin, plugin.OnRegister);
+        string guid = BepInEx.MetadataHelper.GetMetadata(plugin).GUID;
+
+        if (cfg.location == null) cfg.location = Location.GetFromAssembly(plugin.GetType().Assembly, plugin.Log);
+        if (cfg.log == null) cfg.log = plugin.Log;
+
+        return manager.CreateSource(guid, cfg);
     }
 
-    public static IDiscoProvider? GetPlugin(string guid) => plugins.Find(p => p.Guid == guid);
+    public static void OnLoad()
+    {
+        IL2CPPChainloader.Instance.Finished += () => load.Invoke();
 
-    private static bool alreadyLoadedDialogue = false;
+        FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnRawSceneLoad);
+
+        InherentProvider.Provide();
+    }
+
     public static void OnDialogueBundleLoad()
     {
         Log.LogInfo("loaded dialogue bundle..");
 
-        if (alreadyLoadedDialogue) return;
-        alreadyLoadedDialogue = true;
+        if (manager.WasBundleLoaded) return;
 
         manager.OnDialogueBundleLoad();
-
-        foreach (var plugin in plugins)
-        {
-            GuardHook("dialogue-bundle-load", plugin, plugin.OnDialogueBundleLoad);
-        }
 
         // Several vanilla methods use initialDatabase, but they should really be using the master database.
         DialogueBridgePixelCrushers.DialogueSystem.initialDatabase = manager.Dialogue.pcDatabase;
 
         Voidforge.UpdateManager.normalEvent.Add((Il2CppSystem.Action)OnUpdate);
+
+        dialogueLoad.Invoke();
+
+        if (DiscoAPISettings.EnableLuaConsole) LuaConsoleManager.AttachLuaConsole();
+        if (DiscoAPISettings.DumpSourcesOnStartup) DumpDiscoSources.FullDump();
     }
 
     private static void OnMarshalledSceneLoad()
     {
-        foreach (var plugin in plugins)
-        {
-            GuardHook("scene-load", plugin, plugin.OnSceneLoad);
-        }
+        sceneLoad.Invoke();
     }
 
-    public static void OnSceneLoad()
+    public static void OnRawSceneLoad()
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         DiscoAPIPlugin.Instance.Log.LogInfo($"scene '{sceneName}' loaded..");
@@ -64,24 +75,8 @@ public static class DiscoRunner
 
     public static void OnUpdate()
     {
-        foreach (var plugin in plugins)
-        {
-            GuardHook("update", plugin, plugin.OnUpdate);
-        }
+        update.Invoke();
 
         MainThreadExecutor.DequeueOnMainThread();
-    }
-
-    public static void GuardHook(string hookname, IDiscoProvider plugin, Action hook)
-    {
-        try
-        {
-            hook();
-        }
-        catch (Exception e)
-        {
-            Log.LogError($"error in hook '{hookname}' for plugin '{plugin.Guid}':");
-            Log.LogError(e);
-        }
     }
 }

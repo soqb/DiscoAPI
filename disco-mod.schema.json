@@ -1,5 +1,5 @@
 {
-    "$id": "https://github.com/soqb/DiscoAPI/tree/main/disco-mod.schema.json",
+    "$id": "https://github.com/soqb/DiscoAPI/tree/trunk/disco-mod.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "a mod source or reference bank using the Disco Elysium Modding API",
     "type": "object",
@@ -129,6 +129,11 @@
                             "lines"
                         ],
                         "properties": {
+                            "id": {
+                                "description": "the short, unique name of the conversation, used to reference it",
+                                "type": "string",
+                                "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                            },
                             "speaker": {
                                 "$ref": "#/$defs/assetref"
                             },
@@ -190,14 +195,14 @@
                             "name"
                         ],
                         "properties": {
+                            "id": {
+                                "description": "the short, unique name of the actor, used to reference it",
+                                "type": "string",
+                                "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                            },
                             "name": {
                                 "description": "the actor's name",
                                 "type": "string"
-                            },
-                            "id": {
-                                "description": "the short, unique name of the actor, used instead of the name to reference them as an asset.",
-                                "type": "string",
-                                "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
                             },
                             "description": {
                                 "description": "a description of the actor",
@@ -216,21 +221,44 @@
                             "name"
                         ],
                         "properties": {
-                            "name": {
+                            "id": {
+                                "description": "the short, unique name of the variable, used to reference it",
                                 "type": "string",
-                                "description": "the name of the variable"
+                                "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
                             },
                             "type": {
                                 "description": "the type of the variable",
+                                "type": "string",
+                                "pattern": "^(?:text|number|boolean|actor)$"
+                            },
+                            "value": {
+                                "description": "the initial value of the variable",
                                 "oneOf": [
-                                    "text",
-                                    "number",
-                                    "boolean",
-                                    "files",
-                                    "localisation",
-                                    "actor",
-                                    "item",
-                                    "location"
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "boolean"
+                                    },
+                                    {
+                                        "allOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "pattern": "^actor$"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "$ref": "#/$defs/assetref"
+                                            }
+                                        ]
+                                    }
                                 ]
                             }
                         }

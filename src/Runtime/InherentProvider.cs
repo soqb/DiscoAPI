@@ -1,43 +1,44 @@
+using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using UnityEngine;
+using PC = PixelCrushers.DialogueSystem;
+using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime;
 
 // <summary>
 // All the assets and such which are used by the API itself.
 // </summary>
-public class InherentProvider : IDiscoProvider
+public static class InherentProvider
 {
-	public string Guid => "discoapi";
-	public DiscoSource Source { get; }
-	public AssetSource Assets => Source.Assets;
-
-	public static InherentProvider Instance = null!;
-
+	public static DiscoSource source = null!;
 
 	private class InherentAssetRouter : IAssetRouter
 	{
-		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(InherentProvider.Instance.Location);
+		private Location Location => source.Location;
+		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(Location);
 	}
-
-	public string? Location { get; }
-	public IAssetRouter Router { get; }
 
 	public const string DUMMY_NONE_SKILL = "API DUMMY NONE SKILL";
 
-	public InherentProvider()
+	public static void Provide()
 	{
-		Source = DiscoRunner.manager.CreateSource(Guid, DiscoRunner.Log);
-		Instance = this;
+		Location location = Runtime.Location.GetFromAssembly(typeof(InherentProvider).Assembly, DiscoRunner.Log);
 
-		Location = DiscoPlugin.GetLocationFromAssembly(GetType().Assembly, DiscoRunner.Log);
-		Router = new MemoizedAssetRouter(new InherentAssetRouter());
+		source = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance, new() { router = new InherentAssetRouter() });
+
+		source.Manager.Assets.Register(new PCArena<PC.Actor, Actor>(mgr => mgr.pcDatabase.actors));
+		source.Manager.Assets.Register(new PCArena<PC.Conversation, Conversation>(mgr => mgr.pcDatabase.conversations));
+		source.Manager.Assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables));
+		source.Manager.Assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal));
+
+		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 	}
 
-	public void OnDialogueBundleLoad()
+	public static void OnDialogueBundleLoad()
 	{
 		// we have to introduce a dummy actor with a simple portrait for the case where no skill is used in the portrait grid.
-		Assets.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "assets/textures/portrait_none.png" });
+		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "assets/textures/portrait_none.png" });
 	}
 }

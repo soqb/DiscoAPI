@@ -140,7 +140,7 @@ public class MemoizedAssetRouter : IAssetRouter
 	private IAssetRoute<Sprite>? portraits;
 	public IAssetRoute<Sprite> Portraits => Guard(ref portraits, () => inner.Portraits);
 
-	private Dictionary<AssetLocation<Conversation>, IAssetRoute<AudioClip>> clipsForConversation = new();
+	private Dictionary<AssetLocation, IAssetRoute<AudioClip>> clipsForConversation = new();
 	public IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation)
 	{
 		var location = conversation.Location;

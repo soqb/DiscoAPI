@@ -12,7 +12,7 @@ public class DumpDiscoSources
 		string dumpDir = Path.Join(BepInEx.Paths.BepInExRootPath, "discoDumps");
 		Directory.CreateDirectory(dumpDir);
 		foreach (var source in DiscoRunner.manager.linearSources)
-			DumpSource(source, Path.Join(dumpDir, $"{source.Guid}.disco-source"));
+			DumpSource(source, Path.Join(dumpDir, $"{source.Guid}.disco-source.json"));
 	}
 
 	public static void DumpSource(DiscoSource source, string path)

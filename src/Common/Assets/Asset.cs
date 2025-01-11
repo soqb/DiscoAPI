@@ -3,107 +3,74 @@ using Newtonsoft.Json;
 
 namespace DiscoAPI.Common.Assets;
 
-public abstract class Asset : IAssetRef
+public abstract record Asset : IAssetRef
 {
-    [JsonIgnore]
-    public AssetType Type => TypeOf(GetType());
 
     [JsonIgnore]
     public string? source;
-    public string id;
+    [JsonIgnore]
+    public readonly AssetType assetType;
+
+    [JsonProperty(Order = int.MinValue)]
+    public readonly string id;
     public Asset(string id)
     {
         this.id = id;
+        assetType = new(GetType());
     }
 
     Asset IAssetRef.Resolve(IDiscoManager mgr) => this;
 
     [JsonIgnore]
-    public AssetLocation Location => new(Type, source, id);
-
-    public static AssetType TypeOf<T>() where T : Asset => TypeOf(typeof(T));
-
-    public static AssetType TypeOf(Type type)
-    {
-        if (type.IsAssignableTo(typeof(Dialogue.Actor))) return AssetType.Actor;
-        if (type.IsAssignableTo(typeof(Dialogue.Conversation))) return AssetType.Conversation;
-        if (type.IsAssignableTo(typeof(Dialogue.Variable))) return AssetType.Variable;
-        if (type.IsAssignableTo(typeof(Skill))) return AssetType.Skill;
-
-        throw new InvalidOperationException($"{type.FullName} is not a recognised asset type");
-    }
-
+    public AssetLocation Location => new(assetType, source, id);
 }
 
-public enum AssetType
-{
-    Actor,
-    Conversation,
-    Variable,
-    Skill,
-}
+public readonly record struct AssetType(Type type);
 
 public interface LocalIdResolver<T>
 {
-    public T ResolveId(int id);
-    public T ResolveId(string id);
+    T ResolveId(AssetId id) => id.ResolveIn(this);
+    T ResolveId(int id);
+    T ResolveId(string id);
 }
 
-interface IAssetId
+public record AssetId
 {
-    T ResolveIn<T>(LocalIdResolver<T> resolver);
-}
+    private readonly object inner;
 
-record struct AssetIdInt(int id) : IAssetId
-{
-    public T ResolveIn<T>(LocalIdResolver<T> resolver) => resolver.ResolveId(id);
-
-    public override string ToString() => id.ToString();
-}
-
-record struct AssetIdString(string id) : IAssetId
-{
-    public T ResolveIn<T>(LocalIdResolver<T> resolver) => resolver.ResolveId(id);
-
-    public override string ToString() => id.ToString();
-}
-
-public class AssetId
-{
-    private IAssetId inner;
-
-    private AssetId(IAssetId inner)
+    private AssetId(object inner)
     {
         this.inner = inner;
     }
 
-    public T ResolveIn<T>(LocalIdResolver<T> resolver) => inner.ResolveIn(resolver);
+    public T ResolveIn<T>(LocalIdResolver<T> resolver) => inner is string id ? resolver.ResolveId(id) : resolver.ResolveId((int)inner);
 
-    public static implicit operator AssetId(int id) => new(new AssetIdInt(id));
-    public static implicit operator AssetId(string id) => new(new AssetIdString(id));
+    public static implicit operator AssetId(int id) => new((object)id);
+    public static implicit operator AssetId(string id) => new((object)id);
+
+    public override string ToString() => inner.ToString()!;
 }
 
 public interface IAssetRef
 {
-    AssetType Type { get; }
-
     Asset? Resolve(IDiscoManager mgr);
     AssetLocation Location { get; }
 }
 
 public interface IAssetRef<T> : IAssetRef where T : Asset
 {
+    Asset? IAssetRef.Resolve(IDiscoManager mgr) => Resolve(mgr);
+    AssetLocation IAssetRef.Location => new(Location);
+
     new T? Resolve(IDiscoManager mgr);
     new AssetLocation<T> Location { get; }
 }
 
 public record AssetLocation : IAssetRef
 {
-    public AssetType type;
-    public string source;
-    public AssetId id;
-
-    AssetType IAssetRef.Type => type;
+    public readonly AssetType type;
+    public readonly string source;
+    public readonly AssetId id;
 
     public AssetLocation(AssetType type, string? source, AssetId id)
     {
@@ -114,25 +81,40 @@ public record AssetLocation : IAssetRef
         this.source = source;
     }
 
+    public AssetLocation(AssetLocation location)
+    {
+        type = location.type;
+        id = location.id;
+        source = location.source;
+    }
+
     public AssetLocation(AssetType type, IDiscoSource source, AssetId id) : this(type, source.Guid, id) { }
+    public AssetLocation(AssetType type, AssetId id) : this(type, "disco", id) { }
 
     AssetLocation IAssetRef.Location => new(this);
     public Asset? Resolve(IDiscoManager mgr) => mgr.Assets.Resolve(this);
 
     public override string ToString() => $"{source}:{id}";
+
+    public static (string, string) Parse(string id)
+    {
+        string[] parts = id.Split(':');
+        return parts.Length == 1 ? ("disco", parts[0]) : (parts[0], parts[1]);
+    }
 }
 
 public record AssetLocation<T> : AssetLocation, IAssetRef<T> where T : Asset
 {
-    public AssetLocation(string? source, AssetId id) : base(Asset.TypeOf<T>(), source, id) { }
+    public AssetLocation(AssetId id) : this("disco", id) { }
+    public AssetLocation(string? source, AssetId id) : base(new(typeof(T)), source, id) { }
 
     public AssetLocation(IDiscoSource source, AssetId id) : this(source.Guid, id) { }
 
     AssetLocation<T> IAssetRef<T>.Location => new(this);
-    AssetLocation IAssetRef.Location => new AssetLocation<T>(this);
+    AssetLocation IAssetRef.Location => new(this);
 
     public new T? Resolve(IDiscoManager mgr) => (T?)base.Resolve(mgr);
-    Asset? IAssetRef.Resolve(IDiscoManager mgr) => base.Resolve(mgr);
+    Asset? IAssetRef.Resolve(IDiscoManager mgr) => Resolve(mgr);
 
     public override string ToString() => $"{source}:{id}";
 }

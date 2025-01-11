@@ -29,8 +29,9 @@ public class DiscoManager : IDiscoManager
     {
         Assets = new(this);
 
-        DiscoSource disco = new(this, "disco", true, Logger.CreateLogSource("disco"));
+        DiscoSource disco = new(this, "disco", true, new() { log = Logger.CreateLogSource("Disco Elysium") });
         sourcesByGuid.Add("disco", 0);
+        linearSources.Add(disco);
     }
 
     /// <summary>
@@ -38,37 +39,29 @@ public class DiscoManager : IDiscoManager
     /// </summary>
     public DiscoSource Disco => linearSources[0];
 
-    public DiscoSource CreateSource(string guid, ManualLogSource log)
+    public DiscoSource CreateSource(string guid, DiscoSource.Config cfg)
     {
-        if (sourcesByGuid.ContainsKey(guid))
-            return this[guid];
+        if (sourcesByGuid.TryGetValue(guid, out int idx)) return linearSources[idx];
 
-        DiscoSource source = new(this, guid, false, log);
+        DiscoSource source = new(this, guid, false, cfg);
 
         sourcesByGuid.Add(guid, linearSources.Count);
         linearSources.Add(source);
         return source;
     }
 
-    IDiscoSource IDiscoManager.GetSource(string key) => this[key];
-    public DiscoSource GetSource(string key) => this[key];
+    IDiscoSource? IDiscoManager.GetSource(string key) => this[key];
+    public DiscoSource? GetSource(string key) => this[key];
 
-    public DiscoSource this[string key] => linearSources[sourcesByGuid[key]];
+    public DiscoSource? this[string key] => sourcesByGuid.ContainsKey(key) ? linearSources[sourcesByGuid[key]] : null;
 
-    public void OnDialogueBundleLoad()
+    internal void OnDialogueBundleLoad()
     {
-        if (!WasBundleLoaded)
-        {
-            WasBundleLoaded = true;
+        WasBundleLoaded = true;
 
-            realDialogue = new DialogueManager(this);
-            Dialogue.pcDatabase = PixelCrushers.DialogueSystem.DialogueManager.MasterDatabase;
-            Dialogue.pcDatabase.SyncAll();
-
-            Assets.OnDialogueBundleLoaded();
-
-            foreach (var sc in linearSources) sc.Assets.OnDialogueBundleLoaded();
-        }
+        realDialogue = new DialogueManager(this);
+        Dialogue.pcDatabase = PixelCrushers.DialogueSystem.DialogueManager.MasterDatabase;
+        Dialogue.pcDatabase.SyncAll();
     }
 
     private static List<object> gc = new List<object>();

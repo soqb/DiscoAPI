@@ -5,19 +5,19 @@ namespace DiscoAPI.Common.Dialogue;
 public record LineRef
 {
     public IAssetRef<Conversation> conversation;
-    public int lineID;
+    public int lineId;
 
-    public LineRef(IAssetRef<Conversation> conversation, int lineID)
+    public LineRef(IAssetRef<Conversation> conversation, int line)
     {
         this.conversation = conversation;
-        this.lineID = lineID;
+        lineId = line;
     }
-    public LineRef(string source, int conversationID, int lineID)
-        : this(new AssetLocation<Conversation>(source, conversationID), lineID) { }
-    public LineRef(IDiscoSource source, int conversationID, int lineID)
-        : this(new AssetLocation<Conversation>(source.Guid, conversationID), lineID) { }
+    public LineRef(string source, AssetId conversationId, int line)
+        : this(new AssetLocation<Conversation>(source, conversationId), line) { }
+    public LineRef(IDiscoSource source, AssetId conversationId, int line)
+        : this(new AssetLocation<Conversation>(source.Guid, conversationId), line) { }
 
-    public override string ToString() => $"{conversation}#{lineID}";
+    public override string ToString() => $"{conversation}#{lineId}";
 }
 
 public struct Link

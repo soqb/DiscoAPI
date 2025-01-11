@@ -2,9 +2,10 @@
     <PropertyGroup>
         <ModPath>DiscoAPI</ModPath>
     </PropertyGroup>
+
     
-    <Import Project="../config.targets"/>
-    <Import Project="../disco.targets"/>
+    <Import Project="../config.targets" />
+    <Import Project="../disco.targets" />
 
     <PropertyGroup>
         <Version>0.0.1</Version>
@@ -21,6 +22,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
+        
         <Compile Include="src/Common/**/*.cs" />
         <Compile Include="src/Runtime/**/*.cs" />
         <None Include="src/Editor/**/*.cs" />

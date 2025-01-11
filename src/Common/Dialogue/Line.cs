@@ -10,11 +10,11 @@ namespace DiscoAPI.Common.Dialogue;
 public class Line
 {
     [JsonIgnore]
-    public int internalID;
+    public int internalId;
     /// <summary>
     /// Extra information relevant to the line for example an <c>ActiveCheck</c>.
     /// </summary>
-    public DialogueNode node = new EmptyDialogueNode();
+    public IDialogueNode node = new EmptyDialogueNode();
     /// <summary>
     /// The actor speaking the line.
     /// </summary>
@@ -46,11 +46,11 @@ public class Line
     /// <summary>
     /// Outgoing links to other lines; the options shown in the menu after the line is spoken.
     /// </summary>
-    public List<Link> links = new();
+    public List<LineRef> links = new();
 
     public Line(int id, string? text)
     {
-        this.internalID = id;
+        this.internalId = id;
         title = text;
         this.text = text;
     }

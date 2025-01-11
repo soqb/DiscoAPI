@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using DiscoAPI.Common.Assets;
+using System;
 
 namespace DiscoAPI.Common.Dialogue;
 
-[JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
 public enum FieldType
 {
     Text = 0,
@@ -16,26 +16,60 @@ public enum FieldType
     Location = 7
 }
 
-public class Variable : Asset, IAssetRef<Variable>
+public class FieldValueJsonConverter : JsonConverter<FieldValue>
 {
-    public FieldType type;
-    [JsonProperty("value")]
-    public string initialValue;
-
-    public Variable(string id, FieldType type, string initialValue) : base(id)
+    public override FieldValue? ReadJson(JsonReader reader, Type objectType, FieldValue? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        this.type = type;
-        this.initialValue = initialValue;
+        FieldValue val;
+        if (reader.TokenType == JsonToken.String) val = reader.ReadAsString()!;
+        else if (reader.TokenType == JsonToken.Integer) val = reader.ReadAsInt32()!;
+        else if (reader.TokenType == JsonToken.Float) val = reader.ReadAsDouble()!;
+        else val = new(serializer.Deserialize<IAssetRef<Actor>>(reader)!);
+
+        return val;
     }
 
-    public Variable(string id, bool initialValue)
-        : this(id, FieldType.Boolean, initialValue.ToString()) { }
+    public override void WriteJson(JsonWriter writer, FieldValue? value, JsonSerializer serializer)
+    {
+        if (value == null) writer.WriteNull();
+        else writer.WriteValue(value.value);
+    }
+}
 
-    public Variable(string id, int initialValue)
-        : this(id, FieldType.Number, initialValue.ToString()) { }
+[JsonConverter(typeof(FieldValueJsonConverter))]
+public record FieldValue
+{
+    public readonly object value;
+    public readonly FieldType type;
+    private FieldValue(object inner, FieldType type)
+    {
+        this.value = inner;
+        this.type = type;
+    }
 
-    public Variable(string id, FieldType type)
-        : this(id, type, "") { }
+
+    public FieldValue(IAssetRef<Actor> value) : this((object)value, FieldType.Actor) { }
+
+    public static implicit operator FieldValue(string value) => new((object)value, FieldType.Text);
+    public static implicit operator FieldValue(int value) => new((object)value, FieldType.Number);
+    public static implicit operator FieldValue(double value) => new((object)value, FieldType.Number);
+    public static implicit operator FieldValue(bool value) => new((object)value, FieldType.Boolean);
+    public static implicit operator FieldValue(float value) => (double)value;
+
+    public override string ToString() => value.ToString()!;
+}
+
+public record Variable : Asset, IAssetRef<Variable>
+{
+    [JsonProperty("value")]
+    public readonly FieldValue initialValue;
+
+    public FieldType Type => initialValue.type;
+
+    public Variable(string id, FieldValue value) : base(id)
+    {
+        this.initialValue = value;
+    }
 
     [JsonIgnore]
     public new AssetLocation<Variable> Location => new(source, id);

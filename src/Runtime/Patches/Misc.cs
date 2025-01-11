@@ -13,6 +13,6 @@ public static class MiscPatches
 	[HarmonyPrefix]
 	public static bool CancelAchievementsSet()
 	{
-		return DiscoAPISettings.Instance.allowAchievements.Value;
+		return DiscoAPISettings.AllowAchievements;
 	}
 }

@@ -14,6 +14,8 @@ public class DialogueManager : IDialogueManager
     public DialogueMapping mapping;
     public PC.DialogueDatabase pcDatabase = null!; // this is properly initialised in `DiscoManager.OnDialogueBundleLoaded`.
     public Dictionary<string, PC.Asset> fakeArticyIDToAssetCache = new();
+    public PixelsToDisco uncrusher = new();
+    public DiscoToPixels crusher = new();
 
     public DialogueManager(DiscoManager parent)
     {
