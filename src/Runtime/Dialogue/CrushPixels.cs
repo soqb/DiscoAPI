@@ -16,6 +16,7 @@ public class DiscoToPixels
 
 	private static int CrushedId<T, U>(IAssetRef<U> ass, DiscoManager? mgr) where T : PC.Asset, new() where U : Asset
 	{
+		DiscoRunner.Log.LogInfo($"(crushing {ass.Location})");
 		mgr = mgr ?? DiscoRunner.manager;
 		int id = mgr.Assets.ResolveId(ass.Location);
 		var ana = GetArena<T, U>(mgr);
@@ -44,24 +45,29 @@ public class DiscoToPixels
 			? convoId : CrushedId(link.to.conversation, source.Manager);
 		pcLink.destinationDialogueID = link.to.lineId;
 
+		DiscoRunner.Log.LogInfo($"linking to {pcLink.destinationConversationID}#{pcLink.destinationDialogueID}");
+		var c = DiscoRunner.manager.Dialogue.pcDatabase.GetConversation(pcLink.destinationConversationID);
+		if (c != null)
+			DiscoRunner.Log.LogInfo($" > that's {c.Title} which has {c.dialogueEntries.Count} entries");
+
 		return pcLink;
 	}
-	public PC.DialogueEntry Crush(DiscoSource source, Line line, AssetLocation<Conversation> parentConv, int convoId)
+	public PC.DialogueEntry Crush(DiscoSource source, Line line, AssetLocation<Conversation> parentConv, int convoId, int id)
 	{
 		var pcEntry = new PC.DialogueEntry();
 		pcEntry.conversationID = convoId;
-		pcEntry.id = line.internalId;
+		pcEntry.id = id;
 		pcEntry.fields = new();
 		pcEntry.conditionsString = line.condition ?? "";
 		pcEntry.userScript = line.script ?? "";
 		pcEntry.ActorID = line.speaker == null ? 0 : CrushedId(line.speaker!, source.Manager);
 		// NB: currentDialogueText is usually the same, *except* for the fact it won't create a new field when necessary...
 		pcEntry.DialogueText = line.text;
-		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{line.internalId}";
+		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{id}";
 		if (line.sequence != null) pcEntry.Sequence = line.sequence;
 		if (line.sequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
 		foreach (var link in line.links)
-			pcEntry.outgoingLinks.Add(Crush(source, new Link(new(parentConv, line.internalId), link), parentConv, convoId));
+			pcEntry.outgoingLinks.Add(Crush(source, new Link(new(parentConv, id), link), parentConv, convoId));
 
 
 		if (line.node != null)
@@ -85,10 +91,8 @@ public class DiscoToPixels
 		pcConv.Title = conv.id;
 		pcConv.dialogueEntries = new();
 
-		foreach (var line in conv.lines)
-		{
-			pcConv.dialogueEntries.Add(Crush(source, line, conv.Location, convoId));
-		}
+		for (int i = 0; i < conv.lines.Count; i++)
+			pcConv.dialogueEntries.Add(Crush(source, conv.lines[i], conv.Location, convoId, i));
 
 
 		return pcConv;
@@ -222,11 +226,11 @@ public class EditFieldsForDialogue : IDialogueNodeVisitor
 
 public class PixelsToDisco
 {
-	public static string NameOf(PC.Asset asset)
+	public static string NameOf(PC.Asset asset, string? name)
 	{
 		string id;
-		if (asset.Name == null) id = asset.id.ToString();
-		else id = asset.Name;
+		if (name == null) id = asset.id.ToString();
+		else id = name;
 
 		return FormatUtils.Slugify(id);
 	}
@@ -243,7 +247,7 @@ public class PixelsToDisco
 		};
 
 		return new Variable(
-			NameOf(variable),
+			NameOf(variable, variable.Name),
 			val
 		);
 	}
@@ -267,7 +271,7 @@ public class PixelsToDisco
 
 	public Actor Uncrush(PC.Actor actor)
 	{
-		var at = new Actor(NameOf(actor), actor.Name);
+		var at = new Actor(NameOf(actor, actor.Name), actor.Name);
 		if (!string.IsNullOrWhiteSpace(actor.Name)) at.displayName = actor.Name;
 
 		return at;
@@ -275,8 +279,8 @@ public class PixelsToDisco
 
 	public Conversation Uncrush(PC.Conversation conversation)
 	{
-		var cv = new Conversation(NameOf(conversation), new List<Line>());
-		if (!string.IsNullOrWhiteSpace(conversation.Description)) cv.name = conversation.Name;
+		var cv = new Conversation(NameOf(conversation, conversation.Name), new List<Line>());
+		if (!string.IsNullOrWhiteSpace(conversation.Title)) cv.title = conversation.Title;
 		if (!string.IsNullOrWhiteSpace(conversation.Description)) cv.description = conversation.Description;
 
 		// for (int i = 0; i < conversation.dialogueEntries.Count; i++)
@@ -284,7 +288,7 @@ public class PixelsToDisco
 
 		return cv;
 	}
-	public Line Uncrush(int i, PC.DialogueEntry entry) => new Line(i, entry.currentDialogueText);
+	public Line Uncrush(PC.DialogueEntry entry) => new Line(entry.currentDialogueText);
 
 	public Asset Uncrush(PC.Asset ass)
 	{

@@ -50,8 +50,7 @@ public class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset, 
 		var l = pcList.Value;
 
 		// PC ids are never zero.
-		baseMaxOffset = l.Count > 0 ? l[l.Count - 1].id : 0;
-		baseMaxOffset -= l.Count;
+		baseMaxOffset = (l.Count > 0 ? l[l.Count - 1].id : 0) - l.Count + 1;
 		foreach (var asset in assetsToProcessWhenReady) Alloc(asset);
 	}
 

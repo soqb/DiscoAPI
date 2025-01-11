@@ -6,10 +6,10 @@ namespace DiscoAPI.Common.Dialogue;
 
 public record Conversation : Asset, IAssetRef<Conversation>
 {
-    public string? name;
     [JsonIgnore]
     public List<Line> lines;
     public string? description;
+    public string? title;
 
     public Conversation(string id, List<Line> lines) : base(id)
     {

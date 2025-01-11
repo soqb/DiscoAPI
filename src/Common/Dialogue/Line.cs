@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using DiscoAPI.Common.Assets;
-using Newtonsoft.Json;
 
 namespace DiscoAPI.Common.Dialogue;
 
@@ -9,8 +8,6 @@ namespace DiscoAPI.Common.Dialogue;
 /// </summary>
 public class Line
 {
-    [JsonIgnore]
-    public int internalId;
     /// <summary>
     /// Extra information relevant to the line for example an <c>ActiveCheck</c>.
     /// </summary>
@@ -48,9 +45,8 @@ public class Line
     /// </summary>
     public List<LineRef> links = new();
 
-    public Line(int id, string? text)
+    public Line(string? text)
     {
-        this.internalId = id;
         title = text;
         this.text = text;
     }

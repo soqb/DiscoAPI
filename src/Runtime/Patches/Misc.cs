@@ -11,8 +11,5 @@ public static class MiscPatches
 	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), new Type[] { typeof(string), typeof(int) })]
 	[HarmonyPatch(typeof(Achievements), nameof(Achievements.ResetAllStats), new Type[] { typeof(bool) })]
 	[HarmonyPrefix]
-	public static bool CancelAchievementsSet()
-	{
-		return DiscoAPISettings.AllowAchievements;
-	}
+	public static bool CancelAchievementsSet() => DiscoAPISettings.AllowAchievements;
 }

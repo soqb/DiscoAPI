@@ -69,9 +69,14 @@ public class Transgener : BasePlugin
 
         // We create a list of dialogue lines which we will later put into a conversation.
         Line[] lines = new[] {
-            // Each line must have a numeric id which is used to reference it within the conversation.
-            // We should always *try* to make them sequential, but they must only be in ascending order. 
-            new Line(0, "Actually, detective, I'm a woman.") {
+            // Each line must have some (nullable) text, but there's also a whole bunch of additional properties. 
+            new Line("Hey Kim! There's a young man over there. Wierd that we can't see them.") {
+                speaker = harry,
+                links = {
+                    line(1),
+                }
+            },
+            new("Actually, detective, I'm a woman.") {
                 // The speaker is the actor who says the line.
                 // Since we've added an actor, we can use them in this line here.
                 //
@@ -81,10 +86,10 @@ public class Transgener : BasePlugin
                 links = {
                     // `links` is a list of references to the next lines of dialogue that can be spoken.
                     // Here, we just reference the next line.
-                    line(1),
+                    line(2),
                 },
             },
-            new(1, "She says it so insistently, as if arguing with you. You may have upset her.") {
+            new("She says it so insistently, as if arguing with you. You may have upset her.") {
                 // A node is any extra data that a dialogue line might need.
                 // We currently support passive checks, active checks (white, red, always fail, always succeed)
                 // and costs (amounts of Reál to pay).
@@ -92,9 +97,9 @@ public class Transgener : BasePlugin
                 //
                 // The `PassiveCheck` node automatically sets the value of the speaker.  
                 node = new PassiveCheck(Skills.Empathy, Difficulty.Easy),
-                links = { line(2) },
+                links = { line(3) },
             },
-            new(2, "You feel a pit in your stomach. You did something wrong, but you don't know what.") {
+            new("You feel a pit in your stomach. You did something wrong, but you don't know what.") {
                 // We can also give passive checks the additonal `speakOnFailure = true` property,
                 // which dictates that they will be spoken when the check is failed.
                 // If you want separate success and fail dialogue, you will need two separate lines.
@@ -105,27 +110,27 @@ public class Transgener : BasePlugin
                 // This is written in the Lua language and uses a custom list of functions.
                 // FAYDE.co.uk is a good resource for finding out how these functions are used.
                 script = "DamageVolition(1)",
-                links = { line(3) },
-            },
-            new(3, "Her way of dressing, the feminine name, yet deep voice - it should have been clear to you sooner. She's transgender.") {
-                node = new PassiveCheck(Skills.Logic, Difficulty.Trivial),
                 links = { line(4) },
             },
-            new(4, "Almost imperceptible, the lieutenant anxiously twitches his eyebrow.") {
+            new("Her way of dressing, the feminine name, yet deep voice - it should have been clear to you sooner. She's transgender.") {
+                node = new PassiveCheck(Skills.Logic, Difficulty.Trivial),
+                links = { line(5) },
+            },
+            new("Almost imperceptible, the lieutenant anxiously twitches his eyebrow.") {
                 node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Formidable),
                 links = {
                     // If and only if *all* the speakers of the currently linked-to lines are Tequila Sunset
                     // (the actor with id "disco:396"), then the response menu will be shown to the player.
                     // If even one line is not spoken by the player, it will be read automatically.
-                    line(5),
                     line(6),
+                    line(7),
                 },
             },
-            new(5, "Transgender? What's that?") {
+            new("Transgender? What's that?") {
                 speaker = harry,
-                links = { line(7) },
+                links = { line(8) },
             },
-            new(6, "This doesn't have any bearing on the investigation.") {
+            new("This doesn't have any bearing on the investigation.") {
                 speaker = harry,
                 links = {
                     // On dialogue options we don't care about for this *very specific* example,
@@ -133,36 +138,36 @@ public class Transgener : BasePlugin
                     line(0),
                 },
             },
-            new(7, "A transgender person is someone who does not identify with the gender they were assigned at birth. Oftentimes they will dress conforming to their desired gender roles, change their names, and seek medical intervention to, \"transition.\"") {
+            new("A transgender person is someone who does not identify with the gender they were assigned at birth. Oftentimes they will dress conforming to their desired gender roles, change their names, and seek medical intervention to, \"transition.\"") {
                 node = new PassiveCheck(Skills.Encyclopedia, Difficulty.Trivial),
                 links = {
-                    line(8),
                     line(9),
                     line(10),
                     line(11),
+                    line(12),
                 },
             },
-            new(8, "Gender is rather bourgeois, anyway.") {
+            new("Gender is rather bourgeois, anyway.") {
                 speaker = harry,
-                links = { line(12) },
-            },
-            new(9, "Why would any proud Revacholian discard their masculinity?") {
-                speaker = harry,
-                links = { line(0) },
-            },
-            new(10, "Changing your gender? That sounds like quite the hustle. Maybe we can learn a thing or two from this woman.") {
-                speaker = harry,
-                links = { line(0) },
-            },
-            new(11, "That's cool. I have no opinion on this one way or another.") {
-                speaker = harry,
-                links = { line(0) },
-            },
-            new(12, "Just as Mazov dared to challenge the established order of capitalism, so too do others challenge the order of things such as sex and gender.") {
-                node = new PassiveCheck(Skills.Rhetoric, Difficulty.Trivial),
                 links = { line(13) },
             },
-            new(13, "IT'S BEEN SO LONG SINCE WE'VE FELT THE TOUCH OF A WOMAN. WHO CARES IF SHE USED TO BE A MAN? HAVE SEX WITH HER NOW! ITS WHAT A REAL MAN WOULD DO!") {
+            new("Why would any proud Revacholian discard their masculinity?") {
+                speaker = harry,
+                links = { line(0) },
+            },
+            new("Changing your gender? That sounds like quite the hustle. Maybe we can learn a thing or two from this woman.") {
+                speaker = harry,
+                links = { line(0) },
+            },
+            new("That's cool. I have no opinion on this one way or another.") {
+                speaker = harry,
+                links = { line(0) },
+            },
+            new("Just as Mazov dared to challenge the established order of capitalism, so too do others challenge the order of things such as sex and gender.") {
+                node = new PassiveCheck(Skills.Rhetoric, Difficulty.Trivial),
+                links = { line(14) },
+            },
+            new("IT'S BEEN SO LONG SINCE WE'VE FELT THE TOUCH OF A WOMAN. WHO CARES IF SHE USED TO BE A MAN? HAVE SEX WITH HER NOW! ITS WHAT A REAL MAN WOULD DO!") {
                 node = new PassiveCheck(Skills.Electrochemistry, Difficulty.Trivial),
                 // We want to skip the next few passive checks completely if this one fails.
                 // So if this one succeeds, we set the value of that variable to true.
@@ -171,54 +176,54 @@ public class Transgener : BasePlugin
                 links = {
                     // We set down two links here because if the condition on line 14 fails,
                     // We will "fall through" to line 18 and skip all the checks we need to.
-                    line(14),
-                    line(18),
+                    line(15),
+                    line(19),
                 },
             },
-            new(14, "Don't do that. It's clear now, you upset her for accidentally calling her a man. Just apologize.") {
+            new("Don't do that. It's clear now, you upset her for accidentally calling her a man. Just apologize.") {
                 // Here we set the condition, indexing into the Lua map `Variable` which contains the values of all variables.
                 condition = $"Variable[\"{elchemCheck}\"]",
                 node = new PassiveCheck(Skills.Empathy, Difficulty.Trivial),
-                links = { line(15) },
+                links = { line(16) },
             },
-            new(15, "Profusely.") {
+            new("Profusely.") {
                 node = new PassiveCheck(Skills.Composure, Difficulty.Medium) {
                     speakOnFailure = true,
                 },
-                links = { line(16) },
-            },
-            new(16, "It's important to be a good ally.") {
-                node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Medium),
                 links = { line(17) },
             },
-            new(17, "Make a real show of it, sire!") {
-                node = new PassiveCheck(Skills.Drama, Difficulty.Medium),
+            new("It's important to be a good ally.") {
+                node = new PassiveCheck(Skills.EspritDeCorps, Difficulty.Medium),
                 links = { line(18) },
+            },
+            new("Make a real show of it, sire!") {
+                node = new PassiveCheck(Skills.Drama, Difficulty.Medium),
+                links = { line(19) },
             },
             // In order for this line to act as a "hub", a landing page for other lines
             // that line 13 can link to, we give it no actual content.
-            new(18, null) {
+            new(null) {
                 speaker = new AssetLocation<Actor>(disco, 401),
                 links = {
-                    line(19),
                     line(20),
                     line(21),
                     line(22),
+                    line(23),
                 },
             },
-            new(19, "\"Oh, I didn't realize. I'm sorry.\"") {
+            new("\"Oh, I didn't realize. I'm sorry.\"") {
                 speaker = harry,
                 links = { line(0) },
             },
-            new(20, "\"I'm so sorry I'm so sorry I'll leave you alone forever now.\"") {
+            new("\"I'm so sorry I'm so sorry I'll leave you alone forever now.\"") {
                 speaker = harry,
                 links = { line(0) },
             },
-            new(21, "\"I haven't been a good representative of the RCM. We're here to help the people of Martinaise, no matter their identity. I'm sorry to have let you down.\"") {
+            new("\"I haven't been a good representative of the RCM. We're here to help the people of Martinaise, no matter their identity. I'm sorry to have let you down.\"") {
                 speaker = harry,
                 links = { line(0) },
             },
-            new(22, "Try and come up with an elaborate, heartfelt apology in the style of the turn of the century thespians.") {
+            new("Try and come up with an elaborate, heartfelt apology in the style of the turn of the century thespians.") {
                 speaker = harry,
                 // `ActiveCheck` is another of the aforementioned nodes.
                 // Unlike `PassiveCheck`, the response dialogue comes in the next line.
@@ -231,64 +236,57 @@ public class Transgener : BasePlugin
                     Skills.Drama,
                     Difficulty.Legendary
                 ),
-                links = { line(23) },
+                links = { line(24) },
             },
-            new(23, "You try and come up with the words to convey your apology to the young woman, but you come up blank. It's hard to fit \"transgender\" into iambic pentameter, as it turns out.") {
+            new("You try and come up with the words to convey your apology to the young woman, but you come up blank. It's hard to fit \"transgender\" into iambic pentameter, as it turns out.") {
                 speaker = new AssetLocation<Actor>(disco, "drama"),
                 links = {
-                    line(24),
-                    line(26),
+                    line(25),
+                    line(27),
                 },
             },
-            new(24, "\"Detective? You've been standing there for a whole minute. Are you okay?\"") {
+            new("\"Detective? You've been standing there for a whole minute. Are you okay?\"") {
                 // Conversations can be between as many people as you like!
                 // We use kim here, for example.
                 speaker = kim,
                 condition = "IsKimHere()",
-                links = { line(25) },
-            },
-            new(25, "Shit, the lieutenant is onto us. We have to say something soon, or we could lose him.") {
-                speaker = new AssetLocation<Actor>(disco, "drama"),
                 links = { line(26) },
             },
-            new(26, "Don't worry, we can still salvage this. Anyone have any ideas?") {
-                node = new PassiveCheck(Skills.Composure, Difficulty.Trivial),
+            new("Shit, the lieutenant is onto us. We have to say something soon, or we could lose him.") {
+                speaker = new AssetLocation<Actor>(disco, "drama"),
                 links = { line(27) },
             },
-            new(27, "Let me handle this.") {
+            new("Don't worry, we can still salvage this. Anyone have any ideas?") {
+                node = new PassiveCheck(Skills.Composure, Difficulty.Trivial),
+                links = { line(28) },
+            },
+            new("Let me handle this.") {
                 node = new PassiveCheck(Skills.Volition, Difficulty.Heroic) {
                     speakOnFailure = true,
                 },
                 links = {
-                    line(28),
-                },
-            },
-            new(28, "I'm so sorry, I'm so fucking sorry. I'm such a fucking failure. Do you want me to kill myself?") {
-                speaker = harry,
-                links = {
                     line(29),
                 },
             },
-            new(29, null) {
-                script = "NewspaperEndgame(\"HARDIES_SUICIDE\",\"DERANGED COP KILLS HIMSELF\",\"This came as a surprise to absolutely no-one. Literally what the fuck were you expecting.\") "
-            },
-            new(30, "Hey Kim! There's a young man over there. Wierd that we can't see them.") {
+            new("I'm so sorry, I'm so fucking sorry. I'm such a fucking failure. Do you want me to kill myself?") {
                 speaker = harry,
                 links = {
-                    line(0),
-                }
-            }
+                    line(30),
+                },
+            },
+            new(null) {
+                script = "NewspaperEndgame(\"HARDIES_SUICIDE\",\"DERANGED COP KILLS HIMSELF\",\"\") "
+            },
         };
 
         // We add the conversation to the source as with other assets.
         source.Add(new Conversation("young-woman-is-transgender", new List<Line>(lines)));
 
-        // FIXME: BROKEN !!!
         // And, finally, we insert a link (between conversations) to allow it to be spoken.
         // The `from` line is the root of Kim's main dialogue tree.
         source.InsertLink(new Link(
             from: new(disco, "29", 343),
-            to: new(source, "young-woman-is-transgender", 30)
+            to: new(source, "young-woman-is-transgender", 0)
         ));
     }
 }
