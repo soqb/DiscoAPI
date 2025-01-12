@@ -9,6 +9,7 @@ using Il2CppInterop.Runtime.InteropTypes;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using static UnityEngine.ResourceManagement.ResourceManager;
+using PC = PixelCrushers.DialogueSystem;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime;
@@ -30,12 +31,20 @@ public static class MainThreadExecutor
 
 public static class FormatUtils
 {
+	private static readonly Regex RgHyphenlike = new Regex(@"\s|_", RegexOptions.Compiled);
+	private static readonly Regex RgDotlike = new Regex(@"[/\\]+", RegexOptions.Compiled);
+	private static readonly Regex RgInvalid = new Regex(@"[^a-z0-9-\u00C0-\u024F\u1E00-\u1EFF.]", RegexOptions.Compiled);
+	private static readonly Regex RgMultiHyphen = new Regex(@"-{2,}", RegexOptions.Compiled);
+	private static readonly Regex RgWierdDot = new Regex(@"-.-", RegexOptions.Compiled);
+
 	public static string Slugify(string id)
 	{
 		id = id.ToLowerInvariant().Normalize();
-		id = Regex.Replace(id, @"\s|_", "-", RegexOptions.Compiled);
-		id = Regex.Replace(id, @"[^a-z0-9-\u00C0-\u024F\u1E00-\u1EFF.]", "", RegexOptions.Compiled);
-		id = Regex.Replace(id, @"-{2,}", "-", RegexOptions.Compiled);
+		id = RgHyphenlike.Replace(id, "-");
+		id = RgDotlike.Replace(id, ".");
+		id = RgInvalid.Replace(id, "");
+		id = RgMultiHyphen.Replace(id, "-");
+		id = RgWierdDot.Replace(id, ".");
 		id = id.Trim('-');
 		return id;
 	}
@@ -115,6 +124,23 @@ public static class SkillUtils
 	public static EnumArena<SM.SkillType, Skill> Skills => (EnumArena<SM.SkillType, Skill>)DiscoRunner.manager.Assets.GetArena<Skill>();
 
 	public static Skill? Lookup(SM.SkillType st) => Skills[Skills.ReverseId(st)];
+
+	public static PC.Actor SkillToPCActor(IAssetRef<Skill> skill)
+	{
+		return skill.Resolve(DiscoRunner.manager)!.actor.ResolveCrushed(DiscoRunner.manager)!;
+	}
+
+	public static void OnDialogueBundleLoad()
+	{
+		for (int i = SkillUtils.Skills.baseCount; i < SkillUtils.Skills.Count; i++)
+		{
+			Skill skill = SkillUtils.Skills[i]!;
+			string id = skill.actor.ResolveCrushed()!.LookupValue(ArticyBridge.ARTICY_ID_FIELD);
+
+			ArticyBridge.ARTICY_ID_TO_SKILL_TYPE.Add(id, SkillUtils.Skills.GetRaw(i));
+			ArticyBridge.ARTICY_ID_TO_SKILL_NAME.Add(id, skill.displayName);
+		}
+	}
 }
 
 

@@ -81,20 +81,12 @@ public class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset, 
 		var pcAsset = crusher.Crush(src, asset, plannedId);
 		pcAsset.id = plannedId;
 
-		string assetKind;
-		bool isConversation;
-		{
-			Type t = typeof(U);
-			assetKind = t == typeof(Actor) ? "actors"
-				: t == typeof(Conversation) ? "conversations"
-				: t == typeof(Variable) ? "variables"
-				: throw new NotSupportedException();
-			isConversation = t == typeof(Conversation);
-		}
+		bool isConversation = typeof(U) == typeof(Conversation);
 
-		string fakeArticyID = $"{asset.source}.${assetKind}.{asset.id}";
-		pcAsset.fields.Add(new PC.Field(ArticyBridge.ARTICY_ID_FIELD, fakeArticyID, PC.FieldType.Text));
-		Dialogue.fakeArticyIDToAssetCache.Add(fakeArticyID, pcAsset);
+		string articyId = DiscoToPixels.BuildArticyId(asset);
+		DiscoRunner.Log.LogInfo($"{asset.Location} to {articyId}");
+		pcAsset.fields.Add(new PC.Field(ArticyBridge.ARTICY_ID_FIELD, articyId, PC.FieldType.Text));
+		Dialogue.fakeArticyIDToAssetCache.Add(articyId, pcAsset);
 
 		if (isConversation)
 		{

@@ -9,6 +9,7 @@ public class DiscoAPISettings
 	private ConfigEntry<bool> allowAchievements;
 	private ConfigEntry<bool> enableLuaConsole;
 	private ConfigEntry<bool> dumpSourcesOnStartup;
+	private ConfigEntry<bool> logMore;
 
 	public static bool AllowAchievements
 	{
@@ -24,6 +25,11 @@ public class DiscoAPISettings
 	{
 		get => Instance.dumpSourcesOnStartup.Value;
 		set => Instance.dumpSourcesOnStartup.Value = value;
+	}
+	public static bool LogMore
+	{
+		get => Instance.logMore.Value;
+		set => Instance.logMore.Value = value;
 	}
 
 	public DiscoAPISettings(ConfigFile cfg)
@@ -48,6 +54,13 @@ public class DiscoAPISettings
 			"DumpSourcesOnStartup",
 			false,
 			"dump the contents of the base game asset tables for introspection"
+		);
+
+		logMore = cfg.Bind(
+			"Debug",
+			"LogMore",
+			true,
+			"enable logging for more parts of the core game"
 		);
 	}
 }

@@ -2,34 +2,12 @@ using System;
 using System.Collections.Generic;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
-using DiscoAPI.Runtime.Assets;
 using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Dialogue;
 
 public class DiscoToPixels
 {
-	private static PCArena<T, U> GetArena<T, U>(DiscoManager mgr) where T : PC.Asset, new() where U : Asset
-	{
-		return (PCArena<T, U>)mgr.Assets.GetArena<U>();
-	}
-
-	private static int CrushedId<T, U>(IAssetRef<U> ass, DiscoManager? mgr) where T : PC.Asset, new() where U : Asset
-	{
-		DiscoRunner.Log.LogInfo($"(crushing {ass.Location})");
-		mgr = mgr ?? DiscoRunner.manager;
-		int id = mgr.Assets.ResolveId(ass.Location);
-		var ana = GetArena<T, U>(mgr);
-		return ana.GetRaw(id)!.id;
-	}
-
-	public static int CrushedId(IAssetRef<Actor> ass, DiscoManager? mgr = null)
-		=> CrushedId<PC.Actor, Actor>(ass, mgr);
-	public static int CrushedId(IAssetRef<Conversation> ass, DiscoManager? mgr = null)
-		=> CrushedId<PC.Conversation, Conversation>(ass, mgr);
-	public static int CrushedId(IAssetRef<Variable> ass, DiscoManager? mgr = null)
-		=> CrushedId<PC.Variable, Variable>(ass, mgr);
-
 	public PC.Link Crush(DiscoSource source, Link link) => Crush(source, link, null, 0);
 	public PC.Link Crush(DiscoSource source, Link link, AssetLocation<Conversation>? parentConv, int convoId)
 	{
@@ -38,17 +16,12 @@ public class DiscoToPixels
 		if (link.from != null)
 		{
 			pcLink.originConversationID = link.from.conversation.Location == parentConv
-				? convoId : CrushedId(link.from.conversation, source.Manager);
+				? convoId : link.from.conversation.ResolveCrushed(source.Manager)!.id;
 			pcLink.originDialogueID = link.from.lineId;
 		}
 		pcLink.destinationConversationID = link.to.conversation.Location == parentConv
-			? convoId : CrushedId(link.to.conversation, source.Manager);
+			? convoId : link.to.conversation.ResolveCrushed(source.Manager)!.id;
 		pcLink.destinationDialogueID = link.to.lineId;
-
-		DiscoRunner.Log.LogInfo($"linking to {pcLink.destinationConversationID}#{pcLink.destinationDialogueID}");
-		var c = DiscoRunner.manager.Dialogue.pcDatabase.GetConversation(pcLink.destinationConversationID);
-		if (c != null)
-			DiscoRunner.Log.LogInfo($" > that's {c.Title} which has {c.dialogueEntries.Count} entries");
 
 		return pcLink;
 	}
@@ -60,7 +33,7 @@ public class DiscoToPixels
 		pcEntry.fields = new();
 		pcEntry.conditionsString = line.condition ?? "";
 		pcEntry.userScript = line.script ?? "";
-		pcEntry.ActorID = line.speaker == null ? 0 : CrushedId(line.speaker!, source.Manager);
+		pcEntry.ActorID = line.speaker == null ? 0 : line.speaker!.ResolveCrushed(source.Manager)!.id;
 		// NB: currentDialogueText is usually the same, *except* for the fact it won't create a new field when necessary...
 		pcEntry.DialogueText = line.text;
 		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{id}";
@@ -99,6 +72,16 @@ public class DiscoToPixels
 	}
 
 	public static string? EncodeTextureName(string source, string? name) => name == null ? null : $"\0EXTRA\0{source}\0{name}";
+	public static string BuildArticyId(Asset asset)
+	{
+		Type t = asset.GetType();
+		string assetKind = t.IsAssignableTo(typeof(Actor)) ? "actors"
+			: t.IsAssignableTo(typeof(Conversation)) ? "conversations"
+			: t.IsAssignableTo(typeof(Variable)) ? "variables"
+			: throw new NotSupportedException();
+
+		return $"{asset.source}:{assetKind}.{asset.id}";
+	}
 
 	public PC.Actor Crush(DiscoSource source, Actor actor)
 	{
@@ -151,11 +134,11 @@ public class EditFieldsForDialogue : IDialogueNodeVisitor
 		int ArticyDifficulty(DiscoSource source)
 			=> source.Manager.Dialogue.mapping.DifficultyToArticy(ck.difficulty);
 
-		fields.Set("Conversant", FieldType.Actor, source.Manager.Dialogue.mapping.SkillToActorId(ck.skill).ToString());
+		fields.Set("Conversant", FieldType.Actor, SkillUtils.SkillToPCActor(ck.skill).id.ToString());
 		fields.Set("FlagName", FieldType.Text, $"{source.Guid}.checks.{ck.id}");
 		source.Add(new Variable($"checks.{ck.id}", false));
 
-		fields.Set("SkillType", FieldType.Text, source.Manager.Dialogue.mapping.SkillToArticyId(ck.skill));
+		fields.Set("SkillType", FieldType.Text, SkillUtils.SkillToPCActor(ck.skill).LookupValue(ArticyBridge.ARTICY_ID_FIELD));
 		// These two fields are required for all checks but do nothing AFAICT.
 		fields.Set("Articy Id", FieldType.Text, "0x0000000000000000");
 		fields.Set("check_target", FieldType.Text, "0x0000000000000000");
@@ -218,7 +201,7 @@ public class EditFieldsForDialogue : IDialogueNodeVisitor
 
 		fields.Set("DifficultyPass", ArticyDifficulty(source));
 		if (ck.speakOnFailure) fields.Set("Antipassive", true);
-		fields.Set("Actor", source.Manager.Dialogue.mapping.SkillToActorId(ck.skill));
+		fields.Set("Actor", SkillUtils.SkillToPCActor(ck.skill).id);
 	}
 
 	public void Empty(EmptyDialogueNode ck) { }
@@ -279,7 +262,7 @@ public class PixelsToDisco
 
 	public Conversation Uncrush(PC.Conversation conversation)
 	{
-		var cv = new Conversation(NameOf(conversation, conversation.Name), new List<Line>());
+		var cv = new Conversation(NameOf(conversation, conversation.Title), new List<Line>());
 		if (!string.IsNullOrWhiteSpace(conversation.Title)) cv.title = conversation.Title;
 		if (!string.IsNullOrWhiteSpace(conversation.Description)) cv.description = conversation.Description;
 

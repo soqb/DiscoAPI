@@ -52,8 +52,12 @@ public static class DiscoRunner
 
         dialogueLoad.Invoke();
 
+        SkillUtils.OnDialogueBundleLoad();
+
         if (DiscoAPISettings.EnableLuaConsole) LuaConsoleManager.AttachLuaConsole();
         if (DiscoAPISettings.DumpSourcesOnStartup) DumpDiscoSources.FullDump();
+
+        if (DiscoAPISettings.LogMore) LocalizationCustomSystem.LocalizationManager.Singleton.DebugLogs = true;
     }
 
     private static void OnMarshalledSceneLoad()

@@ -3,6 +3,7 @@ using SM = Sunshine.Metric;
 using PC = PixelCrushers.DialogueSystem;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Assets;
+using UnityEngine;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -66,7 +67,39 @@ public static class CharacterPatches
 		{
 			text = text?.Replace(TextUtils.NewLineString, string.Empty);
 		}
-		__result = text; return false;
+		__result = text;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(LocalizationCustomSystem.LocalizationUtils), nameof(LocalizationCustomSystem.LocalizationUtils.GetActorLocalizedFieldToUpper))]
+	[HarmonyPrefix]
+	private static bool OnGetActorLocalizedFieldToUpper(ref string? __result, PC.Actor actor, string fieldName)
+	{
+		// i have no idea why the vanilla method fails sometimes.. this is not a complicated method.
+		string localized = LocalizationCustomSystem.LocalizationManager.GetLocalizedTermToUpper(LocalizationCustomSystem.LocalizationUtils.GetActorLocalizationTerm(actor, fieldName));
+		if (localized != null) __result = localized;
+		else
+		{
+			string value = actor.LookupValue(fieldName);
+			if (value == null) __result = null;
+			else __result = LocalizationCustomSystem.LocalizationUtils.UpdateWrongName(value.ToUpper());
+		}
+
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.SkillTypeToLocalizedName))]
+	[HarmonyPostfix]
+	private static void OnSkillTypeToLocalizedName(ref string? __result, SM.SkillType type)
+	{
+		if (__result == null) __result = SkillUtils.Lookup(type)?.displayName;
+	}
+
+	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.SkillTypeToLocalizedNameToUpper))]
+	[HarmonyPostfix]
+	private static void OnSkillTypeToLocalizedNameToUpper(ref string? __result, SM.SkillType type)
+	{
+		if (__result == null) __result = SkillUtils.Lookup(type)?.displayName.ToUpper();
 	}
 
 	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.GetSkill))]
@@ -116,11 +149,29 @@ public static class CharacterPatches
 		// 	DiscoAPIPlugin.Instance.Log.LogInfo($"   * {sk.skillType}");
 	}
 
+	// these methods reduce efficiency slightly but who care atp.
+	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.GetColor))]
+	[HarmonyPrefix]
+	private static bool OnGetColor(ref Color __result, SM.SkillType skillType)
+	{
+		if ((int)skillType <= Skill.VANILLA_MAX) return true;
+
+		__result = SkillUtils.Lookup(skillType)!.ability switch
+		{
+			AbilityType.Int => ColorConfiguration.Singleton.ColorINT,
+			AbilityType.Psy => ColorConfiguration.Singleton.ColorPSY,
+			AbilityType.Fys => ColorConfiguration.Singleton.ColorFYS,
+			AbilityType.Mot => ColorConfiguration.Singleton.ColorMOT,
+			_ => Color.magenta,
+		};
+		return false;
+	}
+
 	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.GetAbility))]
 	[HarmonyPrefix]
 	private static bool OnGetSkillAbility(ref SM.AbilityType __result, SM.SkillType skillType)
 	{
-		if ((int)skillType <= Skill.VANILLA_MAX) { return true; }
+		if ((int)skillType <= Skill.VANILLA_MAX) return true;
 
 		__result = SkillUtils.AbilityToSunshine(SkillUtils.Lookup(skillType)!.ability);
 		return false;

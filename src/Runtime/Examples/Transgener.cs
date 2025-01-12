@@ -57,7 +57,7 @@ public class Transgener : BasePlugin
         // * Assets are themselves asset references (which resolve to themselves).
         // * `AssetLocation` is another kind of asset reference, which use dynamic lookup.
         // * Both `IAssetRef` and `AssetLocation` come in both generic (as below) and non-generic forms.
-        AssetLocation<Actor> harry = new(disco, "you");
+        AssetLocation<Actor> you = new(disco, "you");
         AssetLocation<Actor> kim = new(disco, "kim-kitsuragi");
 
         // We setup another asset, this time a variable, to use in the following conversation.
@@ -71,7 +71,7 @@ public class Transgener : BasePlugin
         Line[] lines = new[] {
             // Each line must have some (nullable) text, but there's also a whole bunch of additional properties. 
             new Line("Hey Kim! There's a young man over there. Wierd that we can't see them.") {
-                speaker = harry,
+                speaker = you,
                 links = {
                     line(1),
                 }
@@ -127,11 +127,11 @@ public class Transgener : BasePlugin
                 },
             },
             new("Transgender? What's that?") {
-                speaker = harry,
+                speaker = you,
                 links = { line(8) },
             },
             new("This doesn't have any bearing on the investigation.") {
-                speaker = harry,
+                speaker = you,
                 links = {
                     // On dialogue options we don't care about for this *very specific* example,
                     // We just return to the beginning of the conversation.
@@ -148,19 +148,19 @@ public class Transgener : BasePlugin
                 },
             },
             new("Gender is rather bourgeois, anyway.") {
-                speaker = harry,
+                speaker = you,
                 links = { line(13) },
             },
             new("Why would any proud Revacholian discard their masculinity?") {
-                speaker = harry,
+                speaker = you,
                 links = { line(0) },
             },
             new("Changing your gender? That sounds like quite the hustle. Maybe we can learn a thing or two from this woman.") {
-                speaker = harry,
+                speaker = you,
                 links = { line(0) },
             },
             new("That's cool. I have no opinion on this one way or another.") {
-                speaker = harry,
+                speaker = you,
                 links = { line(0) },
             },
             new("Just as Mazov dared to challenge the established order of capitalism, so too do others challenge the order of things such as sex and gender.") {
@@ -212,19 +212,19 @@ public class Transgener : BasePlugin
                 },
             },
             new("\"Oh, I didn't realize. I'm sorry.\"") {
-                speaker = harry,
+                speaker = you,
                 links = { line(0) },
             },
             new("\"I'm so sorry I'm so sorry I'll leave you alone forever now.\"") {
-                speaker = harry,
+                speaker = you,
                 links = { line(0) },
             },
             new("\"I haven't been a good representative of the RCM. We're here to help the people of Martinaise, no matter their identity. I'm sorry to have let you down.\"") {
-                speaker = harry,
+                speaker = you,
                 links = { line(0) },
             },
             new("Try and come up with an elaborate, heartfelt apology in the style of the turn of the century thespians.") {
-                speaker = harry,
+                speaker = you,
                 // `ActiveCheck` is another of the aforementioned nodes.
                 // Unlike `PassiveCheck`, the response dialogue comes in the next line.
                 // The game will set the value of the variable "{guid}.checks.{checkName}" to whether it succeeded,
@@ -269,7 +269,7 @@ public class Transgener : BasePlugin
                 },
             },
             new("I'm so sorry, I'm so fucking sorry. I'm such a fucking failure. Do you want me to kill myself?") {
-                speaker = harry,
+                speaker = you,
                 links = {
                     line(30),
                 },
@@ -285,7 +285,7 @@ public class Transgener : BasePlugin
         // And, finally, we insert a link (between conversations) to allow it to be spoken.
         // The `from` line is the root of Kim's main dialogue tree.
         source.InsertLink(new Link(
-            from: new(disco, "29", 343),
+            from: new(disco, "whirling.kim-main", 343),
             to: new(source, "young-woman-is-transgender", 0)
         ));
     }
