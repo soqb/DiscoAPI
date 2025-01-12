@@ -5,6 +5,8 @@ namespace DiscoAPI.Runtime;
 
 public static class DiscoRunner
 {
+    public static GlobalDiscoConfig globalConfig = new();
+
     public static ModWorld? world;
 
     public static ManualLogSource Log => DiscoAPIPlugin.Instance.Log;

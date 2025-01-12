@@ -78,7 +78,7 @@ public static class PagesPatches
 	private static bool OnSkillConfiguratorUpdateSkillPortraitPanelsContent(Charsheet.SkillPortrayConfigurator __instance)
 	{
 		var skills = (SM.SkillType[])System.Enum.GetValues(typeof(SM.SkillType));
-		for (int i = 0; i < skills.Length; i++)
+		for (int i = 0, j = 0; i < skills.Length; i++)
 		{
 			SM.SkillType skillType = skills[i];
 
@@ -96,30 +96,8 @@ public static class PagesPatches
 
 			if (skillPortraitPanel != null)
 			{
-				skillType = skillType switch
-				{
-					SM.SkillType.LOGIC => (SM.SkillType)31,
-					SM.SkillType.ENCYCLOPEDIA => (SM.SkillType)32,
-					SM.SkillType.RHETORIC => (SM.SkillType)33,
-					SM.SkillType.DRAMA => (SM.SkillType)34,
-					SM.SkillType.VOLITION => (SM.SkillType)35,
-					SM.SkillType.INLAND_EMPIRE => (SM.SkillType)36,
-					SM.SkillType.EMPATHY => (SM.SkillType)37,
-					SM.SkillType.AUTHORITY => (SM.SkillType)38,
-					SM.SkillType.ENDURANCE => (SM.SkillType)39,
-					SM.SkillType.PAIN_THRESHOLD => (SM.SkillType)40,
-					SM.SkillType.PHYSICAL_INSTRUMENT => (SM.SkillType)41,
-					SM.SkillType.ELECTROCHEMISTRY => (SM.SkillType)42,
-					SM.SkillType.HE_COORDINATION => (SM.SkillType)43,
-					SM.SkillType.PERCEPTION => (SM.SkillType)44,
-					SM.SkillType.REACTION => (SM.SkillType)45,
-					SM.SkillType.SAVOIR_FAIRE => (SM.SkillType)46,
-					SM.SkillType.CONCEPTUALIZATION or SM.SkillType.VISUAL_CALCULUS
-					or SM.SkillType.ESPRIT_DE_CORPS or SM.SkillType.SUGGESTION
-					or SM.SkillType.SHIVERS or SM.SkillType.HALF_LIGHT
-					or SM.SkillType.INTERFACING or SM.SkillType.COMPOSURE => SM.SkillType.NONE,
-					_ => skillType,
-				};
+				var skillRef = DiscoRunner.globalConfig.panels[j++].skill;
+				skillType = skillRef == null ? SM.SkillType.NONE : SkillUtils.Skills.GetRaw(skillRef.ResolveId());
 				SM.Skill skill = new SM.Skill(skillType, null);
 				skillPortraitPanel.SetSkill(skill);
 			}

@@ -53,5 +53,4 @@ public static class DialoguePatches
     private static void AllYourDialogueAreBelongToUs(FinalEntry entry)
     {
     }
-
 }

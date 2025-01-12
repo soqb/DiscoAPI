@@ -11,6 +11,7 @@ public static class UnityExtensions
     public static Sunshine.Metric.Difficulty Sunshine(this Difficulty diff) => (Sunshine.Metric.Difficulty)diff;
 
     public static T? Resolve<T>(this IAssetRef<T> asset) where T : Asset => asset.Resolve(DiscoRunner.manager);
+    public static int ResolveId(this IAssetRef asset) => DiscoRunner.manager.Assets.ResolveId(asset.Location);
 
     public static PC.Actor? ResolveCrushed(this IAssetRef<Actor> asset, DiscoManager? mgr = null)
         => Crushed<PC.Actor, Actor>(asset, mgr);
