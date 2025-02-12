@@ -126,6 +126,7 @@
                         "type": "object",
                         "description": "one of the conversations had between actors",
                         "required": [
+                            "id",
                             "lines"
                         ],
                         "properties": {
@@ -192,6 +193,7 @@
                         "description": "the definition of an actor",
                         "type": "object",
                         "required": [
+                            "id",
                             "name"
                         ],
                         "properties": {
@@ -218,6 +220,7 @@
                         "type": "object",
                         "description": "a variable",
                         "required": [
+                            "id",
                             "name"
                         ],
                         "properties": {
@@ -260,6 +263,65 @@
                                         ]
                                     }
                                 ]
+                            }
+                        }
+                    }
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "description": "the definition of a task",
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "title",
+                            "description"
+                        ],
+                        "properties": {
+                            "id": {
+                                "description": "the short, unique name of the subtask under the parent task",
+                                "type": "string",
+                                "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                            },
+                            "title": {
+                                "description": "the name of the task",
+                                "type": "string"
+                            },
+                            "description": {
+                                "description": "a description of the task",
+                                "type": "string"
+                            },
+                            "timed": {
+                                "description": "whether this task has a time limit",
+                                "type": "boolean"
+                            },
+                            "reward": {
+                                "description": "how much experience is rewarded for this task",
+                                "type": "string",
+                                "pattern": "^(?:minor|major|standard)$"
+                            },
+                            "subtasks": {
+                                "description": "the subtask entries under this task",
+                                "type": "object",
+                                "required": [
+                                    "subid",
+                                    "title"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "the short, unique name of the subtask under the parent task",
+                                        "type": "string",
+                                        "pattern": "^(?:[A-Za-z][A-Za-z.-0-9]*|[0-9]+)$"
+                                    },
+                                    "title": {
+                                        "description": "the name of the subtask",
+                                        "type": "string"
+                                    },
+                                    "timed": {
+                                        "description": "whether this subtask has a time limit",
+                                        "type": "boolean"
+                                    }
+                                }
                             }
                         }
                     }

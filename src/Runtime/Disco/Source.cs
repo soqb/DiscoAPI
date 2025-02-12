@@ -24,6 +24,7 @@ public class DiscoSource : IMutableAssets
     public string? DisplayName { get; }
     public string? Description { get; }
     public List<string>? Authors { get; }
+
     public IAssetRouter Router { get; }
 
     private static ManualLogSource NowheresvilleLogger = new ManualLogSource("");
@@ -46,9 +47,9 @@ public class DiscoSource : IMutableAssets
         IsVanilla = isVanilla;
 
         this.cfg = cfg;
-        Router = new MemoizedAssetRouter(cfg.router ?? new EmptyAssetRouter());
+        Router = cfg.router != null ? new MemoizedAssetRouter(cfg.router) : new EmptyAssetRouter();
 
-        if (isVanilla) tables = Enumerable.ToDictionary(manager.Assets.GetVanillaTables(this), value => value.AssetType);
+        if (isVanilla) tables = Enumerable.ToDictionary(manager.Assets.GetDefaultVanillaTables(this), value => value.AssetType);
         else tables = new();
     }
 
@@ -88,8 +89,8 @@ public class DiscoSource : IMutableAssets
             if (tables.TryGetValue(ty, out table!))
                 return table;
 
-        (type, table) = Manager.Assets.CreateTableForType(type, this);
-        tables.Add(type, table);
+        table = Manager.Assets.CreateTableForType(type, this);
+        tables.Add(table.AssetType, table);
         return table;
     }
 

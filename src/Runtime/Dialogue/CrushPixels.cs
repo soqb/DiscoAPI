@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using PC = PixelCrushers.DialogueSystem;
@@ -71,13 +72,77 @@ public class DiscoToPixels
 		return pcConv;
 	}
 
-	public static string? EncodeTextureName(string source, string? name) => name == null ? null : $"\0EXTRA\0{source}\0{name}";
+	public PC.Conversation CrushTask(DiscoSource source, Task task)
+	{
+		var conv = new PC.Conversation();
+		conv.fields = new();
+		conv.dialogueEntries = new();
+
+		var ed = new FieldEditor("", conv.fields);
+
+		string? varRoot = $"task-state.{task.id}";
+		string Var(string? kind = null)
+		{
+			if (string.IsNullOrEmpty(varRoot)) return "";
+
+			kind = string.IsNullOrEmpty(kind) ? "" : "-" + kind;
+			string varName = $"{varRoot}{kind}";
+
+			source.Add(new Variable(varName, false));
+			return $"Variable[\"{source.Guid}.{varName}\"]";
+		}
+
+		conv.Title = task.title;
+		conv.Description = task.description;
+		ed.Set("display_condition_main", Var());
+		ed.Set("done_condition_main", Var("done"));
+		ed.Set("cancel_condition_main", Var("cancelled"));
+		ed.Set("task_reward", (int)task.reward);
+		ed.Set("task_timed", task.isTimed);
+
+		for (int i = 0; i < 12; i++)
+		{
+			string title;
+			bool isTimed;
+			if (i < task.subtasks.Count)
+			{
+				var subtask = task.subtasks[i];
+				title = subtask.title;
+				isTimed = subtask.isTimed;
+				varRoot = $"task_state.{task.id}.{subtask.subid}";
+			}
+			else
+			{
+				varRoot = null;
+				title = "";
+				isTimed = false;
+			}
+
+			string idx = (i + 1).ToString().PadLeft(2, '0');
+			ed.Set($"display_subtask_{idx}", Var());
+			ed.Set($"done_subtask_{idx}", Var("done"));
+			ed.Set($"cancel_subtask_{idx}", Var("cancelled"));
+			ed.Set($"subtask_title_{idx}", title);
+			ed.Set($"timed_subtask_{idx}", isTimed);
+		}
+
+		return conv;
+	}
+
+
+	public static string? EncodeTextureName(string source, string? name)
+	{
+		if (name == null) return null;
+		else return $"{AssetUtils.EXTRA_TEXTURE_PREFIX}{source}:{name}";
+	}
+
 	public static string BuildArticyId(Asset asset)
 	{
 		Type t = asset.GetType();
 		string assetKind = t.IsAssignableTo(typeof(Actor)) ? "actors"
 			: t.IsAssignableTo(typeof(Conversation)) ? "conversations"
 			: t.IsAssignableTo(typeof(Variable)) ? "variables"
+			: t.IsAssignableTo(typeof(Task)) ? "tasks"
 			: throw new NotSupportedException();
 
 		return $"{asset.source}:{assetKind}.{asset.id}";
@@ -89,6 +154,7 @@ public class DiscoToPixels
 		pcActor.fields = new();
 		pcActor.Name = actor.displayName;
 		pcActor.textureName = EncodeTextureName(source.Guid, actor.portraitName);
+		// FIXME: should be better!
 		pcActor.fields.Add(new PC.Field("short_description", "PLACEHOLDER DESCRIPTION", PC.FieldType.Text));
 		pcActor.fields.Add(new PC.Field("LongDescription", "PLACEHOLDER LONG DESCRIPTION", PC.FieldType.Text));
 
@@ -112,7 +178,8 @@ public class DiscoToPixels
 		if (asset is Actor actor) return Crush(source, actor);
 		else if (asset is Conversation conversation) return Crush(source, conversation, convoId);
 		else if (asset is Variable variable) return Crush(source, variable);
-		else throw new System.NotSupportedException("expected an actor, conversation, or varaible");
+		else if (asset is Task task) return CrushTask(source, task);
+		else throw new System.NotSupportedException("expected an actor, conversation, varaible, or task");
 	}
 }
 
@@ -144,7 +211,7 @@ public class EditFieldsForDialogue : IDialogueNodeVisitor
 		fields.Set("check_target", FieldType.Text, "0x0000000000000000");
 
 		if (ck.modifiers.Count > 10)
-			source.Log.LogWarning($"more than 10 modifiers found for a check in {parentConv} @ {fields.id}; some will be ignored");
+			source.Log.LogWarning($"more than 10 modifiers found for a check in {parentConv} @ {fields.path}; some will be ignored");
 
 		for (int i = 1; i <= 10; i++)
 		{
@@ -153,7 +220,7 @@ public class EditFieldsForDialogue : IDialogueNodeVisitor
 			{
 				var modifier = ck.modifiers[i];
 
-				string varName = $"modifier.{parentConv.Location.id}.{fields.id}.{modifier.id}";
+				string varName = $"modifier.{parentConv.Location.id}.{fields.path}.{modifier.id}";
 				source.Add(new Variable(varName, false));
 				variable = $"{source.Guid}.{varName}";
 
@@ -235,9 +302,9 @@ public class PixelsToDisco
 		);
 	}
 
-	public static bool TryDecodeTextureName(string? textureName, out string source, out string path)
+	public static bool TryDecodeTextureName(string? textureName, [NotNullWhen(true)] out string? source, [NotNullWhen(true)] out string? path)
 	{
-		if (textureName == null || !textureName.StartsWith("\0EXTRA\0"))
+		if (textureName == null || !textureName.StartsWith(AssetUtils.EXTRA_TEXTURE_PREFIX))
 		{
 			source = "";
 			path = "";
@@ -245,10 +312,19 @@ public class PixelsToDisco
 		}
 
 		textureName = textureName.Substring(7);
-		int splitAt = textureName.IndexOf('\0');
+		int splitAt = textureName.IndexOf(':');
 
-		source = textureName.Substring(0, splitAt);
-		path = textureName.Substring(splitAt + 1);
+		if (splitAt == -1)
+		{
+			source = "disco";
+			path = textureName;
+		}
+		else
+		{
+			source = textureName.Substring(0, splitAt);
+			path = textureName.Substring(splitAt + 1);
+		}
+
 		return true;
 	}
 

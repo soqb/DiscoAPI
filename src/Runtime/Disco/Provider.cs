@@ -40,7 +40,7 @@ public struct Location
         string? path = Path.GetDirectoryName(assembly.Location);
         if (path == null)
         {
-            if (log != null) log.LogWarning("no assembly path, so no viable location");
+            if (log != null) log.LogWarning("the plugin assembly failed to return a proper path, so has no viable location");
             return null;
         }
 
@@ -57,7 +57,7 @@ public struct Location
             target = target.Parent;
         }
 
-        if (log != null) log.LogWarning("the assembly was not found to be inside the BepInEx plugins directory, so no viable location");
+        if (log != null) log.LogWarning("the plugin assembly was not found to be inside the BepInEx plugins directory, so has no viable location");
         return null;
     }
 

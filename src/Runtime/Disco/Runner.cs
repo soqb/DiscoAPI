@@ -18,6 +18,7 @@ public static class DiscoRunner
     internal static DiscoHook load = new("load");
     internal static DiscoHook sceneLoad = new("scene-load");
     internal static DiscoHook dialogueLoad = new("dialogue-load");
+    internal static DiscoHook preDialogueLoad = new("pre-dialogue-load");
 
     public static DiscoSource SourceFromPlugin(BasePlugin plugin) => SourceFromPlugin(plugin, new());
     public static DiscoSource SourceFromPlugin(BasePlugin plugin, DiscoSource.Config cfg)
@@ -37,6 +38,23 @@ public static class DiscoRunner
         FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnRawSceneLoad);
 
         InherentProvider.Provide();
+
+        InitLogDictionary();
+    }
+
+    private static void InitLogDictionary()
+    {
+        // global::Log.COMPONENT[] missing = new global::Log.COMPONENT[global::Log.componentState.Count];
+
+        // int i = 0;
+        // foreach (var entry in global::Log.componentState)
+        //     if (!entry.Value)
+        //     {
+        //         missing[i++] = entry.Key;
+        //         DiscoRunner.Log.LogInfo($"missing '{entry.Key}'");
+        //     }
+
+        // for (int j = 0; j < i; i++) global::Log.ToggleComponent(missing[j]);
     }
 
     public static void OnDialogueBundleLoad()
@@ -44,6 +62,7 @@ public static class DiscoRunner
         Log.LogInfo("loaded dialogue bundle..");
 
         if (manager.WasBundleLoaded) return;
+        InitLogDictionary();
 
         manager.OnDialogueBundleLoad();
 
@@ -52,6 +71,7 @@ public static class DiscoRunner
 
         Voidforge.UpdateManager.normalEvent.Add((Il2CppSystem.Action)OnUpdate);
 
+        preDialogueLoad.Invoke();
         dialogueLoad.Invoke();
 
         SkillUtils.OnDialogueBundleLoad();
@@ -77,12 +97,18 @@ public static class DiscoRunner
         if (world == null) world = new(w);
 
         world.MarshallSceneLoad(OnMarshalledSceneLoad);
+
+        if (sceneName == "Lobby")
+        {
+            // var stack = PagesSystem.PageStack.Main;
+            // stack.
+        }
     }
 
     public static void OnUpdate()
     {
         update.Invoke();
 
-        MainThreadExecutor.DequeueOnMainThread();
+        MainThreadExecutor.DequeueOnMainThreadPlease();
     }
 }

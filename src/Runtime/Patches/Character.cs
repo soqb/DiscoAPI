@@ -4,6 +4,8 @@ using PC = PixelCrushers.DialogueSystem;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Assets;
 using UnityEngine;
+using LocalizationCustomSystem;
+using System;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -54,14 +56,14 @@ public static class CharacterPatches
 	// 	return false;
 	// }
 
-	[HarmonyPatch(typeof(LocalizationCustomSystem.LocalizationManager), nameof(LocalizationCustomSystem.LocalizationManager.GetLocalizedTermToUpper))]
+	[HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.GetLocalizedTermToUpper))]
 	[HarmonyPrefix]
 	private static bool OnGetLocalizedTermToUpper(ref string? __result, string term, bool removeNewLines)
 	{
 		string? text = I2.Loc.LocalizationManager.GetTermTranslation(term + "_UPPER");
 		if (string.IsNullOrEmpty(text))
 		{
-			text = LocalizationCustomSystem.LocalizationManager.GetLocalizedTerm(term)?.ToUpper();
+			text = LocalizationManager.GetLocalizedTerm(term)?.ToUpper();
 		}
 		if (removeNewLines)
 		{
@@ -71,19 +73,55 @@ public static class CharacterPatches
 		return false;
 	}
 
-	[HarmonyPatch(typeof(LocalizationCustomSystem.LocalizationUtils), nameof(LocalizationCustomSystem.LocalizationUtils.GetActorLocalizedFieldToUpper))]
+	[HarmonyPatch(typeof(LocalizationUtils), nameof(LocalizationUtils.GetActorLocalizedFieldToUpper))]
 	[HarmonyPrefix]
 	private static bool OnGetActorLocalizedFieldToUpper(ref string? __result, PC.Actor actor, string fieldName)
 	{
 		// i have no idea why the vanilla method fails sometimes.. this is not a complicated method.
-		string localized = LocalizationCustomSystem.LocalizationManager.GetLocalizedTermToUpper(LocalizationCustomSystem.LocalizationUtils.GetActorLocalizationTerm(actor, fieldName));
+		string localized = LocalizationManager.GetLocalizedTermToUpper(LocalizationCustomSystem.LocalizationUtils.GetActorLocalizationTerm(actor, fieldName));
 		if (localized != null) __result = localized;
 		else
 		{
 			string value = actor.LookupValue(fieldName);
 			if (value == null) __result = null;
-			else __result = LocalizationCustomSystem.LocalizationUtils.UpdateWrongName(value.ToUpper());
+			else __result = LocalizationUtils.UpdateWrongName(value.ToUpper());
 		}
+
+		return false;
+	}
+
+	private static string? GetActorLocalizedField(PC.Actor actor, string field)
+	{
+		string localized = LocalizationManager.GetLocalizedTerm(LocalizationCustomSystem.LocalizationUtils.GetActorLocalizationTerm(actor, field));
+		if (localized != null) return localized;
+		else
+		{
+			string value = actor.LookupValue(field);
+			if (value == null) return null;
+			else return LocalizationUtils.UpdateWrongName(value);
+		}
+	}
+
+	[HarmonyPatch(typeof(LocalizationUtils), nameof(LocalizationUtils.GetActorLocalizedField), new Type[] { typeof(PC.Actor), typeof(string) })]
+	[HarmonyPrefix]
+	private static bool OnGetActorLocalizedField(ref string? __result, PC.Actor actor, string fieldName)
+	{
+		// i have no idea why the vanilla method fails sometimes.. this is not a complicated method.
+		__result = GetActorLocalizedField(actor, fieldName);
+		return false;
+	}
+
+	[HarmonyPatch(typeof(LocalizationUtils), nameof(LocalizationUtils.GetActorLocalizedField), new Type[] { typeof(string), typeof(string) })]
+	[HarmonyPrefix]
+	private static bool OnGetActorLocalizedField(ref string? __result, string name, string fieldName)
+	{
+		var actor = DialogueBridgePixelCrushers.DialogueSystem.MasterDatabase.GetActor(name);
+		if (actor == null)
+		{
+			UnityEngine.Debug.Log("Actor: " + name + " doesn't extists in the database!");
+			__result = null;
+		}
+		else __result = GetActorLocalizedField(actor, fieldName);
 
 		return false;
 	}
@@ -175,72 +213,6 @@ public static class CharacterPatches
 
 		__result = SkillUtils.AbilityToSunshine(SkillUtils.Lookup(skillType)!.ability);
 		return false;
-	}
-
-	[HarmonyPatch(typeof(Charsheet.SkillPortraitLabelsConfigurator), "OnLanguageChanged")]
-	[HarmonyPrefix]
-	private static void OnLabelConfiguratorLanguageChanged(Charsheet.SkillPortraitLabelsConfigurator __instance)
-	{
-		for (int i = 0; i < __instance.labelsSettings.Length; i++)
-		{
-			var sco = __instance.labelsSettings[i].scriptable;
-			var preset = sco.Cast<Charsheet.SkillPortraitLabelsPreset>();
-
-			if (preset.labelsSettings.Length != Skill.VANILLA_SKILL_PORTRAIT_COUNT) continue;
-
-			int settingCount = Skills.Count - Skills.baseCount + Skill.VANILLA_SKILL_PORTRAIT_COUNT + 1;
-			Charsheet.SkillPortraitLabelSettings[] settings = new Charsheet.SkillPortraitLabelSettings[settingCount];
-			preset.labelsSettings.CopyTo(settings, 0);
-
-			var old = settings[0]!;
-			for (int j = Skills.baseCount; j <= Skills.Count; j++)
-			{
-				// kinda wierd sequence of events, but we also need a preset for NONE...
-				SM.SkillType skill;
-				string labelText;
-				if (j < Skills.Count)
-				{
-					skill = Skills.GetRaw(j);
-					labelText = Skills[j]!.displayName;
-				}
-				else
-				{
-					skill = SM.SkillType.NONE;
-					labelText = "";
-				}
-
-				int computed = j - Skills.baseCount + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
-				settings[computed] = new Charsheet.SkillPortraitLabelSettings()
-				{
-					fontSize = old.fontSize,
-					labelOffset = old.labelOffset,
-					leftMargin = old.leftMargin,
-					lineSpace = old.lineSpace,
-					nameplateSize = old.nameplateSize,
-					textOffset = old.textOffset,
-					labelText = labelText,
-					skill = skill,
-				};
-			}
-
-			// DiscoAPIPlugin.Instance.Log.LogInfo($" > preset looks like:");
-			// foreach (var se in preset.labelsSettings)
-			// 	DiscoAPIPlugin.Instance.Log.LogInfo($"   * {se.labelText}");
-
-			preset.labelsSettings = settings;
-		}
-
-		if (__instance.skillToPresetIndex.Count == Skills.Count - Skills.baseCount + Skill.VANILLA_SKILL_PORTRAIT_COUNT + 1)
-			return;
-
-		for (int j = Skills.baseCount; j < Skills.Count; j++)
-		{
-			SM.SkillType skill = Skills.GetRaw(j);
-			int computed = j - Skills.baseCount + Skill.VANILLA_SKILL_PORTRAIT_COUNT;
-			__instance.skillToPresetIndex.Add(skill, computed);
-		}
-
-		__instance.skillToPresetIndex.Add(SM.SkillType.NONE, Skills.Count - Skills.baseCount + Skill.VANILLA_SKILL_PORTRAIT_COUNT);
 	}
 }
 

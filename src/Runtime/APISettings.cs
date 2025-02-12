@@ -58,8 +58,8 @@ public class DiscoAPISettings
 
 		logMore = cfg.Bind(
 			"Debug",
-			"LogMore",
-			true,
+			"LogVerbose",
+			false,
 			"enable logging for more parts of the core game"
 		);
 	}

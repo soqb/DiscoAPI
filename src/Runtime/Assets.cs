@@ -147,7 +147,6 @@ public class AssetManager : IAssetManager
 	}
 
 	private record ArenaStorage(
-		Type type,
 		IAssetArena arena,
 		Func<DiscoSource, IArenaTable> vanilla,
 		Func<DiscoSource, IArenaTable> modded
@@ -167,14 +166,14 @@ public class AssetManager : IAssetManager
 	public IAssetArena GetArenaForType(Type type) => GetStorageForType(type).arena;
 	public IAssetArena<T> GetArena<T>() where T : Asset => (IAssetArena<T>)GetStorageForType(typeof(T)).arena;
 
-	public (Type, IArenaTable) CreateTableForType(Type type, DiscoSource source)
+	public IArenaTable CreateTableForType(Type type, DiscoSource source)
 	{
 		ArenaStorage arena = GetStorageForType(type);
-		if (source.IsVanilla) return (arena.type, arena.vanilla(source));
-		else return (arena.type, arena.modded(source));
+		if (source.IsVanilla) return arena.vanilla(source);
+		else return arena.modded(source);
 	}
 
-	public IEnumerable<IArenaTable> GetVanillaTables(DiscoSource source) => arenas
+	public IEnumerable<IArenaTable> GetDefaultVanillaTables(DiscoSource source) => arenas
 		.Where(kv => kv.Value.arena.HasVanillaAssets)
 		.Select(kv => kv.Value.vanilla(source));
 
@@ -190,10 +189,12 @@ public class AssetManager : IAssetManager
 
 	public void Register<T>(IAssetArena<T> arena) where T : Asset
 	{
-		DiscoRunner.Log.LogInfo($"registered asset arena '{arena.GetType()}' for '{typeof(T)}' assets.");
+		// NB: We conservatively use `arena.AssetType` instead of `typeof(T)`
+		// because the former may be a subtype of the latter.
+		DiscoRunner.Log.LogInfo($"registered asset arena '{arena.GetType()}' for '{arena.AssetType}' assets.");
 		arenas.Add(
-			typeof(T),
-			new(typeof(T), arena, (source) => new VanillaTable<T>(source, arena), (source) => new ModTable<T>(source, arena))
+			arena.AssetType,
+			new(arena, (source) => new VanillaTable<T>(source, arena), (source) => new ModTable<T>(source, arena))
 		);
 	}
 }

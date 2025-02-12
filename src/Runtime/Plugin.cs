@@ -28,17 +28,32 @@ public class DiscoAPIPlugin : BasePlugin
         Instance = this;
     }
 
+    public void PatchAll(Type type)
+    {
+        try
+        {
+            harmony.PatchAll(type);
+        }
+        catch (Exception e)
+        {
+            DiscoRunner.Log.LogError($"patching with type {type} failed!");
+            DiscoRunner.Log.LogError(e);
+        }
+    }
+
+
     public override void Load()
     {
         settings = new(Config);
 
         BepInEx.Logging.Logger.Sources.Add(mockUnityLogger);
 
-        harmony.PatchAll(typeof(DiscoAPIPlugin));
-        harmony.PatchAll(typeof(Patches.DialoguePatches));
-        harmony.PatchAll(typeof(Patches.PagesPatches));
-        harmony.PatchAll(typeof(Patches.CharacterPatches));
-        harmony.PatchAll(typeof(Patches.MiscPatches));
+        PatchAll(typeof(DiscoAPIPlugin));
+        PatchAll(typeof(Patches.DialoguePatches));
+        PatchAll(typeof(Patches.PagesPatches));
+        PatchAll(typeof(Patches.CharacterPatches));
+        PatchAll(typeof(Patches.MiscPatches));
+        // PatchAll(typeof(Patches.VirtualTexturePatches));
         AddUnityListener(DialogueBundleLoader.bundleWasLoaded, DiscoRunner.OnDialogueBundleLoad);
 
         DiscoRunner.OnLoad();

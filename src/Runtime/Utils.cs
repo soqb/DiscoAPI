@@ -4,8 +4,10 @@ using System.Text.RegularExpressions;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
+using DiscoAPI.Runtime.Dialogue;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using static UnityEngine.ResourceManagement.ResourceManager;
@@ -20,7 +22,7 @@ public static class MainThreadExecutor
 
 	public static void Queue(Action cb) => queue.Enqueue(cb);
 
-	internal static void DequeueOnMainThread()
+	internal static void DequeueOnMainThreadPlease()
 	{
 		while (queue.Count > 0)
 		{
@@ -64,6 +66,11 @@ public static class SkillUtils
 
 	public static string? GetSkillOrAbilityName(SM.Modifiable modifiable)
 	{
+		if (modifiable == null)
+		{
+			DiscoRunner.Log.LogWarning("unexpected null modifiable");
+			return null;
+		}
 		// excellent example of why il2cpp is a bit weird:
 		if (modifiable.GetIl2CppType() == Il2CppType.Of<SM.Skill>())
 			return GetActorSkillName(modifiable.Cast<SM.Skill>().skillType);
@@ -146,12 +153,24 @@ public static class SkillUtils
 
 public static class AssetUtils
 {
-	public delegate void Complete<T>(T? result, string? error);
+	public const string EXTRA_TEXTURE_PREFIX = "\0EXTRA\0";
+	public static AsyncOperationHandle<Sprite?> LoadPortrait(string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite?>> del)
+	{
+		if (PixelsToDisco.TryDecodeTextureName(textureName, out string? source, out string? path))
+		{
+			var handle = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
+			handle.add_Completed(del);
+			return handle;
+		}
+		else return ActorsPortraitsBundleManager.LoadPortraitSpriteAsync(textureName, del);
 
+	}
+
+	public delegate void Complete<T>(T? result, string? error);
 
 	public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute) where T : Il2CppObjectBase
 	{
-		return SpoofHandle<T>(execute, new AsyncOperationHandle());
+		return SpoofHandle<T>(execute, new());
 	}
 
 	public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute, AsyncOperationHandle dep) where T : Il2CppObjectBase
@@ -185,7 +204,7 @@ public static class AssetUtils
 		if (dep.IsValid() && !dep.IsDone) dep.add_Completed((Action<AsyncOperationHandle>)(_ => Execute()));
 		else Execute();
 
-		return op.Handle;
+		return new(op.Cast<IAsyncOperation>());
 	}
 }
 

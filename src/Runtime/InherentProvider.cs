@@ -27,14 +27,19 @@ public static class InherentProvider
 		Location location = Runtime.Location.GetFromAssembly(typeof(InherentProvider).Assembly, DiscoRunner.Log);
 
 		source = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance, new() { router = new InherentAssetRouter() });
+		var assets = source.Manager.Assets;
 
-		source.Manager.Assets.Register(new PCArena<PC.Actor, Actor>(mgr => mgr.pcDatabase.actors));
-		source.Manager.Assets.Register(new PCArena<PC.Conversation, Conversation>(mgr => mgr.pcDatabase.conversations));
-		source.Manager.Assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables));
-		source.Manager.Assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal));
+		var convos = new PCArena<PC.Conversation, Conversation>(mgr => mgr.pcDatabase.conversations);
+
+		assets.Register(new PCArena<PC.Actor, Actor>(mgr => mgr.pcDatabase.actors));
+		assets.Register(convos);
+		assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables));
+		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal));
+		assets.Register(new PCProxyArena<Task, PC.Conversation, Conversation>(convos, (conv) => conv.FieldExists("display_condition_main")));
 
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 	}
+
 
 	public static void OnDialogueBundleLoad()
 	{

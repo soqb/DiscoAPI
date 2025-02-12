@@ -3,48 +3,129 @@ using System.Collections.Generic;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Dialogue;
+using System.Collections;
+using System.Linq;
 using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Assets;
 
-public interface IAssetArena
+public interface IAssetArena : IEnumerable
 {
+	private class Enumerator : IEnumerator
+	{
+		public int idx;
+		public IAssetArena arena;
+
+		public Enumerator(IAssetArena table)
+		{
+			this.arena = table;
+			Reset();
+		}
+
+		public object Current => arena[idx]!;
+		object IEnumerator.Current => this.Current;
+
+		public bool MoveNext()
+		{
+			return ++idx < arena.Count;
+		}
+		public void Reset() => idx = -1;
+		public void Dispose() { }
+	}
+
 	bool HasVanillaAssets { get; }
 	Type AssetType { get; }
 
 	void Alloc(Asset asset);
 	Asset? this[int id] { get; }
 	int Count { get; }
+
+	IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 }
 
-public interface IAssetArena<T> : IAssetArena where T : Asset
+public interface IAssetArena<T> : IAssetArena, IEnumerable<T> where T : Asset
 {
+	private class Enumerator : IEnumerator<T>
+	{
+		public int idx;
+		public IAssetArena<T> arena;
+
+		public Enumerator(IAssetArena<T> table)
+		{
+			this.arena = table;
+			Reset();
+		}
+
+		public T Current => arena[idx]!;
+		object IEnumerator.Current => Current;
+
+		public bool MoveNext()
+		{
+			return ++idx < arena.Count;
+		}
+		public void Reset() => idx = -1;
+		public void Dispose() { }
+	}
+
 	void Alloc(T asset);
 	new T? this[int id] { get; }
 
 	Type IAssetArena.AssetType => typeof(T);
 	void IAssetArena.Alloc(Asset asset) => Alloc((T)asset);
 	Asset? IAssetArena.this[int id] => this[id];
+
+	IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
 }
 
 
 public class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset, new()
 {
+	// FIXME: the treatment of "raw" assets here is pretty sloppy. consider a dedicated collection.
+	private class RawEnumerator : IEnumerator<T>
+	{
+		public int idx;
+		public PCArena<T, U> arena;
+
+		public RawEnumerator(PCArena<T, U> table)
+		{
+			this.arena = table;
+			Reset();
+		}
+
+		public T Current => arena.GetRaw(idx)!;
+		object IEnumerator.Current => Current;
+
+		public bool MoveNext()
+		{
+			return ++idx < arena.Count;
+		}
+		public void Reset() => idx = -1;
+		public void Dispose() { }
+	}
+
+	private readonly record struct RawEnumerable(PCArena<T, U> arena) : IEnumerable<T>
+	{
+		public IEnumerator<T> GetEnumerator() => new RawEnumerator(arena);
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
+	public IEnumerable<T> Raw => new RawEnumerable(this);
+
 	private bool WasBundleLoaded => DiscoRunner.manager.WasBundleLoaded;
 	private DialogueManager Dialogue => DiscoRunner.manager.Dialogue;
 	private Lazy<Il2CppSystem.Collections.Generic.List<T>> pcList;
-	private Il2CppSystem.Collections.Generic.List<T> list
+	public Il2CppSystem.Collections.Generic.List<T> list
 	{
 		get
 		{
 			if (!WasBundleLoaded) return new();
 
-			if (!pcList.IsValueCreated) DequeueAssets();
+			if (!pcList.IsValueCreated) Init();
 			return pcList.Value;
 		}
 	}
 
-	private void DequeueAssets()
+	private void Init()
 	{
 		// ensure the value is created before we dequeue.
 		var l = pcList.Value;
@@ -56,14 +137,16 @@ public class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset, 
 
 	private Queue<U> assetsToProcessWhenReady = new();
 
-	private PixelsToDisco uncrusher => Dialogue.Parent.Dialogue.uncrusher;
-	private DiscoToPixels crusher => Dialogue.Parent.Dialogue.crusher;
+	public PixelsToDisco uncrusher => Dialogue.Parent.Dialogue.uncrusher;
+	public DiscoToPixels crusher => Dialogue.Parent.Dialogue.crusher;
 
 	private int baseMaxOffset = 0;
 
 	public PCArena(Func<DialogueManager, Il2CppSystem.Collections.Generic.List<T>> listSupplicant)
 	{
 		this.pcList = new(() => listSupplicant(Dialogue));
+
+		DiscoRunner.preDialogueLoad.Add(Init);
 	}
 
 	public bool HasVanillaAssets => true;
@@ -76,15 +159,19 @@ public class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset, 
 			return;
 		}
 
-		var src = Dialogue.Parent[asset.source!]!;
+		Intern(asset, (src, id) => crusher.Crush(src, asset, id));
+	}
+
+	public void Intern(Asset origin, Func<DiscoSource, int, PC.Asset> crush)
+	{
+		var src = Dialogue.Parent[origin.source!]!;
 		int plannedId = baseMaxOffset + Count;
-		var pcAsset = crusher.Crush(src, asset, plannedId);
+		PC.Asset pcAsset = crush(src, plannedId);
 		pcAsset.id = plannedId;
 
 		bool isConversation = typeof(U) == typeof(Conversation);
 
-		string articyId = DiscoToPixels.BuildArticyId(asset);
-		DiscoRunner.Log.LogInfo($"{asset.Location} to {articyId}");
+		string articyId = DiscoToPixels.BuildArticyId(origin);
 		pcAsset.fields.Add(new PC.Field(ArticyBridge.ARTICY_ID_FIELD, articyId, PC.FieldType.Text));
 		Dialogue.fakeArticyIDToAssetCache.Add(articyId, pcAsset);
 
@@ -103,7 +190,6 @@ public class PCArena<T, U> : IAssetArena<U> where U : Asset where T : PC.Asset, 
 	public U? this[int id] => id >= 0 && id < Count ? (U)uncrusher.Uncrush(list[id]) : null;
 
 	public int Count => list.Count;
-	public int MaxId => list.Count > 0 ? pcList.Value[Count - 1].id : -1;
 
 }
 
@@ -162,4 +248,48 @@ public class EnumArena<T, U> : IAssetArena<U> where T : struct, Enum where U : A
 	}
 }
 
+// FIXME: all a bit hacky tbh.
+public class PCProxyArena<T, T2, U> : IAssetArena<T> where T : Asset where U : Asset where T2 : PC.Asset, new()
+{
+	private bool WasBundleLoaded => DiscoRunner.manager.WasBundleLoaded;
+	private PCArena<T2, U> inner;
+	private Func<T2, bool> isValid;
 
+	// Forced to use a list because indices are sparsely scattered.
+	private List<int> rawIndices = new();
+	private Queue<T> allocWhenReady = new();
+
+	public PCProxyArena(PCArena<T2, U> inner, Func<T2, bool> isValid)
+	{
+		this.inner = inner;
+		this.isValid = isValid;
+
+		DiscoRunner.preDialogueLoad.Add(Init);
+	}
+
+	public void Init()
+	{
+		rawIndices = inner.Raw.Where(isValid).Select((_, idx) => idx).ToList();
+		foreach (T ass in allocWhenReady) Alloc(ass);
+	}
+
+	public T? this[int id] => null;
+	// one day soon:
+	// id < rawIndices.Count && id >= 0 ? inner.list[rawIndices[id]] : null;
+
+	public bool HasVanillaAssets => throw new NotImplementedException();
+
+	public int Count => rawIndices.Count;
+
+	public void Alloc(T asset)
+	{
+		if (!WasBundleLoaded)
+		{
+			allocWhenReady.Enqueue(asset);
+			return;
+		}
+
+		rawIndices.Add(inner.list.Count);
+		inner.Intern(asset, (src, id) => inner.crusher.Crush(src, asset, id));
+	}
+}

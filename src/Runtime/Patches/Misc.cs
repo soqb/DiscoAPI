@@ -6,10 +6,11 @@ namespace DiscoAPI.Runtime.Patches;
 public static class MiscPatches
 {
 	// its good etiquette to not let people cheese too easily:
-	[HarmonyPatch(typeof(Achievements), nameof(Achievements.Set), new Type[] { typeof(string) })]
-	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), new Type[] { typeof(string), typeof(float) })]
-	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), new Type[] { typeof(string), typeof(int) })]
-	[HarmonyPatch(typeof(Achievements), nameof(Achievements.ResetAllStats), new Type[] { typeof(bool) })]
+	[HarmonyPatch(typeof(Achievements), nameof(Achievements.Set), typeof(string))]
+	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), typeof(string), typeof(float))]
+	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), typeof(string), typeof(int))]
+	[HarmonyPatch(typeof(Achievements), nameof(Achievements.ResetAllStats), typeof(bool))]
 	[HarmonyPrefix]
-	public static bool CancelAchievementsSet() => DiscoAPISettings.AllowAchievements;
+	public static bool CancelSetAchievements() => DiscoAPISettings.AllowAchievements;
+
 }

@@ -5,13 +5,13 @@ namespace DiscoAPI.Runtime.Dialogue;
 
 public class FieldEditor
 {
-    public string id;
+    public string path;
     public Il2CppSystem.Collections.Generic.List<PC.Field> fields;
 
-    public FieldEditor(string id, Il2CppSystem.Collections.Generic.List<PC.Field> fields)
+    public FieldEditor(string path, Il2CppSystem.Collections.Generic.List<PC.Field> fields)
     {
         this.fields = fields;
-        this.id = id;
+        this.path = path;
     }
 
     public void Set(string name, FieldType type, string value)
@@ -27,6 +27,8 @@ public class FieldEditor
         }
     }
 
+    public void Set(string name, string value) => Set(name, FieldType.Text, value.ToString());
     public void Set(string name, bool value) => Set(name, FieldType.Boolean, value.ToString());
     public void Set(string name, int value) => Set(name, FieldType.Number, value.ToString());
+    public void Set(string name, double value) => Set(name, FieldType.Number, value.ToString());
 }
