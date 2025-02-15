@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Common.Dialogue;
 
 namespace DiscoAPI.Common;
 
@@ -25,6 +24,5 @@ public interface IMutableAssets : IDiscoSource
 public interface IDiscoManager
 {
     IAssetManager Assets { get; }
-    IDialogueManager Dialogue { get; }
     IDiscoSource? GetSource(string key);
 }

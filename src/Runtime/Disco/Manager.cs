@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using DiscoAPI.Runtime.Dialogue;
 using DiscoAPI.Common;
-using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Common.Assets;
 using System;
@@ -20,7 +19,6 @@ public class DiscoManager : IDiscoManager
 
     public DialogueManager Dialogue => BundleGuard(realDialogue);
     public AssetManager Assets { get; }
-    IDialogueManager IDiscoManager.Dialogue => this.Dialogue;
     IAssetManager IDiscoManager.Assets => this.Assets;
     public readonly List<DiscoSource> linearSources = new();
     public readonly Dictionary<string, int> sourcesByGuid = new();
@@ -63,6 +61,4 @@ public class DiscoManager : IDiscoManager
         Dialogue.pcDatabase = PixelCrushers.DialogueSystem.DialogueManager.MasterDatabase;
         Dialogue.pcDatabase.SyncAll();
     }
-
-    private static List<object> gc = new List<object>();
 }

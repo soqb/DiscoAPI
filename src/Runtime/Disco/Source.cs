@@ -60,7 +60,7 @@ public class DiscoSource : IMutableAssets
             var arena = (PCArena<PC.Conversation, Conversation>)Manager.Assets.GetArena<Conversation>();
 
             int id = Manager.Assets.ResolveId(line.conversation.Location);
-            return arena.GetRaw(id)?.dialogueEntries[line.lineId];
+            return arena.Raw[id]?.dialogueEntries[line.lineId];
         }
 
         if (link.from != null)

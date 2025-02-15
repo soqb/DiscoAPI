@@ -31,11 +31,11 @@ public static class InherentProvider
 
 		var convos = new PCArena<PC.Conversation, Conversation>(mgr => mgr.pcDatabase.conversations);
 
-		assets.Register(new PCArena<PC.Actor, Actor>(mgr => mgr.pcDatabase.actors));
-		assets.Register(convos);
-		assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables));
-		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal));
-		assets.Register(new PCProxyArena<Task, PC.Conversation, Conversation>(convos, (conv) => conv.FieldExists("display_condition_main")));
+		assets.Register(new PCArena<PC.Actor, Actor>(mgr => mgr.pcDatabase.actors), true);
+		assets.Register(convos, true);
+		assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables), true);
+		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal), true);
+		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
 
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 	}

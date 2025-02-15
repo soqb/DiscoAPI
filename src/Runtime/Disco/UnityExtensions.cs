@@ -29,7 +29,6 @@ public static class UnityExtensions
     {
         mgr = mgr ?? DiscoRunner.manager;
         int id = mgr.Assets.ResolveId(ass.Location);
-        var ana = GetArena<T, U>(mgr);
-        return ana.GetRaw(id);
+        return GetArena<T, U>(mgr).Raw[id];
     }
 }

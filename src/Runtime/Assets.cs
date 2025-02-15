@@ -149,7 +149,8 @@ public class AssetManager : IAssetManager
 	private record ArenaStorage(
 		IAssetArena arena,
 		Func<DiscoSource, IArenaTable> vanilla,
-		Func<DiscoSource, IArenaTable> modded
+		Func<DiscoSource, IArenaTable> modded,
+		bool hasVanillaAssets
 	);
 
 	private Dictionary<Type, ArenaStorage> arenas = new();
@@ -174,7 +175,7 @@ public class AssetManager : IAssetManager
 	}
 
 	public IEnumerable<IArenaTable> GetDefaultVanillaTables(DiscoSource source) => arenas
-		.Where(kv => kv.Value.arena.HasVanillaAssets)
+		.Where(kv => kv.Value.hasVanillaAssets)
 		.Select(kv => kv.Value.vanilla(source));
 
 	public int ResolveId(AssetLocation ass)
@@ -183,18 +184,24 @@ public class AssetManager : IAssetManager
 		if (table == null) return -1;
 		return table.ResolveId(ass.id) + table.idOffset;
 	}
-	public Asset? Resolve(AssetLocation ass) => GetStorageForType(ass.type.type)?.arena[ResolveId(ass)];
+
+	public Asset? Resolve(AssetLocation ass) => (Asset?)GetStorageForType(ass.type.type)?.arena[ResolveId(ass)];
 
 	public void Add(Asset asset) => Parent[asset.source!]?.Add(asset);
 
-	public void Register<T>(IAssetArena<T> arena) where T : Asset
+	public void Register<T>(IAssetArena<T> arena, bool hasVanillaAssets) where T : Asset
 	{
 		// NB: We conservatively use `arena.AssetType` instead of `typeof(T)`
 		// because the former may be a subtype of the latter.
 		DiscoRunner.Log.LogInfo($"registered asset arena '{arena.GetType()}' for '{arena.AssetType}' assets.");
 		arenas.Add(
 			arena.AssetType,
-			new(arena, (source) => new VanillaTable<T>(source, arena), (source) => new ModTable<T>(source, arena))
+			new(
+				arena,
+				(source) => new VanillaTable<T>(source, arena),
+				(source) => new ModTable<T>(source, arena),
+				hasVanillaAssets
+			)
 		);
 	}
 }

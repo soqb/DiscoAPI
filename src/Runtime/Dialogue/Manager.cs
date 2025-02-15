@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
-using DiscoAPI.Common;
-using DiscoAPI.Common.Dialogue;
 using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Dialogue;
 
-public class DialogueManager : IDialogueManager
+public class DialogueManager
 {
     public DiscoManager Parent { get; init; }
-    IDiscoManager IDialogueManager.Parent => this.Parent;
 
     public DialogueMapping mapping;
     public PC.DialogueDatabase pcDatabase = null!; // this is properly initialised in `DiscoManager.OnDialogueBundleLoaded`.
