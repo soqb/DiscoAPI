@@ -48,4 +48,7 @@ public class GlobalDiscoConfig
 			else throw new InvalidOperationException("expected an array of skill panels with exactly 24 entries.");
 		}
 	}
+
+	public IAssetRef<Skill> MoraleSkill { get; set; } = new AssetLocation<Skill>("volition");
+	public IAssetRef<Skill> HealthSkill { get; set; } = new AssetLocation<Skill>("endurance");
 }

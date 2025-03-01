@@ -13,7 +13,7 @@ namespace DiscoAPI.Runtime;
 [BepInProcess("disco.exe")]
 public class DiscoAPIPlugin : BasePlugin
 {
-    public const string GUID = "discoapi";
+    public const string GUID = "DiscoAPI";
     public static DiscoAPIPlugin Instance = null!;
     private static Harmony harmony = new Harmony(GUID);
 

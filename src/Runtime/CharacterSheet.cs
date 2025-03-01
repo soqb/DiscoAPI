@@ -133,7 +133,18 @@ public class CharacterSheet
 	}
 
 	public SM.CharacterSheet sm;
-	public Dictionary<AssetLocation, SM.Skill> skillMap = new();
+	internal Dictionary<AssetLocation, SM.Skill> skillMap = new();
+
+	public SM.Skill? GetRawSkill(IAssetRef<Skill> skill)
+	{
+		if (skillMap.TryGetValue(skill.Location, out var raw)) return raw;
+		else return null;
+	}
+
+	public void Recalc() => sm.Recalc();
+
+	public SM.Skill MoraleRaw => GetRawSkill(DiscoRunner.globalConfig.MoraleSkill)!;
+	public SM.Skill HealthRaw => GetRawSkill(DiscoRunner.globalConfig.HealthSkill)!;
 
 	public CharacterSheet(SM.CharacterSheet sm)
 	{

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using DiscoAPI.Common;
 using DiscoAPI.Common.Assets;
@@ -17,6 +18,7 @@ public class DiscoSource : IMutableAssets
         public Location location = null;
         public ManualLogSource? log = null;
         public IAssetRouter? router = new EmptyAssetRouter();
+        public ConfigFile? configFile = null;
     }
 
     public bool IsVanilla { get; }
@@ -32,6 +34,7 @@ public class DiscoSource : IMutableAssets
     private Config cfg;
     public Location Location => cfg.location;
     public ManualLogSource Log => cfg.log ?? NowheresvilleLogger;
+    public ConfigFile? ConfigFile => cfg.configFile;
 
     public DiscoManager Manager { get; }
     IDiscoManager IDiscoSource.Manager => Manager;

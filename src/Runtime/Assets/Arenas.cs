@@ -5,6 +5,7 @@ using DiscoAPI.Runtime.Dialogue;
 using System.Collections;
 using System.Linq;
 using PC = PixelCrushers.DialogueSystem;
+using Il2CppInterop.Runtime;
 
 namespace DiscoAPI.Runtime.Assets;
 
@@ -185,7 +186,7 @@ public class PCArena<T, U> : IAssetArena<U>, IRawArena<T> where U : Asset where 
 
 	private bool WasBundleLoaded => DiscoRunner.manager.WasBundleLoaded;
 	private DialogueManager Dialogue => DiscoRunner.manager.Dialogue;
-	public int Count => throw new NotImplementedException();
+	public int Count => Raw.Count;
 
 	public void Alloc(U asset)
 	{
@@ -254,8 +255,16 @@ public class PCProxyArena<T, T2> : IAssetArena<T>, IRawArena<T2> where T : Asset
 	}
 }
 
+public static class EnumArena
+{
+	public static Dictionary<(Il2CppSystem.Type, long), string> GlobalEnumOverrideNames { get; } = new();
+	public static Dictionary<(Il2CppSystem.Type, string), long> GlobalEnumOverrideValues { get; } = new();
+	public static Dictionary<(Il2CppSystem.Type, string), long> GlobalEnumOverrideValuesLowercase { get; } = new();
+}
+
 public class EnumArena<T, U> : IAssetArena<U> where T : struct, Enum where U : Asset
 {
+
 	public readonly record struct Entry(T a, U b);
 
 	public readonly int baseCount;
@@ -303,6 +312,14 @@ public class EnumArena<T, U> : IAssetArena<U> where T : struct, Enum where U : A
 	public void Alloc(U asset)
 	{
 		int idx = entries.Count - baseCount + baseMax + 1;
-		entries.Add(new(Enum.Parse<T>(idx.ToString()), asset));
+		T inst = Enum.Parse<T>(idx.ToString());
+
+		var type = Il2CppType.Of<T>();
+		string name = asset.Location.ToString();
+		long value = Convert.ToInt64(inst);
+		EnumArena.GlobalEnumOverrideNames.Add((type, value), name);
+		EnumArena.GlobalEnumOverrideValues.Add((type, name), value);
+		EnumArena.GlobalEnumOverrideValuesLowercase.Add((type, name.ToLowerInvariant()), value);
+		entries.Add(new(inst, asset));
 	}
 }

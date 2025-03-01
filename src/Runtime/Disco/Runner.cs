@@ -27,6 +27,7 @@ public static class DiscoRunner
 
         if (cfg.location == null) cfg.location = Location.GetFromAssembly(plugin.GetType().Assembly, plugin.Log);
         if (cfg.log == null) cfg.log = plugin.Log;
+        if (cfg.configFile == null) cfg.configFile = plugin.Config;
 
         return manager.CreateSource(guid, cfg);
     }
@@ -76,15 +77,14 @@ public static class DiscoRunner
 
         SkillUtils.OnDialogueBundleLoad();
 
-        if (DiscoAPISettings.EnableLuaConsole) LuaConsoleManager.AttachLuaConsole();
         if (DiscoAPISettings.DumpSourcesOnStartup) DumpDiscoSources.FullDump();
 
-        if (DiscoAPISettings.LogMore) LocalizationCustomSystem.LocalizationManager.Singleton.DebugLogs = true;
     }
 
     private static void OnMarshalledSceneLoad()
     {
         sceneLoad.Invoke();
+        LobbyLoadExecutor.OnLoadLobbyPlease();
     }
 
     public static void OnRawSceneLoad()

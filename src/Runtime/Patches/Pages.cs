@@ -73,17 +73,18 @@ public static class PagesPatches
 	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.OnPointerEnter))]
 	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.OnPointerExit))]
 	[HarmonyPrefix]
-	private static bool PreSkillPanelPointer(SkillPortraitPanel __instance)
+	private static bool OnSkillPanelPointer(SkillPortraitPanel __instance)
 	{
-		__instance.portrait.color = Color.black;
 		return (GetSkillConfigForPanel(__instance).flags & SkillPanelConfig.Flags.DisableSelection) == 0;
 	}
 
 	[HarmonyPatch(typeof(SkillPortraitSelection), nameof(SkillPortraitSelection.OnSelect))]
 	[HarmonyPatch(typeof(SkillPortraitSelection), nameof(SkillPortraitSelection.OnDeselect))]
 	[HarmonyPrefix]
-	private static bool PreSkillPanelSelect(SkillPortraitSelection __instance)
-		=> (GetSkillConfigForPanel(__instance.skillPortraitPanel).flags & SkillPanelConfig.Flags.DisableSelection) == 0;
+	private static bool OnSkillPanelSelect(SkillPortraitSelection __instance)
+	{
+		return (GetSkillConfigForPanel(__instance.skillPortraitPanel).flags & SkillPanelConfig.Flags.DisableSelection) == 0;
+	}
 
 	[HarmonyPatch(typeof(SkillPortraitPanel), nameof(SkillPortraitPanel.UpdateData))]
 	[HarmonyPrefix]
@@ -94,7 +95,7 @@ public static class PagesPatches
 		{
 			__instance.isHovered = false;
 			__instance.isSelectHovered = false;
-			__instance.skillPortrayLabel.skillNumber.enabled = false;
+			__instance.skillPortrayLabel.gameObject.SetActive(false);
 			__instance.UpdateSelectionVisuals();
 			return false;
 		}
@@ -130,6 +131,7 @@ public static class PagesPatches
 	[HarmonyPrefix]
 	private static bool OnLabelConfiguratorLanguageChanged(Charsheet.SkillPortraitLabelsConfigurator __instance)
 	{
+		// DiscoRunner.Log.LogInfo("configurating !!");
 		if (!__instance.languageToLabelsSettings.TryGetValue(LocalizationManager.GetCurrentLanguageCode(), out var preset))
 		{
 			preset = __instance.languageToLabelsSettings["en"];
@@ -170,12 +172,12 @@ public static class PagesPatches
 			}
 
 
-			// if (settings != null)
-			// {
-			// 	DiscoRunner.Log.LogInfo($"{settings.fontSize}, {settings.labelOffset}, {settings.leftMargin}, {settings.lineSpace}, {settings.nameplateSize}, {settings.textOffset}, {settings.labelText}, {settings.skill}");
-			// 	preset.Apply(label.SkillPortraitLabel, settings);
-			// }
-			// else UnityEngine.Debug.LogError($"Charsheet skill portrait label for {label.SkillType} is missing settings in preset");
+			if (settings != null)
+			{
+				// DiscoRunner.Log.LogInfo($"{settings.fontSize}, {settings.labelOffset}, {settings.leftMargin}, {settings.lineSpace}, {settings.nameplateSize}, {settings.textOffset}, {settings.labelText}, {settings.skill}");
+				preset.Apply(label.SkillPortraitLabel, settings);
+			}
+			else UnityEngine.Debug.LogError($"Charsheet skill portrait label for {label.SkillType} is missing settings in preset");
 		}
 
 		return false;

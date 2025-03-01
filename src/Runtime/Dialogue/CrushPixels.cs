@@ -36,7 +36,7 @@ public class DiscoToPixels
 		pcEntry.userScript = line.script ?? "";
 		pcEntry.ActorID = line.speaker == null ? 0 : line.speaker!.ResolveCrushed(source.Manager)!.id;
 		// NB: currentDialogueText is usually the same, *except* for the fact it won't create a new field when necessary...
-		pcEntry.DialogueText = line.text;
+		if (line.text != null) pcEntry.DialogueText = line.text;
 		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{id}";
 		if (line.sequence != null) pcEntry.Sequence = line.sequence;
 		if (line.sequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
@@ -215,21 +215,17 @@ public class EditFieldsForDialogue : IDialogueNodeVisitor
 
 		for (int i = 1; i <= 10; i++)
 		{
-			string value = "", variable = "", tooltip = "";
-			if (ck.modifiers.Count > i)
+			string value = "", condition = "", tooltip = "";
+			if (ck.modifiers.Count >= i)
 			{
-				var modifier = ck.modifiers[i];
+				var modifier = ck.modifiers[i - 1];
 
-				string varName = $"modifier.{parentConv.Location.id}.{fields.path}.{modifier.id}";
-				source.Add(new Variable(varName, false));
-				variable = $"{source.Guid}.{varName}";
-
+				condition = modifier.condition;
 				value = modifier.delta.ToString();
 				tooltip = modifier.tooltip;
 			}
 			fields.Set($"modifier{i}", FieldType.Number, value);
-			// TODO: variable is not the name of the variable but a LUA conditions string!
-			fields.Set($"variable{i}", FieldType.Text, variable);
+			fields.Set($"variable{i}", FieldType.Text, condition);
 			fields.Set($"tooltip{i}", FieldType.Text, tooltip);
 		}
 

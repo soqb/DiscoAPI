@@ -16,6 +16,30 @@ using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime;
 
+public static class LobbyLoadExecutor
+{
+	private static bool isLoaded;
+	private static Queue<Action> queue = new();
+
+	public static event Action OnLobbyLoad
+	{
+		add
+		{
+			if (isLoaded) value();
+			else queue.Enqueue(value);
+		}
+		remove => throw new Exception("don't");
+	}
+
+	internal static void OnLoadLobbyPlease()
+	{
+		isLoaded = true;
+		while (queue.Count > 0) queue.Dequeue().Invoke();
+
+	}
+
+}
+
 public static class MainThreadExecutor
 {
 	private static Queue<Action> queue = new();
@@ -24,10 +48,7 @@ public static class MainThreadExecutor
 
 	internal static void DequeueOnMainThreadPlease()
 	{
-		while (queue.Count > 0)
-		{
-			queue.Dequeue().Invoke();
-		}
+		while (queue.Count > 0) queue.Dequeue().Invoke();
 	}
 }
 

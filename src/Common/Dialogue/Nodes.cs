@@ -45,7 +45,7 @@ public class ActiveCheck : IDialogueNode
         AlwaysSucceed,
     }
 
-    public record Modifier(string id, int delta, string tooltip, string? condition)
+    public record Modifier(string id, int delta, string tooltip, string condition)
     {
         /// <summary>
         /// The value of the modifier.

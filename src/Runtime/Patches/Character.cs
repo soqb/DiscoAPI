@@ -1,5 +1,6 @@
 using HarmonyLib;
 using SM = Sunshine.Metric;
+using SD = Sunshine.Dialogue;
 using PC = PixelCrushers.DialogueSystem;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Assets;
@@ -11,6 +12,160 @@ namespace DiscoAPI.Runtime.Patches;
 
 public static class CharacterPatches
 {
+	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
+	[HarmonyPrefix]
+	private static bool OnPassiveSuccess(ref bool __result, PC.DialogueEntry entry)
+	{
+		if (DiscoAPISettings.AllChecksPass)
+		{
+			__result = !PassiveNode.IsAntiPassiveNode(entry);
+			return false;
+		}
+
+		return true;
+	}
+
+	[HarmonyPatch(typeof(SM.SunshineRoller), nameof(SM.SunshineRoller.RollOne))]
+	[HarmonyPrefix]
+	private static bool OnRollOneDie(ref int __result)
+	{
+		if (DiscoAPISettings.AllChecksPass)
+		{
+			__result = SM.SunshineRoller.NextRollBonus + 6;
+			return false;
+		}
+
+		return true;
+	}
+
+	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.VolitionHealAmount))]
+	[HarmonyPrefix]
+	private static bool OnEnddayVolitionHealAmount(ref bool __result)
+	{
+		__result = DiscoRunner.world!.you.MoraleRaw.damageValue < 0.0;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.EnduranceHealAmount))]
+	[HarmonyPrefix]
+	private static bool OnEnddayEnduranceHealAmount(ref bool __result)
+	{
+		__result = DiscoRunner.world!.you.HealthRaw.damageValue < 0.0;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.DamageVolition))]
+	[HarmonyPrefix]
+	private static bool OnDamageVolition(int amount)
+	{
+		Sunshine.EndgameManager.NewspaperToShow = null;
+		if (amount > 0)
+		{
+			CharacterSheet you = DiscoRunner.world!.you;
+			you.MoraleRaw.DamageValue(amount);
+			you.Recalc();
+			CharacterManipulations.PlayVolitionDamageVisual();
+			HudController.Singleton.RefreshAll();
+			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedMorale, (-amount).ToString());
+		}
+		return false;
+	}
+
+	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.HealVolition))]
+	[HarmonyPrefix]
+	private static bool OnHealVolition(int amount)
+	{
+		if (amount > 0)
+		{
+			CharacterSheet you = DiscoRunner.world!.you;
+			you.MoraleRaw.HealValue(Mathf.Min(amount, you.MoraleRaw.maximumValue - you.MoraleRaw.value));
+			you.Recalc();
+			HudController.Singleton.RefreshAll();
+			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedMorale, $"+{amount}");
+		}
+		return false;
+	}
+
+	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.DamageEndurance))]
+	[HarmonyPrefix]
+	private static bool OnDamageEndurance(int amount)
+	{
+		Sunshine.EndgameManager.NewspaperToShow = null;
+		if (amount > 0)
+		{
+			CharacterSheet you = DiscoRunner.world!.you;
+			you.MoraleRaw.DamageValue(amount);
+			you.Recalc();
+			CharacterManipulations.PlayVolitionDamageVisual();
+			HudController.Singleton.RefreshAll();
+			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedHealth, (-amount).ToString());
+		}
+		return false;
+	}
+
+	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.HealEndurance))]
+	[HarmonyPrefix]
+	private static bool OnHealEndurance(int amount)
+	{
+		if (amount > 0)
+		{
+			CharacterSheet you = DiscoRunner.world!.you;
+			you.MoraleRaw.HealValue(Mathf.Min(amount, you.HealthRaw.maximumValue - you.MoraleRaw.value));
+			you.Recalc();
+			HudController.Singleton.RefreshAll();
+			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedHealth, $"+{amount}");
+		}
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.CurrentVolition))]
+	[HarmonyPrefix]
+	private static bool OnCurrentVolition(ref double __result)
+	{
+		__result = DiscoRunner.world!.you.MoraleRaw.value;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HasVolitionDamage))]
+	[HarmonyPrefix]
+	private static bool OnHasVolitionDamage(ref bool __result)
+	{
+		__result = DiscoRunner.world!.you.MoraleRaw.damageValue < 0.0;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HealAllVolition))]
+	[HarmonyPrefix]
+	private static bool OnHealAllVolition()
+	{
+		CharacterManipulations.HealVolition(-DiscoRunner.world!.you.MoraleRaw.damageValue);
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.CurrentEndurance))]
+	[HarmonyPrefix]
+	private static bool OnCurrentEndurance(ref double __result)
+	{
+		__result = DiscoRunner.world!.you.HealthRaw.value;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HasEnduranceDamage))]
+	[HarmonyPrefix]
+	private static bool OnHasEnduranceDamage(ref bool __result)
+	{
+		__result = DiscoRunner.world!.you.HealthRaw.damageValue < 0.0;
+		return false;
+	}
+
+	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HealAllEndurance))]
+	[HarmonyPrefix]
+	private static bool OnHealAllEndurance()
+	{
+		CharacterManipulations.HealEndurance(-DiscoRunner.world!.you.HealthRaw.damageValue);
+		return false;
+	}
+
 	private static EnumArena<SM.SkillType, Skill> Skills => SkillUtils.Skills;
 	// the vanilla method does a static match against the recognised skilltypes so we need to change that:
 	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.GetActorSkillName))]
@@ -55,6 +210,25 @@ public static class CharacterPatches
 	// 	__result = localizedTerm ?? LocalizationCustomSystem.LocalizationUtils.UpdateWrongName(actor.LookupValue(fieldName));
 	// 	return false;
 	// }
+	[HarmonyPatch(typeof(I2.Loc.LocalizationManager), nameof(I2.Loc.LocalizationManager.GetTermTranslation))]
+	[HarmonyPrefix]
+	private static bool OnGetTermTranslation(ref string? __result, string? Term)
+	{
+		if (Term == null || !Term.StartsWith("\0RAW\0")) return true;
+		Term = Term.Substring(5);
+		__result = Term;
+		return false;
+
+	}
+	[HarmonyPatch(typeof(I2.Loc.I2Utils), nameof(I2.Loc.I2Utils.GetValidTermName))]
+	[HarmonyPrefix]
+	private static bool OnGetValidTermName(ref string? __result, string? text)
+	{
+		if (text == null || !text.StartsWith("\0RAW\0")) return true;
+		__result = text;
+		return false;
+
+	}
 
 	[HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.GetLocalizedTermToUpper))]
 	[HarmonyPrefix]
@@ -96,7 +270,7 @@ public static class CharacterPatches
 		if (localized != null) return localized;
 		else
 		{
-			string value = actor.LookupValue(field);
+			string value = actor!.LookupValue(field);
 			if (value == null) return null;
 			else return LocalizationUtils.UpdateWrongName(value);
 		}
