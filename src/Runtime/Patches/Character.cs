@@ -40,17 +40,17 @@ public static class CharacterPatches
 
 	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.VolitionHealAmount))]
 	[HarmonyPrefix]
-	private static bool OnEnddayVolitionHealAmount(ref bool __result)
+	private static bool OnEnddayVolitionHealAmount(ref int __result, int hoursSlept)
 	{
-		__result = DiscoRunner.world!.you.MoraleRaw.damageValue < 0.0;
+		__result = Math.Min(Math.Abs(DiscoRunner.world!.you.MoraleRaw.damageValue), hoursSlept);
 		return false;
 	}
 
 	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.EnduranceHealAmount))]
 	[HarmonyPrefix]
-	private static bool OnEnddayEnduranceHealAmount(ref bool __result)
+	private static bool OnEnddayEnduranceHealAmount(ref int __result, int hoursSlept)
 	{
-		__result = DiscoRunner.world!.you.HealthRaw.damageValue < 0.0;
+		__result = Math.Min(Math.Abs(DiscoRunner.world!.you.HealthRaw.damageValue), hoursSlept);
 		return false;
 	}
 

@@ -57,9 +57,9 @@ public class DiscoAPISettings
 		cfg.SaveOnConfigSet = true;
 		allowAchievements = cfg.Bind(
 			"General",
-			"ForceEnableAchievements",
+			"AllowAchievements",
 			false,
-			"Re-enable Steam achievements — the API disables them by default for safety"
+			"Re-enable achievements — the API disables them by default for safety"
 		);
 
 		enableLuaConsole = cfg.Bind(

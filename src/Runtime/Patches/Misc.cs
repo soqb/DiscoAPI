@@ -6,11 +6,18 @@ namespace DiscoAPI.Runtime.Patches;
 
 public static class MiscPatches
 {
-	// its good etiquette to not let people cheese too easily:
+	// its good etiquette to not let people cheese too easily.
+	// we're definitely double-counting some functions but inlining screws us in some places:
 	[HarmonyPatch(typeof(Achievements), nameof(Achievements.Set), typeof(string))]
 	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), typeof(string), typeof(float))]
 	[HarmonyPatch(typeof(Achievements), nameof(Achievements.SetStat), typeof(string), typeof(int))]
+	[HarmonyPatch(typeof(Achievements), nameof(Achievements.Clear), typeof(string))]
 	[HarmonyPatch(typeof(Achievements), nameof(Achievements.ResetAllStats), typeof(bool))]
+	[HarmonyPatch(typeof(SteamAchievements), nameof(SteamAchievements.Set), typeof(string))]
+	[HarmonyPatch(typeof(SteamAchievements), nameof(SteamAchievements.SetStat), typeof(string), typeof(float))]
+	[HarmonyPatch(typeof(SteamAchievements), nameof(SteamAchievements.SetStat), typeof(string), typeof(int))]
+	[HarmonyPatch(typeof(SteamAchievements), nameof(SteamAchievements.Clear), typeof(string))]
+	[HarmonyPatch(typeof(SteamAchievements), nameof(SteamAchievements.ResetAllStats), typeof(bool))]
 	[HarmonyPrefix]
 	private static bool CancelSetAchievements() => DiscoAPISettings.AllowAchievements;
 
@@ -26,7 +33,6 @@ public static class MiscPatches
 	[HarmonyPatch(
 		typeof(Il2CppSystem.Enum), nameof(Il2CppSystem.Enum.Parse),
 		new Type[] { typeof(Il2CppSystem.Type), typeof(string), typeof(bool) }
-	// new ArgumentType[] { ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Ref }
 	)]
 	[HarmonyPrefix]
 	private static bool OnEnumParse(ref object __result, Il2CppSystem.Type enumType, string value, bool ignoreCase)
