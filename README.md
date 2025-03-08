@@ -5,9 +5,10 @@ A work-in-progress modding framework for Disco Elysium.
 # Installation
 
 - Ensure you have the [.NET SDK 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) installed.
-- Please follow [The BepInEx installation instructions (Il2Cpp version)](https://docs.bepinex.dev/v6.0.0-pre.1/articles/user_guide/installation/index.html) and ensure that you have run the game with it at least once.
+- Please follow [The BepInEx installation instructions (Il2Cpp version)](https://docs.bepinex.dev/v6.0.0-pre.1/articles/user_guide/installation/index.html),
+  using build version be-697 which can be found [here](https://builds.bepinex.dev/projects/bepinex_be),
+  and ensure that you have run the game with it at least once.
 - Clone this repository.
-- Copy `doc/disco.targets` into the parent directory of this project (`..`).
 - Copy `doc/config.targets.template` to `config.targets` and edit as necessary.
 - Build the project with `dotnet build Runtime.sln`.
   * This will automatically copy the compiled plugin to the correct folder, overwriting any old version present.

@@ -24,7 +24,7 @@ public class DiscoAPIPlugin : BasePlugin
         Instance = this;
     }
 
-    public void PatchAll(Type type)
+    internal void PatchAll(Type type)
     {
         try
         {

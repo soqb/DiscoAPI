@@ -1,30 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <ModPath>DiscoAPI</ModPath>
-    </PropertyGroup>
+    <Import Project="./config.targets"/>
     
-    <Import Project="./config.targets" />
-    <Import Project="./disco.targets" />
-
     <PropertyGroup>
         <Version>0.0.1</Version>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
         <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
+        <TargetFramework>net6.0</TargetFramework>
         <AssemblyName>DiscoAPI</AssemblyName>
-        <Description>Modding API for Disco Elysium (separate runtime components only)</Description>
+        <Description>Modding API for Disco Elysium (separate Runtime-agnostic components only)</Description>
+        <Version>0.0.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
         <RootNamespace>DiscoAPI</RootNamespace>
-        <DefineConstants>DISCOAPI_RUNTIME</DefineConstants>
+        <Nullable>enable</Nullable>
+        
+        <OutputFolder Condition="'$(OutputFolder)' == ''">$(UnityProject)/Packages/DiscoAPI</OutputFolder>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
-        
-        <Compile Include="src/Common/**/*.cs" />
-        <Compile Include="src/Runtime/**/*.cs" />
-        <None Include="src/Editor/**/*.cs" />
-        <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+        <None Include="src/Runtime/**/*.cs"></None>
+        <Compile Include="src/Common/**/*.cs"></Compile>
     </ItemGroup>
 </Project>
