@@ -24,7 +24,7 @@ public static class InherentProvider
 
 	public static void Provide()
 	{
-		Location location = Runtime.Location.GetFromAssembly(typeof(InherentProvider).Assembly, DiscoRunner.Log);
+		Location location = Location.GetFromAssembly(typeof(InherentProvider).Assembly, "discoapi");
 
 		source = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance, new() { router = new InherentAssetRouter() });
 		var assets = source.Manager.Assets;

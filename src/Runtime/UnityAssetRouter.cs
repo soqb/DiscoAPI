@@ -129,16 +129,12 @@ public class MemoizedAssetRouter : IAssetRouter
 	public MemoizedAssetRouter(IAssetRouter inner)
 	{
 		this.inner = inner;
+
+		portraits = new(() => inner.Portraits);
 	}
 
-	private static T Guard<T>(ref T? real, Func<T> factory)
-	{
-		if (real == null) real = factory();
-		return real;
-	}
-
-	private IAssetRoute<Sprite>? portraits;
-	public IAssetRoute<Sprite> Portraits => Guard(ref portraits, () => inner.Portraits);
+	private Lazy<IAssetRoute<Sprite>> portraits;
+	public IAssetRoute<Sprite> Portraits => portraits.Value;
 
 	private Dictionary<AssetLocation, IAssetRoute<AudioClip>> clipsForConversation = new();
 	public IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation)

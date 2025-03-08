@@ -43,16 +43,12 @@ public class DiscoToPixels
 		foreach (var link in line.links)
 			pcEntry.outgoingLinks.Add(Crush(source, new Link(new(parentConv, id), link), parentConv, convoId));
 
+		var fields = new FieldEditor(pcEntry.Title, pcEntry.fields);
+		fields.Set("AlwaysPlayVoice", false);
+		fields.Set("PlayVoiceInPsychologicalMode", false);
 
-		if (line.node != null)
-		{
-			var fields = new FieldEditor(pcEntry.Title, pcEntry.fields);
-			fields.Set("AlwaysPlayVoice", false);
-			fields.Set("PlayVoiceInPsychologicalMode", false);
-
-			EditFieldsForDialogue editor = new(fields, source, parentConv);
-			line.node.Visit(editor);
-		}
+		EditFieldsForDialogue editor = new(fields, source, parentConv);
+		line.node.Visit(editor);
 
 		return pcEntry;
 	}

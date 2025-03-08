@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using BepInEx.Logging;
 namespace DiscoAPI.Runtime;
 
 public struct Location
@@ -35,12 +34,12 @@ public struct Location
         return string.Equals(Norm(a), Norm(b), cmp);
     }
 
-    public static Location GetFromAssembly(Assembly assembly, ManualLogSource? log)
+    public static Location GetFromAssembly(Assembly assembly, string guid)
     {
         string? path = Path.GetDirectoryName(assembly.Location);
         if (path == null)
         {
-            if (log != null) log.LogWarning("the plugin assembly failed to return a proper path, so has no viable location");
+            DiscoRunner.Log.LogWarning($"for plugin '{guid}', the assembly failed to return a proper path, so has no viable location");
             return null;
         }
 
@@ -57,7 +56,7 @@ public struct Location
             target = target.Parent;
         }
 
-        if (log != null) log.LogWarning("the plugin assembly was not found to be inside the BepInEx plugins directory, so has no viable location");
+        DiscoRunner.Log.LogWarning($"for plugin '{guid}', the assembly was not found to be inside the BepInEx plugins directory, so has no viable location");
         return null;
     }
 

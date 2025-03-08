@@ -44,7 +44,6 @@ public static class MiscPatches
 
 		if (map.TryGetValue((enumType, value), out long val))
 		{
-			__result = true;
 			__result = Il2CppSystem.Enum.ToObject(enumType, val);
 			return false;
 		}

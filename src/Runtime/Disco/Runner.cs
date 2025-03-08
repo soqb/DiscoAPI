@@ -25,7 +25,7 @@ public static class DiscoRunner
     {
         string guid = BepInEx.MetadataHelper.GetMetadata(plugin).GUID;
 
-        if (cfg.location == null) cfg.location = Location.GetFromAssembly(plugin.GetType().Assembly, plugin.Log);
+        if (cfg.location == null) cfg.location = Location.GetFromAssembly(plugin.GetType().Assembly, guid);
         if (cfg.log == null) cfg.log = plugin.Log;
         if (cfg.configFile == null) cfg.configFile = plugin.Config;
 
