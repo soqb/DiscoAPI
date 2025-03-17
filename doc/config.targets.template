@@ -3,6 +3,8 @@
 
         <!-- NECESSARY FOR RUNTIME BUILDS -->
         <DiscoElysium>PATH TO DISCO ELYSIUM HERE</DiscoElysium>
+        <Unity2020>PATH TO UNITY EDITOR BASE DIR (LIKELY ENDS WITH VERSION)</Unity2020>
+
     </PropertyGroup>
 </Project>
 
