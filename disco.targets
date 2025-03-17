@@ -14,6 +14,7 @@
         
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <TargetFramework>net6.0-windows</TargetFramework>
+        <UnityEditor2020 Condition="'$(UnityEditor2020)' == ''">$(Unity2020)/Editor/Unity</UnityEditor2020>
     </PropertyGroup>
 
     <!--References to Disco Elysium assemblies-->

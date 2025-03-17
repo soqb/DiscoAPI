@@ -30,7 +30,7 @@ public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 	{
 		return AssetUtils.SpoofHandle<AssetBundle>(complete =>
 		{
-			// req.add_completed((Action<AsyncOperation>)(_ => complete(req.assetBundle, null)));
+			req.add_completed((Action<AsyncOperation>)(_ => complete(req.assetBundle, null)));
 		});
 	}
 

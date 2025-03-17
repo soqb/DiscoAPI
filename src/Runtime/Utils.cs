@@ -222,7 +222,12 @@ public static class AssetUtils
 			op.HasExecuted = true;
 		}
 
-		if (dep.IsValid() && !dep.IsDone) dep.add_Completed((Action<AsyncOperationHandle>)(_ => Execute()));
+		if (dep.IsValid() && !dep.IsDone)
+		{
+			Action<Il2CppSystem.Threading.Tasks.Task> action = _ => Execute();
+			// we go via the task because the normal completion event has an NBS parameter.
+			dep.m_InternalOp.Task.ContinueWith(action);
+		}
 		else Execute();
 
 		return new(op.Cast<IAsyncOperation>());
