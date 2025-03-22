@@ -105,7 +105,7 @@ public class DiscoToPixels
 				var subtask = task.subtasks[i];
 				title = subtask.title;
 				isTimed = subtask.isTimed;
-				varRoot = $"task_state.{task.id}.{subtask.subid}";
+				varRoot = $"task-state.{task.id}.{subtask.subid}";
 			}
 			else
 			{
