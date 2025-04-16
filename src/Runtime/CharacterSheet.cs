@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using CollageMode;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.Assets;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -117,7 +116,7 @@ public class ModWorld
 	public ModWorld(World discoWorld)
 	{
 		this.discoWorld = discoWorld;
-		you = new(discoWorld.you);
+		you = CharacterSheet.GetForSM(discoWorld.you);
 	}
 
 	public void MarshallSceneLoad(Action onceDone) => catalogueMarshall.MarshallSceneLoad(onceDone);
@@ -128,15 +127,24 @@ public class CharacterSheet
 	public static Dictionary<SM.CharacterSheet, CharacterSheet> reverseIndex = new();
 	public static CharacterSheet GetForSM(SM.CharacterSheet sheet)
 	{
-		if (!reverseIndex.ContainsKey(sheet)) reverseIndex.Add(sheet, new(sheet));
-		return reverseIndex[sheet];
+		if (reverseIndex.ContainsKey(sheet)) return reverseIndex[sheet];
+
+		CharacterSheet sh = new(sheet);
+		sh.EnsureInitialized();
+		reverseIndex.Add(sheet, sh);
+		return sh;
 	}
 
 	public SM.CharacterSheet sm;
-	internal Dictionary<AssetLocation, SM.Skill> skillMap = new();
+	private Dictionary<AssetLocation, SM.Skill> skillMap = new();
 
 	public SM.Skill? GetRawSkill(IAssetRef<Skill> skill)
 	{
+		DiscoRunner.Log.LogInfo($"skill is {skill}");
+		foreach (var sk in skillMap)
+		{
+			DiscoRunner.Log.LogInfo($"skill is {sk.Key} to {sk.Value}");
+		}
 		if (skillMap.TryGetValue(skill.Location, out var raw)) return raw;
 		else return null;
 	}
@@ -151,18 +159,19 @@ public class CharacterSheet
 		this.sm = sm;
 	}
 
-	public void EnsureSkillsInstalled()
+	public void EnsureInitialized()
 	{
-		var skills = (EnumArena<SM.SkillType, Skill>)DiscoRunner.manager.Assets.GetArena<Skill>();
-
-		for (int i = 0; i < skills.Count; i++)
+		DiscoRunner.Log.LogInfo($"init'z called");
+		for (int i = 0; i < SkillUtils.Skills.Count; i++)
 		{
-			var sk = skills[i];
+			var sk = SkillUtils.Skills[i];
 			if (sk == null || skillMap.ContainsKey(sk.Location)) continue;
 
-			var type = skills.GetRaw(i);
-			var skill = i < skills.baseCount ? sm.GetSkill(type) : new SM.Skill(type, sm);
+			var type = SkillUtils.Skills.GetRaw(i);
+			SM.Skill skill = i < SkillUtils.Skills.baseCount ? sm.GetSkill(type) : new(type, sm);
+			DiscoRunner.Log.LogInfo($"init'zing {sk} to {skill}");
 			skillMap.Add(sk.Location, skill);
 		}
+
 	}
 }
