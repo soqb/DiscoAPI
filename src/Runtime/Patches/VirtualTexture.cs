@@ -6,35 +6,6 @@ namespace DiscoAPI.Runtime.Patches;
 
 public class VirtualTexturePatches
 {
-	// [HarmonyPatch(typeof(PageDecoder), nameof(PageDecoder.DecodePage2))]
-	// [HarmonyPostfix]
-	// private static void OnDecodePage2(PageRequest pageReq, byte[] input)
-	// {
-	// 	DiscoRunner.Log.LogInfo($"page: {pageReq.page.x}x{pageReq.page.y}");
-	// 	DiscoRunner.Log.LogInfo($"page data is {input.Length} long");
-	// 	DiscoRunner.Log.LogInfo($"page diffuse is {pageReq.diff?.Length} long or {pageReq.diff0?.Length} long");
-
-	// 	int width = 136, height = 136;
-	// 	byte[] data = pageReq.diff;
-
-	// 	var page = pageReq.page;
-
-	// 	string vtDir = Path.Join(BepInEx.Paths.BepInExRootPath, "discoDumps", "vt", $"{page.asset}-m{page.mip}");
-	// 	Directory.CreateDirectory(vtDir);
-	// 	string path = Path.Join(vtDir, $"{page.x}x{page.y}.bmp");
-
-	// 	unsafe
-	// 	{
-	// 		fixed (byte* ptr = data)
-	// 		{
-	// 			using (Bitmap image = new Bitmap(width, height, width * 4, PixelFormat.Format32bppRgb, new IntPtr(ptr)))
-	// 			{
-	// 				image.Save(path);
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.ReadPage))]
 	[HarmonyPrefix]
 	private static bool PreReadPage2(
@@ -44,10 +15,14 @@ public class VirtualTexturePatches
 		ref (System.Drawing.Rectangle, PageLocation, PageProvider?) __state
 	)
 	{
-		if (!CustomVirtualTextureManager.TryLookup(__instance.m_asset, out var texture)) return true;
+		if (!CustomVirtualTextureManager.TryLookup(__instance.m_asset, out var customizer))
+		{
+			__state = default;
+			return true;
+		}
 
-		PageLocation page = texture.InvertPageId(index);
-		if (!texture.TrySubstitute(page, out var pages, out var overlap)) return true;
+		PageLocation page = customizer!.InvertPageId(index);
+		if (!customizer.TrySubstitute(page, out var pages, out var overlap)) return true;
 
 		__state = (overlap, page, pages);
 
@@ -69,8 +44,6 @@ public class VirtualTexturePatches
 	{
 		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
 		if (pages == null) return;
-
-		DiscoRunner.Log.LogInfo($"blitting overlap ({overlap.X}, {overlap.Y}) to ({overlap.Right}, {overlap.Bottom}) which is {overlap.Width * overlap.Height} pixels");
 
 		void FillBy(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<byte> array, GetPixel getPixel)
 		{
@@ -95,13 +68,32 @@ public class VirtualTexturePatches
 	[HarmonyPrefix]
 	private static bool OnOpenRead2(PageFile2 __instance, ref bool __result)
 	{
-		// if (CustomVirtualTextureManager.TryLookup(__instance.m_asset, out var texture))
-		// {
-		// 	__instance.m_stream = Il2CppSystem.IO.Stream.Null;
-		// 	__result = true;
-		// 	return false;
-		// }
+		if (CustomVirtualTextureManager.TryLoadTexture(__instance.m_asset) == VirtualTextureState.AdHoc)
+		{
+			// if we're an ad-hoc texture, we don't need any of the standard malarkey.
+			__instance.m_stream = Il2CppSystem.IO.Stream.Null;
+			__result = true;
+			return false;
+		}
+
 		return true;
+	}
+
+	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.Close))]
+	[HarmonyPrefix]
+	private static void OnClose2(PageFile2 __instance)
+	{
+		CustomVirtualTextureManager.TryUnloadTexture(__instance.m_asset);
+	}
+
+	[HarmonyPatch(typeof(AmplifyTextureManager), nameof(AmplifyTextureManager.InitializeCollections))]
+	[HarmonyPrefix]
+	private static void OnInitializeTextureCollections(AmplifyTextureManager __instance)
+	{
+		foreach (var collection in CustomVirtualTextureManager.collections.Values)
+		{
+			__instance.VirtualTextureCollections.Add(collection);
+		}
 	}
 
 	// NB: we would like this to be temporary but re-enabling VT cache compression
@@ -113,6 +105,6 @@ public class VirtualTexturePatches
 		if (editorProps != null) editorProps.m_cacheCompression = false;
 		else __instance.m_cacheCompression = false;
 
-		DiscoRunner.Log.LogInfo("disabled cache compression !!");
+		DiscoRunner.Log.LogInfo("disabled virtual texture cache compression. performance will be impacted.");
 	}
 }

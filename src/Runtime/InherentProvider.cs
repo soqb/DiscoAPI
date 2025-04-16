@@ -60,6 +60,9 @@ public static class InherentProvider
 		{
 			substitutions = { new PageSubstitution(new(1088, 1088, 2176, 2176), BitmapPageProvider.FromFile(path)) }
 		});
+
+		AdHocTextureConfig config = new(BitmapPageProvider.FromFile(path), new(2176, 2176));
+		CustomVirtualTextureManager.RegisterAdHoc(config);
 	}
 
 

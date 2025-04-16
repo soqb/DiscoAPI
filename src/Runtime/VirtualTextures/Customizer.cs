@@ -10,13 +10,22 @@ public struct VirtualTextureOverrides
 {
 	public List<PageSubstitution> substitutions = new();
 
-	public VirtualTextureOverrides()
+	public VirtualTextureOverrides() { }
+}
+
+public struct AdHocTextureConfig
+{
+	public PageProvider.Factory getPages;
+	public Size size;
+
+	public AdHocTextureConfig(PageProvider.Factory providerFactory, Size size)
 	{
+		this.getPages = providerFactory;
+		this.size = size;
 	}
 }
 
 public record struct PageLocation(int mip, int x, int y);
-
 public record struct PageSubstitution(Rectangle area, PageProvider.Factory pagesFactory);
 
 public interface IPageBlitter
@@ -24,21 +33,13 @@ public interface IPageBlitter
 	public bool TryGetPageSubstitute(PageLocation page);
 }
 
-public class VirtualTextureCustomizer
+public abstract class VirtualTextureCustomizer
 {
 	public VirtualTexture asset;
 
-	private record struct PageSubstitutionInstance(Rectangle area, PageProvider pages);
-	private PageSubstitutionInstance[] substs;
-
-	public VirtualTextureCustomizer(VirtualTexture asset, VirtualTextureOverrides settings)
+	protected VirtualTextureCustomizer(VirtualTexture asset)
 	{
 		this.asset = asset;
-
-		substs = settings.substitutions.Select(subst => new PageSubstitutionInstance(
-			subst.area,
-			subst.pagesFactory.Invoke(asset, subst.area)
-		)).ToArray();
 	}
 
 	public PageLocation InvertPageId(int index)
@@ -56,10 +57,46 @@ public class VirtualTextureCustomizer
 			int xy = index - pagesSeen;
 			return new(mip, xy % pagesPerRow, xy / pagesPerRow);
 		}
+
 		throw new Exception("unknown page id !");
 	}
 
-	public bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap)
+	public abstract bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap);
+}
+
+public class AdHocVirtualTextureCustomizer : VirtualTextureCustomizer
+{
+	private Rectangle area;
+	private PageProvider pages;
+
+	public AdHocVirtualTextureCustomizer(VirtualTexture asset, AdHocTextureConfig config) : base(asset)
+	{
+		area = new(0, 0, config.size.Width, config.size.Height);
+		pages = config.getPages(asset, area);
+	}
+
+	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap)
+	{
+		pages = this.pages;
+		overlap = area;
+		return true;
+	}
+}
+
+public class OverridesVirtualTextureCustomizer : VirtualTextureCustomizer
+{
+	private record struct PageSubstitutionInstance(Rectangle area, PageProvider pages);
+	private PageSubstitutionInstance[] substs;
+
+	public OverridesVirtualTextureCustomizer(VirtualTexture asset, VirtualTextureOverrides settings) : base(asset)
+	{
+		substs = settings.substitutions.Select(subst => new PageSubstitutionInstance(
+			subst.area,
+			subst.pagesFactory.Invoke(asset, subst.area)
+		)).ToArray();
+	}
+
+	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap)
 	{
 		for (int i = substs.Length - 1; i >= 0; i--)
 		{
