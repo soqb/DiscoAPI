@@ -2,6 +2,7 @@ using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.VirtualTextures;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using PC = PixelCrushers.DialogueSystem;
@@ -23,11 +24,11 @@ public static class InherentProvider
 	}
 
 	public const string DUMMY_NONE_SKILL = "API DUMMY NONE SKILL";
+	public const string MISSING_PORTRAIT_PATH = "assets/textures/portrait_missing_placeholder.png";
+	public static Location Location { get; } = Location.GetFromAssembly(typeof(InherentProvider).Assembly, "discoapi");
 
 	public static void Provide()
 	{
-		Location location = Location.GetFromAssembly(typeof(InherentProvider).Assembly, "discoapi");
-
 		source = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance, new() { router = new InherentAssetRouter() });
 		var assets = source.Manager.Assets;
 
@@ -53,6 +54,12 @@ public static class InherentProvider
 			CharacterComponents.Of(global::World.singleton.you).TryDeserialize(mod.GetObject<JToken>("you"));
 			WorldComponents.Of(global::World.singleton).TryDeserialize(mod.GetObject<JToken>("world"));
 		};
+
+		string path = Location.Get("assets/textures/hello_revachol_page2.png")!;
+		CustomVirtualTextureManager.RegisterOverrides("e8f9498d308bbbac312e6be93ac820bd", new VirtualTextureOverrides()
+		{
+			substitutions = { new PageSubstitution(new(1088, 1088, 2176, 2176), BitmapPageProvider.FromFile(path)) }
+		});
 	}
 
 

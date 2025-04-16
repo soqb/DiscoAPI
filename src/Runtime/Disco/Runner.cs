@@ -94,7 +94,6 @@ public static class DiscoRunner
     public static void OnSceneLoad()
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        DiscoAPIPlugin.Instance.Log.LogInfo($"scene '{sceneName}' loaded..");
 
         var w = global::World.Singleton;
         if (w == null) return;
