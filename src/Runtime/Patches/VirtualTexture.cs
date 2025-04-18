@@ -6,6 +6,13 @@ namespace DiscoAPI.Runtime.Patches;
 
 public class VirtualTexturePatches
 {
+	[HarmonyPatch(typeof(PageSequencer), nameof(PageSequencer.ComputeIndex))]
+	[HarmonyPostfix]
+	private static void OnComputeIndex(int mip, int x, int y, int __result)
+	{
+		DiscoRunner.Log.LogInfo($"this is page {mip}#({x}, {y}) at index {__result}");
+	}
+
 	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.ReadPage))]
 	[HarmonyPrefix]
 	private static bool PreReadPage2(
@@ -24,6 +31,7 @@ public class VirtualTexturePatches
 		PageLocation page = customizer!.InvertPageId(index);
 		if (!customizer.TrySubstitute(page, out var pages, out var overlap)) return true;
 
+		DiscoRunner.Log.LogInfo($"i think this is page {page.mip}#({page.x}, {page.y}) at index {index}");
 		__state = (overlap, page, pages);
 
 		// if overlap is complete, don't bother with original decoding because it will all be replaced.
@@ -43,6 +51,7 @@ public class VirtualTexturePatches
 	)
 	{
 		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
+		DiscoRunner.Log.LogInfo($"but now i think this is page {page.mip}#({page.x}, {page.y}) at index {index}");
 		if (pages == null) return;
 
 		void FillBy(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<byte> array, GetPixel getPixel)

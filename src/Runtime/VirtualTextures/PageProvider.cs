@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Linq;
 
 namespace DiscoAPI.Runtime.VirtualTextures;
 
@@ -26,17 +23,34 @@ public abstract class PageProvider
 
 public class BitmapPageProvider : PageProvider
 {
+	public bool didFail;
 	public Bitmap[] diffusionMips;
 
-	private BitmapPageProvider(string path, VirtualTexture asset, Rectangle area) : base(asset, area)
+	private Bitmap[] GenerateMipmaps(string path)
 	{
 		Bitmap fullQuality = new(path);
-		diffusionMips = new Bitmap[asset.m_mipCount];
+		var mipmaps = new Bitmap[asset.m_mipCount];
 		for (int mip = 0; mip < asset.m_mipCount; mip++)
 		{
 			Size size = new(area.Width >> mip, area.Height >> mip);
-			if (fullQuality.Size == size) diffusionMips[mip] = fullQuality;
-			else diffusionMips[mip] = new(fullQuality, size);
+			if (fullQuality.Size == size) mipmaps[mip] = fullQuality;
+			else mipmaps[mip] = new(fullQuality, size);
+		}
+
+		return mipmaps;
+	}
+
+	private BitmapPageProvider(string path, VirtualTexture asset, Rectangle area) : base(asset, area)
+	{
+		try
+		{
+			diffusionMips = GenerateMipmaps(path);
+		}
+		catch (System.Exception e)
+		{
+			didFail = true;
+			diffusionMips = new Bitmap[0];
+			DiscoRunner.Log.LogWarning($"vt loading failed: {e}");
 		}
 	}
 
@@ -45,6 +59,15 @@ public class BitmapPageProvider : PageProvider
 
 	public override Color GetDiffusionPixel(PageLocation page, int x, int y)
 	{
+		// DiscoRunner.Log.LogInfo($"* ({x}, {y}) and this is page {page.mip}#({page.x}, {page.y})");
+		// if (didFail)
+		// {
+		// if (x + y == 0 || x + y == 135) return Color.Purple;
+		// else return Color.Green;
+		// if ((page.x + page.y) % 2 == 0) return Color.FromArgb(255, Math.Min(255, page.x * 4), 0, Math.Min(255, page.y * 4));
+		// else return Color.Purple;
+		// }
+
 		var mipmap = diffusionMips[page.mip];
 		int pageLeft = page.x * 136 - (area.X >> page.mip);
 		int pageTop = page.y * 136 - (area.Y >> page.mip);
@@ -53,6 +76,6 @@ public class BitmapPageProvider : PageProvider
 		if (x < mipmap.Width && y < mipmap.Height) return mipmap.GetPixel(x, y);
 		else return Color.Purple;
 	}
-	public override Color GetNormalPixel(PageLocation page, int x, int y) => Color.White;
+	public override Color GetNormalPixel(PageLocation page, int x, int y) => Color.FromArgb(0, 0, 0, 255);
 	public override Color GetSpecularPixel(PageLocation page, int x, int y) => Color.White;
 }

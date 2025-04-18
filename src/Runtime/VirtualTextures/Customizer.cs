@@ -78,7 +78,7 @@ public class AdHocVirtualTextureCustomizer : VirtualTextureCustomizer
 	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap)
 	{
 		pages = this.pages;
-		overlap = area;
+		overlap = new(0, 0, 136, 136);
 		return true;
 	}
 }
