@@ -62,8 +62,7 @@ public class BitmapPageProvider : PageProvider
 		// DiscoRunner.Log.LogInfo($"* ({x}, {y}) and this is page {page.mip}#({page.x}, {page.y})");
 		// if (didFail)
 		// {
-		// if (x + y == 0 || x + y == 135) return Color.Purple;
-		// else return Color.Green;
+		if (x < 34 || x >= 102 || y < 34 || y >= 102) return Color.Red;
 		// if ((page.x + page.y) % 2 == 0) return Color.FromArgb(255, Math.Min(255, page.x * 4), 0, Math.Min(255, page.y * 4));
 		// else return Color.Purple;
 		// }

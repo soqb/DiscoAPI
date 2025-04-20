@@ -51,8 +51,8 @@ public class VirtualTexturePatches
 	)
 	{
 		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
-		DiscoRunner.Log.LogInfo($"but now i think this is page {page.mip}#({page.x}, {page.y}) at index {index}");
 		if (pages == null) return;
+		DiscoRunner.Log.LogInfo($"but now i think this is page {page.mip}#({page.x}, {page.y}) at index {index}");
 
 		void FillBy(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<byte> array, GetPixel getPixel)
 		{

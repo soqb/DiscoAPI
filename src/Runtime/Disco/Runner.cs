@@ -32,7 +32,9 @@ public static class DiscoRunner
 
     public static void Do()
     {
+        Log.LogInfo("switching virtual texture collection...");
         AmplifyTextureManager.Instance.SetActiveCollection(AmplifyTextureManager.Instance.VirtualTextureCollections[AmplifyTextureManager.Instance.VirtualTextureCollections.Count - 1].UniqueName);
+        Log.LogInfo("switched virtual texture collection.");
     }
 
     public static DiscoSource SourceFromPlugin(BasePlugin plugin) => SourceFromPlugin(plugin, new());
