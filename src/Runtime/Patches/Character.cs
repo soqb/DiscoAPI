@@ -12,29 +12,11 @@ namespace DiscoAPI.Runtime.Patches;
 public static class CharacterPatches
 {
 	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.Recalc))]
-	[HarmonyPrefix]
-	private static bool OnRecalc(SM.CharacterSheet __instance)
+	[HarmonyPostfix]
+	private static void OnRecalc(SM.CharacterSheet __instance)
 	{
-		DiscoRunner.Log.LogInfo("i am real i promiz");
 		foreach (object datum in ModCharacterSheet.Of(__instance).ComponentData)
 			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
-
-		if (__instance.abilities == null || __instance.skills == null)
-		{
-			Debug.LogErrorFormat("Recalc failed for character, missing skills or abilities list");
-			return false;
-		}
-		SM.Ability[] array = __instance.abilities;
-		for (int i = 0; i < array.Length; i++)
-		{
-			array[i].Recalc(__instance);
-		}
-		SM.Skill[] array2 = __instance.skills;
-		for (int i = 0; i < array2.Length; i++)
-		{
-			array2[i].Recalc(__instance);
-		}
-		return false;
 	}
 
 	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
