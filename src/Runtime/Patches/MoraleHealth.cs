@@ -143,8 +143,9 @@ public static class MoraleHealthPatches
 	{
 		if (__instance.characterSheet == null) return true;
 
-		SM.Skill morale = YouSkills.MoraleRaw;
-		SM.Skill health = YouSkills.HealthRaw;
+		var skills = CharacterComponents.Skills.Of(__instance.characterSheet)!;
+		SM.Skill morale = skills.MoraleRaw;
+		SM.Skill health = skills.HealthRaw;
 		__instance.volition.Max = morale.maximumValue;
 		__instance.endurance.Max = health.maximumValue;
 		__instance.volition.Current = morale.value;
