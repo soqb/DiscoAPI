@@ -20,29 +20,30 @@ public sealed class SkillContainer
 
 	internal void ReinitializeFromNativeInstance(SM.CharacterSheet sheet)
 	{
-		var skills = (EnumArena<SM.SkillType, Skill>)DiscoRunner.manager.Assets.GetArena<Skill>();
+		var skillArena = SkillUtils.Skills;
 
-		for (int i = 0; i < skills.Count; i++)
+		for (int i = 0; i < skillArena.Count; i++)
 		{
-			var sk = skills[i];
+			var sk = skillArena[i];
 			if (sk == null || skillMap.ContainsKey(sk.Location)) continue;
 
-			var type = skills.GetRaw(i);
-			var skill = i < skills.baseCount ? sheet.GetSkill(type) : new SM.Skill(type, sheet);
+			var type = skillArena.GetRaw(i);
+			var skill = i < skillArena.baseCount ? sheet.GetSkill(type) : new SM.Skill(type, sheet);
 			skillMap.Add(sk.Location, skill);
 		}
 	}
 
 	internal void RepopulateNativeInstanceLists(SM.CharacterSheet sheet)
 	{
-		DiscoRunner.Log.LogInfo($"repoping!!! @ {DebugUtils.StackTrace()}");
-		int targetCount = SkillUtils.Skills.Count + Skill.VANILLA_SKILL_PORTRAIT_COUNT - Skill.VANILLA_SKILL_COUNT;
+		var skillArena = SkillUtils.Skills;
+
+		int targetCount = skillArena.Count + Skill.VANILLA_SKILL_PORTRAIT_COUNT - Skill.VANILLA_SKILL_COUNT;
 		SM.Skill?[] skills = new SM.Skill[targetCount];
 		sheet.skills.CopyTo(skills, 0);
 
-		for (int i = 0; i < SkillUtils.Skills.Count - SkillUtils.Skills.baseCount; i++)
+		for (int i = 0; i < skillArena.Count - skillArena.baseCount; i++)
 		{
-			var asset = SkillUtils.Skills[i + SkillUtils.Skills.baseCount]!.Location;
+			var asset = skillArena[i + skillArena.baseCount]!.Location;
 			var skill = GetRawSkill(asset);
 			if (skill == null) DiscoRunner.Log.LogError($"skill {asset} on sheet {sheet.name} was null!");
 			skills[i + Skill.VANILLA_SKILL_PORTRAIT_COUNT] = skill;
