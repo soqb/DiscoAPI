@@ -1,17 +1,24 @@
 using HarmonyLib;
 using SM = Sunshine.Metric;
-using SD = Sunshine.Dialogue;
 using PC = PixelCrushers.DialogueSystem;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.Assets;
 using UnityEngine;
 using LocalizationCustomSystem;
 using System;
+using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.Patches;
 
 public static class CharacterPatches
 {
+	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.Recalc))]
+	[HarmonyPostfix]
+	private static void OnRecalc(SM.CharacterSheet __instance)
+	{
+		foreach (object datum in ModCharacterSheet.Of(__instance).ComponentData)
+			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
+	}
+
 	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
 	[HarmonyPrefix]
 	private static bool OnPassiveSuccess(ref bool __result, PC.DialogueEntry entry)
@@ -38,135 +45,7 @@ public static class CharacterPatches
 		return true;
 	}
 
-	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.VolitionHealAmount))]
-	[HarmonyPrefix]
-	private static bool OnEnddayVolitionHealAmount(ref int __result, int hoursSlept)
-	{
-		__result = Math.Min(Math.Abs(DiscoRunner.world!.you.MoraleRaw.damageValue), hoursSlept);
-		return false;
-	}
 
-	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.EnduranceHealAmount))]
-	[HarmonyPrefix]
-	private static bool OnEnddayEnduranceHealAmount(ref int __result, int hoursSlept)
-	{
-		__result = Math.Min(Math.Abs(DiscoRunner.world!.you.HealthRaw.damageValue), hoursSlept);
-		return false;
-	}
-
-	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.DamageVolition))]
-	[HarmonyPrefix]
-	private static bool OnDamageVolition(int amount)
-	{
-		Sunshine.EndgameManager.NewspaperToShow = null;
-		if (amount > 0)
-		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.MoraleRaw.DamageValue(amount);
-			you.Recalc();
-			CharacterManipulations.PlayVolitionDamageVisual();
-			HudController.Singleton.RefreshAll();
-			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedMorale, (-amount).ToString());
-		}
-		return false;
-	}
-
-	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.HealVolition))]
-	[HarmonyPrefix]
-	private static bool OnHealVolition(int amount)
-	{
-		if (amount > 0)
-		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.MoraleRaw.HealValue(Mathf.Min(amount, you.MoraleRaw.maximumValue - you.MoraleRaw.value));
-			you.Recalc();
-			HudController.Singleton.RefreshAll();
-			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedMorale, $"+{amount}");
-		}
-		return false;
-	}
-
-	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.DamageEndurance))]
-	[HarmonyPrefix]
-	private static bool OnDamageEndurance(int amount)
-	{
-		Sunshine.EndgameManager.NewspaperToShow = null;
-		if (amount > 0)
-		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.MoraleRaw.DamageValue(amount);
-			you.Recalc();
-			CharacterManipulations.PlayVolitionDamageVisual();
-			HudController.Singleton.RefreshAll();
-			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedHealth, (-amount).ToString());
-		}
-		return false;
-	}
-
-	[HarmonyPatch(typeof(CharacterManipulations), nameof(CharacterManipulations.HealEndurance))]
-	[HarmonyPrefix]
-	private static bool OnHealEndurance(int amount)
-	{
-		if (amount > 0)
-		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.MoraleRaw.HealValue(Mathf.Min(amount, you.HealthRaw.maximumValue - you.MoraleRaw.value));
-			you.Recalc();
-			HudController.Singleton.RefreshAll();
-			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedHealth, $"+{amount}");
-		}
-		return false;
-	}
-
-	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.CurrentVolition))]
-	[HarmonyPrefix]
-	private static bool OnCurrentVolition(ref double __result)
-	{
-		__result = DiscoRunner.world!.you.MoraleRaw.value;
-		return false;
-	}
-
-	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HasVolitionDamage))]
-	[HarmonyPrefix]
-	private static bool OnHasVolitionDamage(ref bool __result)
-	{
-		__result = DiscoRunner.world!.you.MoraleRaw.damageValue < 0.0;
-		return false;
-	}
-
-	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HealAllVolition))]
-	[HarmonyPrefix]
-	private static bool OnHealAllVolition()
-	{
-		CharacterManipulations.HealVolition(-DiscoRunner.world!.you.MoraleRaw.damageValue);
-		return false;
-	}
-
-	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.CurrentEndurance))]
-	[HarmonyPrefix]
-	private static bool OnCurrentEndurance(ref double __result)
-	{
-		__result = DiscoRunner.world!.you.HealthRaw.value;
-		return false;
-	}
-
-	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HasEnduranceDamage))]
-	[HarmonyPrefix]
-	private static bool OnHasEnduranceDamage(ref bool __result)
-	{
-		__result = DiscoRunner.world!.you.HealthRaw.damageValue < 0.0;
-		return false;
-	}
-
-	[HarmonyPatch(typeof(SD.CharacterLuaFunctions), nameof(SD.CharacterLuaFunctions.HealAllEndurance))]
-	[HarmonyPrefix]
-	private static bool OnHealAllEndurance()
-	{
-		CharacterManipulations.HealEndurance(-DiscoRunner.world!.you.HealthRaw.damageValue);
-		return false;
-	}
-
-	private static EnumArena<SM.SkillType, Skill> Skills => SkillUtils.Skills;
 	// the vanilla method does a static match against the recognised skilltypes so we need to change that:
 	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.GetActorSkillName))]
 	[HarmonyPrefix]
@@ -316,12 +195,12 @@ public static class CharacterPatches
 
 	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.GetSkill))]
 	[HarmonyPrefix]
-	private static bool OnGetSkill(ref SM.Skill __result, SM.CharacterSheet __instance, SM.SkillType type)
+	private static bool OnGetSkill(ref SM.Skill? __result, SM.CharacterSheet __instance, SM.SkillType type)
 	{
 		// DiscoAPIPlugin.Instance.Log.LogInfo($"getting skill value of {type}");
 		if ((int)type <= Skill.VANILLA_MAX) return true;
 
-		__result = CharacterSheet.GetForSM(__instance).skillMap[SkillUtils.Lookup(type)!.Location];
+		__result = CharacterComponents.Skills.Of(__instance)!.GetRawSkill(SkillUtils.Lookup(type)!.Location);
 		return false;
 	}
 
@@ -330,11 +209,10 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static void OnInitialize(SM.CharacterSheet __instance, bool force)
 	{
-		if (__instance.intellect != null && !force) return;
+		var sheet = ModCharacterSheet.Of(__instance);
+		if (__instance.intellect != null && !force && sheet.Contains(CharacterComponents.Skills)) return;
 
-		var sheet = CharacterSheet.GetForSM(__instance);
-		for (int i = Skills.baseCount; i < Skills.Count; i++)
-			sheet.skillMap[Skills[i]!.Location] = new(Skills.GetRaw(i), __instance);
+		sheet.GetOrAdd(CharacterComponents.Skills).ReinitializeFromNativeInstance(__instance);
 	}
 
 	// most methods don't use the skill fields, but instead a certain array so we update that when we need to:
@@ -342,23 +220,7 @@ public static class CharacterPatches
 	[HarmonyPostfix]
 	private static void OnRepopulateSheetLists(SM.CharacterSheet __instance)
 	{
-		int targetCount = Skills.Count + Skill.VANILLA_SKILL_PORTRAIT_COUNT - Skill.VANILLA_SKILL_COUNT;
-		SM.Skill[] ar = new SM.Skill[targetCount];
-		__instance.skills.CopyTo(ar, 0);
-
-		var sheet = CharacterSheet.GetForSM(__instance);
-		sheet.EnsureSkillsInstalled();
-
-		for (int i = 0; i < Skills.Count - Skills.baseCount; i++)
-		{
-			var loc = Skills[i + Skills.baseCount]!.Location;
-			ar[i + Skill.VANILLA_SKILL_PORTRAIT_COUNT] = sheet.skillMap[loc];
-		}
-
-		__instance.skills = ar;
-
-		// foreach (var sk in __instance.skills)
-		// 	DiscoAPIPlugin.Instance.Log.LogInfo($"   * {sk.skillType}");
+		CharacterComponents.Skills.Of(__instance)!.RepopulateNativeInstanceLists(__instance);
 	}
 
 	// these methods reduce efficiency slightly but who care atp.
