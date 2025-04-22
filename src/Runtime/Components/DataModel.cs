@@ -68,7 +68,6 @@ public abstract class ModEntity<T, P>
 	public IEnumerable<object> ComponentData => components.Values;
 	public D Add<D>(ComponentKey<D, T, P> key) where D : notnull
 	{
-		DiscoRunner.Log.LogInfo($"adding {typeof(D)} to {typeof(T)}");
 		D d = key.factory((T)(object)this);
 		components.Add(key, d);
 		return d;
