@@ -1,5 +1,6 @@
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
+using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime;
 

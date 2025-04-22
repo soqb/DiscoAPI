@@ -2,15 +2,41 @@ using HarmonyLib;
 using SM = Sunshine.Metric;
 using PC = PixelCrushers.DialogueSystem;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.Assets;
 using UnityEngine;
 using LocalizationCustomSystem;
 using System;
+using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.Patches;
 
 public static class CharacterPatches
 {
+	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.Recalc))]
+	[HarmonyPrefix]
+	private static bool OnRecalc(SM.CharacterSheet __instance)
+	{
+		DiscoRunner.Log.LogInfo("i am real i promiz");
+		foreach (object datum in ModCharacterSheet.Of(__instance).ComponentData)
+			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
+
+		if (__instance.abilities == null || __instance.skills == null)
+		{
+			Debug.LogErrorFormat("Recalc failed for character, missing skills or abilities list");
+			return false;
+		}
+		SM.Ability[] array = __instance.abilities;
+		for (int i = 0; i < array.Length; i++)
+		{
+			array[i].Recalc(__instance);
+		}
+		SM.Skill[] array2 = __instance.skills;
+		for (int i = 0; i < array2.Length; i++)
+		{
+			array2[i].Recalc(__instance);
+		}
+		return false;
+	}
+
 	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
 	[HarmonyPrefix]
 	private static bool OnPassiveSuccess(ref bool __result, PC.DialogueEntry entry)
@@ -38,7 +64,6 @@ public static class CharacterPatches
 	}
 
 
-	private static EnumArena<SM.SkillType, Skill> Skills => SkillUtils.Skills;
 	// the vanilla method does a static match against the recognised skilltypes so we need to change that:
 	[HarmonyPatch(typeof(SM.Skill), nameof(SM.Skill.GetActorSkillName))]
 	[HarmonyPrefix]
@@ -193,7 +218,7 @@ public static class CharacterPatches
 		// DiscoAPIPlugin.Instance.Log.LogInfo($"getting skill value of {type}");
 		if ((int)type <= Skill.VANILLA_MAX) return true;
 
-		__result = CharacterSheet.GetForSM(__instance).GetRawSkill(SkillUtils.Lookup(type)!.Location);
+		__result = CharacterComponents.Skills.Of(__instance)!.GetRawSkill(SkillUtils.Lookup(type)!.Location);
 		return false;
 	}
 
@@ -202,9 +227,10 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static void OnInitialize(SM.CharacterSheet __instance, bool force)
 	{
-		if (__instance.intellect != null && !force) return;
+		var sheet = ModCharacterSheet.Of(__instance);
+		if (__instance.intellect != null && !force && sheet.Contains(CharacterComponents.Skills)) return;
 
-		_ = CharacterSheet.GetForSM(__instance);
+		sheet.GetOrAdd(CharacterComponents.Skills).ReinitializeFromNativeInstance(__instance);
 	}
 
 	// most methods don't use the skill fields, but instead a certain array so we update that when we need to:
@@ -212,19 +238,7 @@ public static class CharacterPatches
 	[HarmonyPostfix]
 	private static void OnRepopulateSheetLists(SM.CharacterSheet __instance)
 	{
-		int targetCount = Skills.Count + Skill.VANILLA_SKILL_PORTRAIT_COUNT - Skill.VANILLA_SKILL_COUNT;
-		SM.Skill?[] ar = new SM.Skill[targetCount];
-		__instance.skills.CopyTo(ar, 0);
-
-		var sheet = CharacterSheet.GetForSM(__instance);
-
-		for (int i = 0; i < Skills.Count - Skills.baseCount; i++)
-		{
-			var loc = Skills[i + Skills.baseCount]!.Location;
-			ar[i + Skill.VANILLA_SKILL_PORTRAIT_COUNT] = sheet.GetRawSkill(loc);
-		}
-
-		__instance.skills = ar;
+		CharacterComponents.Skills.Of(__instance)!.RepopulateNativeInstanceLists(__instance);
 	}
 
 	// these methods reduce efficiency slightly but who care atp.

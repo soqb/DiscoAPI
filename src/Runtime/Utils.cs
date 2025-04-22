@@ -16,6 +16,19 @@ using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime;
 
+public static class LuaConsoleManager
+{
+	public static void AttachLuaConsole()
+	{
+		GameObject obj = new GameObject("luaconsolemgr");
+		GameObject.DontDestroyOnLoad(obj);
+
+		var console = obj.AddComponent<PixelCrushers.DialogueSystem.LuaConsole>();
+		console.firstKey = KeyCode.LeftControl;
+		console.secondKey = KeyCode.Return;
+	}
+}
+
 public static class LobbyLoadExecutor
 {
 	private static bool isLoaded;

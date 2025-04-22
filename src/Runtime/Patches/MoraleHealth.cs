@@ -2,17 +2,20 @@ using HarmonyLib;
 using SM = Sunshine.Metric;
 using SD = Sunshine.Dialogue;
 using System;
+using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.Patches;
 
 public static class MoraleHealthPatches
 {
+	private static ModCharacterSheet You = DiscoRunner.world!.You;
+	private static SkillContainer YouSkills = CharacterComponents.Skills.Of(You)!;
 
 	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.VolitionHealAmount))]
 	[HarmonyPrefix]
 	private static bool OnEnddayVolitionHealAmount(ref int __result, int hoursSlept)
 	{
-		__result = Math.Min(Math.Abs(DiscoRunner.world!.you.MoraleRaw.damageValue), hoursSlept);
+		__result = Math.Min(Math.Abs(YouSkills.MoraleRaw.damageValue), hoursSlept);
 		return false;
 	}
 
@@ -20,7 +23,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnEnddayEnduranceHealAmount(ref int __result, int hoursSlept)
 	{
-		__result = Math.Min(Math.Abs(DiscoRunner.world!.you.HealthRaw.damageValue), hoursSlept);
+		__result = Math.Min(Math.Abs(YouSkills.HealthRaw.damageValue), hoursSlept);
 		return false;
 	}
 
@@ -31,9 +34,8 @@ public static class MoraleHealthPatches
 		Sunshine.EndgameManager.NewspaperToShow = null;
 		if (amount > 0)
 		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.MoraleRaw.DamageValue(amount);
-			you.Recalc();
+			YouSkills.MoraleRaw.DamageValue(amount);
+			You.Recalc();
 			CharacterManipulations.PlayVolitionDamageVisual();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedMorale, (-amount).ToString());
@@ -47,9 +49,9 @@ public static class MoraleHealthPatches
 	{
 		if (amount > 0)
 		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.MoraleRaw.HealValue(Math.Min(amount, you.MoraleRaw.maximumValue - you.MoraleRaw.value));
-			you.Recalc();
+			SM.Skill morale = YouSkills.MoraleRaw;
+			morale.HealValue(Math.Min(amount, morale.maximumValue - morale.value));
+			You.Recalc();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedMorale, $"+{amount}");
 		}
@@ -63,9 +65,8 @@ public static class MoraleHealthPatches
 		Sunshine.EndgameManager.NewspaperToShow = null;
 		if (amount > 0)
 		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.HealthRaw.DamageValue(amount);
-			you.Recalc();
+			YouSkills.HealthRaw.DamageValue(amount);
+			You.Recalc();
 			CharacterManipulations.PlayVolitionDamageVisual();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedHealth, (-amount).ToString());
@@ -79,9 +80,9 @@ public static class MoraleHealthPatches
 	{
 		if (amount > 0)
 		{
-			CharacterSheet you = DiscoRunner.world!.you;
-			you.HealthRaw.HealValue(Math.Min(amount, you.HealthRaw.maximumValue - you.MoraleRaw.value));
-			you.Recalc();
+			SM.Skill health = YouSkills.HealthRaw;
+			health.HealValue(Math.Min(amount, health.maximumValue - health.value));
+			You.Recalc();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedHealth, $"+{amount}");
 		}
@@ -92,7 +93,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnCurrentVolition(ref double __result)
 	{
-		__result = DiscoRunner.world!.you.MoraleRaw.value;
+		__result = YouSkills.MoraleRaw.value;
 		return false;
 	}
 
@@ -100,7 +101,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnHasVolitionDamage(ref bool __result)
 	{
-		__result = DiscoRunner.world!.you.MoraleRaw.damageValue < 0.0;
+		__result = YouSkills.MoraleRaw.damageValue < 0.0;
 		return false;
 	}
 
@@ -108,7 +109,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnHealAllVolition()
 	{
-		CharacterManipulations.HealVolition(-DiscoRunner.world!.you.MoraleRaw.damageValue);
+		CharacterManipulations.HealVolition(-YouSkills.MoraleRaw.damageValue);
 		return false;
 	}
 
@@ -116,7 +117,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnCurrentEndurance(ref double __result)
 	{
-		__result = DiscoRunner.world!.you.HealthRaw.value;
+		__result = YouSkills.HealthRaw.value;
 		return false;
 	}
 
@@ -124,7 +125,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnHasEnduranceDamage(ref bool __result)
 	{
-		__result = DiscoRunner.world!.you.HealthRaw.damageValue < 0.0;
+		__result = YouSkills.HealthRaw.damageValue < 0.0;
 		return false;
 	}
 
@@ -132,7 +133,7 @@ public static class MoraleHealthPatches
 	[HarmonyPrefix]
 	private static bool OnHealAllEndurance()
 	{
-		CharacterManipulations.HealEndurance(-DiscoRunner.world!.you.HealthRaw.damageValue);
+		CharacterManipulations.HealEndurance(-YouSkills.HealthRaw.damageValue);
 		return false;
 	}
 
@@ -142,8 +143,8 @@ public static class MoraleHealthPatches
 	{
 		if (__instance.characterSheet == null) return true;
 
-		SM.Skill morale = DiscoRunner.world!.you.MoraleRaw;
-		SM.Skill health = DiscoRunner.world!.you.HealthRaw;
+		SM.Skill morale = YouSkills.MoraleRaw;
+		SM.Skill health = YouSkills.HealthRaw;
 		__instance.volition.Max = morale.maximumValue;
 		__instance.endurance.Max = health.maximumValue;
 		__instance.volition.Current = morale.value;
