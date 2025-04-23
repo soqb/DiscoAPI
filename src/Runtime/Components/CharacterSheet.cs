@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.Assets;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Components;
@@ -55,13 +54,17 @@ public sealed class SkillContainer
 
 public class ModCharacterSheet : ModEntity<ModCharacterSheet, SM.CharacterSheet>, IRecalculable
 {
-	public static ModEntityRegistry<ModCharacterSheet, SM.CharacterSheet> Registry { get; } = new(s => new(s));
+	public static ModEntityRegistry<ModCharacterSheet, SM.CharacterSheet> Registry { get; }
+		= new(new CWTEntityMap<ModCharacterSheet, SM.CharacterSheet>(s => new(s)));
+
+	protected override IComponentStore Components { get; } = new DictComponentStore();
+
 	public static ModCharacterSheet Of(SM.CharacterSheet s) => Registry.EntityOf(s);
 
 	// NB: The base method is hooked to recalculate all components.
 	public void Recalc() => EntityBase.Recalc();
 
-	public ModCharacterSheet(SM.CharacterSheet disco) : base(Registry, disco) { }
+	private ModCharacterSheet(SM.CharacterSheet disco) : base(Registry, disco) { }
 }
 
 public static class CharacterComponents

@@ -37,7 +37,7 @@ public static class DiscoRunner
     {
         IL2CPPChainloader.Instance.Finished += () => load.Invoke();
 
-        FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnRawSceneLoad);
+        FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad);
 
         InherentProvider.Provide();
 
@@ -82,28 +82,17 @@ public static class DiscoRunner
 
     }
 
-    private static void OnMarshalledSceneLoad()
-    {
-        sceneLoad.Invoke();
-        LobbyLoadExecutor.OnLoadLobbyPlease();
-    }
-
-    public static void OnRawSceneLoad()
+    public static void OnSceneLoad()
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         DiscoAPIPlugin.Instance.Log.LogInfo($"scene '{sceneName}' loaded..");
 
         var w = global::World.Singleton;
         if (w == null) return;
-        if (world == null) world = new(w);
+        if (world == null) world = ModWorld.Of(w);
 
-        world.MarshallSceneLoad(OnMarshalledSceneLoad);
-
-        if (sceneName == "Lobby")
-        {
-            // var stack = PagesSystem.PageStack.Main;
-            // stack.
-        }
+        sceneLoad.Invoke();
+        if (sceneName == "Lobby") LobbyLoadExecutor.OnLoadLobbyPlease();
     }
 
     public static void OnUpdate()
