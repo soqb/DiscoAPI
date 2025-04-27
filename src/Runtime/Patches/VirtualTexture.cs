@@ -50,7 +50,7 @@ public class VirtualTexturePatches
 		(System.Drawing.Rectangle, PageLocation, PageProvider?) __state
 	)
 	{
-		const int DebugBorderWidth = 4;
+		const int DebugBorderWidth = 6;
 		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
 
 		void SetPixel(Il2CppArrayBase<byte> array, int x, int y, System.Drawing.Color color)
