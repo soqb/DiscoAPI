@@ -1,17 +1,18 @@
 using HarmonyLib;
 using AmplifyTexture;
 using DiscoAPI.Runtime.VirtualTextures;
+using System;
 
 namespace DiscoAPI.Runtime.Patches;
 
 public class VirtualTexturePatches
 {
-	[HarmonyPatch(typeof(PageSequencer), nameof(PageSequencer.ComputeIndex))]
-	[HarmonyPostfix]
-	private static void OnComputeIndex(int mip, int x, int y, int __result)
-	{
-		DiscoRunner.Log.LogInfo($"this is page {mip}#({x}, {y}) at index {__result}");
-	}
+	// [HarmonyPatch(typeof(PageSequencer), nameof(PageSequencer.ComputeIndex))]
+	// [HarmonyPostfix]
+	// private static void OnComputeIndex(int mip, int x, int y, int __result)
+	// {
+	// DiscoRunner.Log.LogDebug($"this is page {mip}#({x}, {y}) at index {__result}");
+	// }
 
 	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.ReadPage))]
 	[HarmonyPrefix]
@@ -22,7 +23,7 @@ public class VirtualTexturePatches
 		ref (System.Drawing.Rectangle, PageLocation, PageProvider?) __state
 	)
 	{
-		if (!CustomVirtualTextureManager.TryLookup(__instance.m_asset, out var customizer))
+		if (!ModVirtualTexture.CustomizerKey.TryOf(__instance.m_asset, out var customizer))
 		{
 			__state = default;
 			return true;
@@ -31,7 +32,8 @@ public class VirtualTexturePatches
 		PageLocation page = customizer!.InvertPageId(index);
 		if (!customizer.TrySubstitute(page, out var pages, out var overlap)) return true;
 
-		DiscoRunner.Log.LogInfo($"i think this is page {page.mip}#({page.x}, {page.y}) at index {index}");
+		// if overlap is empty, don't waste work trying to replace pixels.
+		if (overlap.IsEmpty) pages = null;
 		__state = (overlap, page, pages);
 
 		// if overlap is complete, don't bother with original decoding because it will all be replaced.
@@ -52,9 +54,8 @@ public class VirtualTexturePatches
 	{
 		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
 		if (pages == null) return;
-		DiscoRunner.Log.LogInfo($"but now i think this is page {page.mip}#({page.x}, {page.y}) at index {index}");
 
-		void FillBy(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<byte> array, GetPixel getPixel)
+		void FillWith(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<byte> array, GetPixel getPixel)
 		{
 			for (int y = overlap.Y; y < overlap.Bottom; y++) for (int x = overlap.X; x < overlap.Right; x++)
 				{
@@ -66,9 +67,25 @@ public class VirtualTexturePatches
 				}
 		}
 
-		FillBy(pageReq.diff, (page, x, y) => pages.GetDiffusionPixel(page, x, y));
-		FillBy(pageReq.norm, (page, x, y) => pages.GetNormalPixel(page, x, y));
-		FillBy(pageReq.spec, (page, x, y) => pages.GetSpecularPixel(page, x, y));
+
+		GetPixel diffuser = (page, x, y) => pages.GetDiffusionPixel(page, x, y);
+		if (CustomVirtualTextureManager.DebugPages)
+		{
+			bool TryDebugBorders(int x, int y, out System.Drawing.Color color)
+			{
+				color = default;
+				if (x >= 10 && x < 126 && y >= 10 && y < 126) return false;
+
+				int d = Math.Min(255, (x + y) * 16 / 17);
+				color = System.Drawing.Color.FromArgb(d, 255 - d, d);
+				return true;
+			}
+			diffuser = (page, x, y) => TryDebugBorders(x, y, out var color) ? color : pages.GetDiffusionPixel(page, x, y);
+		};
+
+		FillWith(pageReq.diff, diffuser);
+		FillWith(pageReq.norm, (page, x, y) => pages.GetNormalPixel(page, x, y));
+		FillWith(pageReq.spec, (page, x, y) => pages.GetSpecularPixel(page, x, y));
 
 		__result = true;
 	}

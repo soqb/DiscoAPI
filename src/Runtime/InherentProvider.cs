@@ -55,17 +55,21 @@ public static class InherentProvider
 			WorldComponents.Of(global::World.singleton).TryDeserialize(mod.GetObject<JToken>("world"));
 		};
 
-		// string path = Location.Get("assets/textures/hello_revachol_page2.png")!;
-		// CustomVirtualTextureManager.RegisterOverrides("e8f9498d308bbbac312e6be93ac820bd", new VirtualTextureOverrides()
-		// {
-		// 	substitutions = { new PageSubstitution(new(1088, 1088, 2176, 2176), BitmapPageProvider.FromFile(path)) }
-		// });
+		CustomVirtualTextureManager.RegisterOverrides("e8f9498d308bbbac312e6be93ac820bd", new VirtualTextureOverrides()
+		{
+			substitutions = { new PageSubstitution(
+				new(1088, 1088, 2176, 2176),
+				BitmapPageProvider.FromFile(Location.Get("assets/textures/hello_revachol_page2.png")!)
+			) }
+		});
 
-		AdHocTextureConfig config = new(
-			BitmapPageProvider.FromFile(Location.Get("assets/textures/adhoc_bg.png")!),
-			new(4352, 4352)
+		AdHocTextureConfig textureConfig = new(
+			new(4352, 4352),
+			BitmapPageProvider.FromFile(Location.Get("assets/textures/adhoc_bg.png")!)
 		);
-		CustomVirtualTextureManager.RegisterAdHoc(config);
+
+		var collection = CustomVirtualTextureManager.InternNewCollection("the-big-collection");
+		collection.VirtualTextures.Add(ModVirtualTexture.CreateAdHoc(textureConfig));
 	}
 
 

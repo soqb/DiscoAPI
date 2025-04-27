@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
+using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.VirtualTextures;
 
@@ -18,10 +19,10 @@ public struct AdHocTextureConfig
 	public PageProvider.Factory getPages;
 	public Size size;
 
-	public AdHocTextureConfig(PageProvider.Factory providerFactory, Size size)
+	public AdHocTextureConfig(Size size, PageProvider.Factory providerFactory)
 	{
-		this.getPages = providerFactory;
 		this.size = size;
+		this.getPages = providerFactory;
 	}
 }
 
@@ -122,5 +123,34 @@ public class OverridesVirtualTextureCustomizer : VirtualTextureCustomizer
 		pages = null;
 		overlap = default;
 		return false;
+	}
+}
+
+public class ModVirtualTexture : ModEntity<ModVirtualTexture, VirtualTexture>
+{
+	public ModVirtualTexture(VirtualTexture entity) : base(Registry, entity) { }
+
+	protected override IComponentStore Components { get; } = new DictComponentStore();
+
+	public static ModEntityRegistry<ModVirtualTexture, VirtualTexture> Registry { get; }
+		= new(new PersistentEntityMap<ModVirtualTexture, VirtualTexture>(p => new(p)));
+	public static ModVirtualTexture Of(VirtualTexture s) => Registry.EntityOf(s);
+
+	public static ComponentKey<VirtualTextureCustomizer, ModVirtualTexture, VirtualTexture> CustomizerKey { get; }
+		= Registry.Register<VirtualTextureCustomizer>("discoapi", "customizer");
+
+	public static ModVirtualTexture CreateAdHoc(AdHocTextureConfig config)
+	{
+		ModVirtualTexture? me = null;
+
+		ScriptableObjectHook<VirtualTexture>.CreateInstanceWith(asset =>
+		{
+			CustomVirtualTextureManager.InitializeAdHoc(asset, config);
+
+			me = Of(asset);
+			me.Add(CustomizerKey, new AdHocVirtualTextureCustomizer(asset, config));
+		});
+
+		return me!;
 	}
 }

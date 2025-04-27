@@ -15,10 +15,12 @@ public enum VirtualTextureState
 
 public static class CustomVirtualTextureManager
 {
-	private delegate VirtualTextureCustomizer? GetCustomizer(VirtualTexture asset);
-	private record struct VTEntry(VirtualTextureState state, GetCustomizer factory, VirtualTextureCustomizer? customizer);
+	public static bool DebugPages { get; set; } = false;
 
-	private static Dictionary<string, VTEntry> textureRegistry = new();
+	private delegate VirtualTextureCustomizer GetCustomizer(VirtualTexture asset);
+	private record struct VTEntry(VirtualTextureState state, GetCustomizer factory);
+
+	private static Dictionary<string, VirtualTextureOverrides> overriden = new();
 	public static Dictionary<string, VirtualTextureCollection> collections = new();
 
 	private static LayoutSettings layoutSettings = new()
@@ -52,84 +54,61 @@ public static class CustomVirtualTextureManager
 		defaultSpecularValue = new(1f, 1f, 1f, 1f),
 	};
 
-	private static VirtualTextureCustomizer CreateCustomizer(VirtualTexture asset, AdHocTextureConfig config)
+	public static VirtualTextureCollection InternNewCollection(string name)
 	{
 		VirtualTextureCollection collection = ScriptableObject.CreateInstance<VirtualTextureCollection>();
-		collection.UniqueName = asset.name;
-		collection.name = asset.name;
+		collection.UniqueName = name;
+		collection.name = name;
 		collection.VirtualTextures = new();
-		collection.VirtualTextures.Add(asset);
 		collection.m_pageTablePacker = new();
-		collections.Add(asset.m_hashName, collection);
 		collection.hideFlags |= HideFlags.DontUnloadUnusedAsset;
+		collections.Add(name, collection);
 
-		return new AdHocVirtualTextureCustomizer(asset, config);
+		return collection;
+
 	}
 
-	public static string RegisterAdHoc(AdHocTextureConfig config)
+	internal static void InitializeAdHoc(VirtualTexture asset, AdHocTextureConfig config)
 	{
-		string hashName = "";
-
-		ScriptableObjectHook<VirtualTexture>.CreateInstanceWith(asset =>
-		{
-			// NB: We do this here because creating the VT in turn calls PageFile2.OpenRead which would complain
-			//	   if we didn't have the registry entry properly set up.
-			asset.m_virtualSize = VirtualSize._8K_x_8K;
-			asset.m_mipFilter = MipFilter.Nearest;
-			asset.m_layoutPreset = LayoutPreset.Unity_Standard;
-			asset.m_signature = new byte[16];
-			asset.m_version = new VersionInfo(2, 2, 4);
-			asset.m_assetIndex = 42;
-			asset.m_layoutSettings = layoutSettings;
-			asset.m_pageFile = new(asset);
-			asset.UpdateProperties();
-			asset.Initialize();
-			asset.name = $"adhoc/{asset.m_hashName}";
-			asset.hideFlags |= HideFlags.DontUnloadUnusedAsset;
-
-			hashName = asset.HashName;
-
-			textureRegistry.Add(
-				hashName,
-				new(VirtualTextureState.AdHoc, asset => CreateCustomizer(asset, config), null)
-			);
-		});
-
-		return hashName;
+		asset.m_virtualSize = VirtualSize._8K_x_8K;
+		asset.m_mipFilter = MipFilter.Nearest;
+		asset.m_layoutPreset = LayoutPreset.Unity_Standard;
+		asset.m_signature = new byte[16];
+		asset.m_version = new VersionInfo(2, 2, 4);
+		asset.m_assetIndex = 42;
+		asset.m_layoutSettings = layoutSettings;
+		asset.m_pageFile = new(asset);
+		asset.UpdateProperties();
+		asset.Initialize();
+		asset.name = $"adhoc/{asset.m_hashName}";
+		asset.hideFlags |= HideFlags.DontUnloadUnusedAsset;
 	}
 
-	public static void RegisterOverrides(string hashName, VirtualTextureOverrides overrides) => textureRegistry.Add(
-		hashName,
-		new(VirtualTextureState.Overriden, asset => new OverridesVirtualTextureCustomizer(asset, overrides), null)
-	);
+	public static void RegisterOverrides(string hashName, VirtualTextureOverrides overrides)
+	{
+		overriden.Add(hashName, overrides);
+	}
 
 	public static VirtualTextureState TryLoadTexture(VirtualTexture asset)
 	{
-		if (!textureRegistry.TryGetValue(asset.m_hashName, out var entry)) return VirtualTextureState.Vanilla;
-		if (entry.customizer != null) throw new InvalidOperationException("double virtual texture load");
+		var texture = ModVirtualTexture.Of(asset);
+		if (!overriden.TryGetValue(asset.m_hashName, out var overrides))
+		{
+			return texture.Contains(ModVirtualTexture.CustomizerKey)
+				? VirtualTextureState.AdHoc
+				: VirtualTextureState.Vanilla;
+		}
 
-		textureRegistry[asset.HashName] = new(entry.state, entry.factory, entry.factory!(asset));
-		return entry.state;
+		if (texture.Contains(ModVirtualTexture.CustomizerKey)) throw new InvalidOperationException("double virtual texture load");
+
+		DiscoRunner.Log.LogInfo($"{asset.name} now has overrides customizer");
+		texture.Add(ModVirtualTexture.CustomizerKey, new OverridesVirtualTextureCustomizer(asset, overrides));
+		return VirtualTextureState.Overriden;
 	}
 
 	public static void TryUnloadTexture(VirtualTexture asset)
 	{
-		if (!textureRegistry.TryGetValue(asset.m_hashName, out var entry)) return;
-		if (entry.customizer != null) textureRegistry[asset.HashName] = new(entry.state, entry.factory, null);
-	}
-
-	public static bool TryLookup(VirtualTexture asset, out VirtualTextureCustomizer? customizer)
-	{
-		if (textureRegistry.TryGetValue(asset.m_hashName, out var entry))
-		{
-			customizer = entry.customizer;
-			return true;
-		}
-		else
-		{
-			customizer = null;
-			return false;
-		}
+		// nothing to be done...
 	}
 }
 
