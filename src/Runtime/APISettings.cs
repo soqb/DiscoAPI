@@ -15,6 +15,7 @@ public class DiscoAPISettings
 	private ConfigEntry<bool> enableDeveloperMode;
 	private ConfigEntry<bool> allChecksPass;
 	private ConfigEntry<bool> componentLifecycleTracking;
+	private ConfigEntry<bool> drawVirtualTextureBorders;
 
 	public static bool AllowAchievements
 	{
@@ -50,6 +51,11 @@ public class DiscoAPISettings
 	{
 		get => Instance.componentLifecycleTracking.Value;
 		set => Instance.componentLifecycleTracking.Value = value;
+	}
+	public static bool DrawVirtualTextureBorders
+	{
+		get => Instance.drawVirtualTextureBorders.Value;
+		set => Instance.drawVirtualTextureBorders.Value = value;
 	}
 
 	private EventHandler NowAndLater(Action something)
@@ -119,6 +125,12 @@ public class DiscoAPISettings
 			"ComponentLifecycleTracking",
 			false,
 			"Log the lifecycle stages of entities in the component system. May produce a lot of log messages."
+		);
+		drawVirtualTextureBorders = cfg.Bind(
+			"Debug",
+			"DrawVirtualTextureBorders",
+			false,
+			"Draw colored borders on the edges of virtual textures to reveal their shape"
 		);
 
 		Log.COMPONENT[] needsSwitching = Enum.GetValues<Log.COMPONENT>().Where(f => !Log.IsComponentActive(f)).ToArray();

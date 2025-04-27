@@ -15,8 +15,6 @@ public enum VirtualTextureState
 
 public static class CustomVirtualTextureManager
 {
-	public static bool DebugPages { get; set; } = false;
-
 	private delegate VirtualTextureCustomizer GetCustomizer(VirtualTexture asset);
 	private record struct VTEntry(VirtualTextureState state, GetCustomizer factory);
 

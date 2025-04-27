@@ -2,6 +2,7 @@ using HarmonyLib;
 using AmplifyTexture;
 using DiscoAPI.Runtime.VirtualTextures;
 using System;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -25,15 +26,12 @@ public class VirtualTexturePatches
 	{
 		if (!ModVirtualTexture.CustomizerKey.TryOf(__instance.m_asset, out var customizer))
 		{
-			__state = default;
 			return true;
 		}
 
-		PageLocation page = customizer!.InvertPageId(index);
+		PageLocation page = VirtualTextureCustomizer.InvertPageId(__instance.m_asset, index);
 		if (!customizer.TrySubstitute(page, out var pages, out var overlap)) return true;
 
-		// if overlap is empty, don't waste work trying to replace pixels.
-		if (overlap.IsEmpty) pages = null;
 		__state = (overlap, page, pages);
 
 		// if overlap is complete, don't bother with original decoding because it will all be replaced.
@@ -52,40 +50,56 @@ public class VirtualTexturePatches
 		(System.Drawing.Rectangle, PageLocation, PageProvider?) __state
 	)
 	{
+		const int DebugBorderWidth = 4;
 		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
-		if (pages == null) return;
 
-		void FillWith(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<byte> array, GetPixel getPixel)
+		void SetPixel(Il2CppArrayBase<byte> array, int x, int y, System.Drawing.Color color)
 		{
-			for (int y = overlap.Y; y < overlap.Bottom; y++) for (int x = overlap.X; x < overlap.Right; x++)
-				{
-					var pix = getPixel(page, x, y);
-					array[0 + 4 * (y * 136 + x)] = pix.R;
-					array[1 + 4 * (y * 136 + x)] = pix.G;
-					array[2 + 4 * (y * 136 + x)] = pix.B;
-					array[3 + 4 * (y * 136 + x)] = pix.A;
-				}
+			array[0 + 4 * (y * 136 + x)] = color.R;
+			array[1 + 4 * (y * 136 + x)] = color.G;
+			array[2 + 4 * (y * 136 + x)] = color.B;
+			array[3 + 4 * (y * 136 + x)] = color.A;
 		}
 
-
-		GetPixel diffuser = (page, x, y) => pages.GetDiffusionPixel(page, x, y);
-		if (CustomVirtualTextureManager.DebugPages)
+		void FillOverlap()
 		{
-			bool TryDebugBorders(int x, int y, out System.Drawing.Color color)
+			DiscoRunner.Log.LogDebug($"overlap at {page.mip}#({page.x}, {page.y})");
+			void FillWith(Il2CppArrayBase<byte> array, GetPixel getPixel)
 			{
-				color = default;
-				if (x >= 10 && x < 126 && y >= 10 && y < 126) return false;
-
-				int d = Math.Min(255, (x + y) * 16 / 17);
-				color = System.Drawing.Color.FromArgb(d, 255 - d, d);
-				return true;
+				for (int y = overlap.Y; y < overlap.Bottom; y++)
+					for (int x = overlap.X; x < overlap.Right; x++)
+						SetPixel(array, x + 4, y + 4, getPixel(page, x, y));
 			}
-			diffuser = (page, x, y) => TryDebugBorders(x, y, out var color) ? color : pages.GetDiffusionPixel(page, x, y);
-		};
 
-		FillWith(pageReq.diff, diffuser);
-		FillWith(pageReq.norm, (page, x, y) => pages.GetNormalPixel(page, x, y));
-		FillWith(pageReq.spec, (page, x, y) => pages.GetSpecularPixel(page, x, y));
+			FillWith(pageReq.diff, pages.GetDiffusionPixel);
+			FillWith(pageReq.norm, pages.GetNormalPixel);
+			FillWith(pageReq.spec, pages.GetSpecularPixel);
+		}
+
+		void DebugFill()
+		{
+			System.Drawing.Color DebugColor(int x, int y)
+			{
+				int d = Math.Min(255, (x + y) * 16 / 17);
+				return System.Drawing.Color.FromArgb(d, 255 - d, d);
+			}
+
+			for (int y = 0; y < DebugBorderWidth; y++)
+				for (int x = 0; x < 136; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
+
+			for (int y = 136 - DebugBorderWidth; y < 136; y++)
+				for (int x = 0; x < 136; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
+
+			for (int y = DebugBorderWidth; y < 136 - DebugBorderWidth; y++)
+			{
+				for (int x = 0; x < DebugBorderWidth; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
+				for (int x = 136 - DebugBorderWidth; x < 136; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
+			}
+
+		}
+
+		if (pages != null) FillOverlap();
+		if (DiscoAPISettings.DrawVirtualTextureBorders) DebugFill();
 
 		__result = true;
 	}

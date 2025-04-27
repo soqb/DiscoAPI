@@ -2,34 +2,26 @@ using System.Drawing;
 
 namespace DiscoAPI.Runtime.VirtualTextures;
 
-public abstract class PageProvider
+public interface PageProvider
 {
-	public delegate PageProvider Factory(VirtualTexture asset, Rectangle area);
+	public delegate PageProvider Factory(int mipCount, Rectangle area);
 
-	protected VirtualTexture asset;
-	protected Rectangle area;
-
-	public abstract Color GetDiffusionPixel(PageLocation page, int x, int y);
-	public abstract Color GetNormalPixel(PageLocation page, int x, int y);
-	public abstract Color GetSpecularPixel(PageLocation page, int x, int y);
-
-	protected PageProvider(VirtualTexture asset, Rectangle area)
-	{
-		this.asset = asset;
-		this.area = area;
-	}
+	Color GetDiffusionPixel(PageLocation page, int x, int y);
+	Color GetNormalPixel(PageLocation page, int x, int y);
+	Color GetSpecularPixel(PageLocation page, int x, int y);
 }
 
 public class BitmapPageProvider : PageProvider
 {
 	public bool didFail;
 	public Bitmap[] diffusionMips;
+	public Rectangle area;
 
-	private Bitmap[] GenerateMipmaps(string path)
+	private Bitmap[] GenerateMipmaps(string path, int mipCount)
 	{
 		Bitmap fullQuality = new(path);
-		var mipmaps = new Bitmap[asset.m_mipCount];
-		for (int mip = 0; mip < asset.m_mipCount; mip++)
+		var mipmaps = new Bitmap[mipCount];
+		for (int mip = 0; mip < mipCount; mip++)
 		{
 			Size size = new(area.Width >> mip, area.Height >> mip);
 			if (fullQuality.Size == size) mipmaps[mip] = fullQuality;
@@ -39,11 +31,12 @@ public class BitmapPageProvider : PageProvider
 		return mipmaps;
 	}
 
-	private BitmapPageProvider(string path, VirtualTexture asset, Rectangle area) : base(asset, area)
+	private BitmapPageProvider(string path, int mipCount, Rectangle area)
 	{
+		this.area = area;
 		try
 		{
-			diffusionMips = GenerateMipmaps(path);
+			diffusionMips = GenerateMipmaps(path, mipCount);
 		}
 		catch (System.Exception e)
 		{
@@ -54,24 +47,27 @@ public class BitmapPageProvider : PageProvider
 	}
 
 	public static PageProvider.Factory FromFile(string path)
-		=> (asset, area) => new BitmapPageProvider(path, asset, area);
+		=> (mipCount, area) => new BitmapPageProvider(path, mipCount, area);
 
-	public override Color GetDiffusionPixel(PageLocation page, int x, int y)
+	private Color GetFallbackDiffusionPixel(PageLocation page, int x, int y)
 	{
-		if (didFail)
-		{
-			if ((page.x + page.y) % 2 == (x / 68 + y / 68) % 2) return Color.Green;
-			else return Color.Purple;
-		}
-
-		var mipmap = diffusionMips[page.mip];
-		int pageLeft = page.x * 136 - (area.X >> page.mip);
-		int pageTop = page.y * 136 - (area.Y >> page.mip);
-		x = pageLeft + x;
-		y = pageTop + y;
-		if (x < mipmap.Width && y < mipmap.Height) return mipmap.GetPixel(x, y);
+		if ((page.x + page.y) % 2 == (x / 64 + y / 64) % 2) return Color.Green;
 		else return Color.Purple;
 	}
-	public override Color GetNormalPixel(PageLocation page, int x, int y) => Color.FromArgb(0, 0, 0, 255);
-	public override Color GetSpecularPixel(PageLocation page, int x, int y) => Color.White;
+
+	public Color GetDiffusionPixel(PageLocation page, int x, int y)
+	{
+		if (didFail) return GetFallbackDiffusionPixel(page, x, y);
+
+		Bitmap mipmap = diffusionMips[page.mip];
+		int pageLeft = page.x * 128 - (area.X >> page.mip);
+		int pageTop = page.y * 128 - (area.Y >> page.mip);
+		x = pageLeft + x;
+		y = pageTop + y;
+
+		if (x >= 0 && y >= 0 && x < mipmap.Width && y < mipmap.Height) return mipmap.GetPixel(x, y);
+		return GetFallbackDiffusionPixel(page, x, y);
+	}
+	public Color GetNormalPixel(PageLocation page, int x, int y) => Color.FromArgb(0, 0, 0, 255);
+	public Color GetSpecularPixel(PageLocation page, int x, int y) => Color.White;
 }

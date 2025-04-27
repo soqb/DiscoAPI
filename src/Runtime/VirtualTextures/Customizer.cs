@@ -43,7 +43,7 @@ public abstract class VirtualTextureCustomizer
 		this.asset = asset;
 	}
 
-	public PageLocation InvertPageId(int index)
+	public static PageLocation InvertPageId(VirtualTexture asset, int index)
 	{
 		int pagesSeen = 0;
 		for (int mip = 0; mip < asset.m_mipCount; mip++)
@@ -73,13 +73,13 @@ public class AdHocVirtualTextureCustomizer : VirtualTextureCustomizer
 	public AdHocVirtualTextureCustomizer(VirtualTexture asset, AdHocTextureConfig config) : base(asset)
 	{
 		area = new(0, 0, config.size.Width, config.size.Height);
-		pages = config.getPages(asset, area);
+		pages = config.getPages(asset.m_mipCount, area);
 	}
 
 	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap)
 	{
 		pages = this.pages;
-		overlap = new(0, 0, 136, 136);
+		overlap = new(-4, -4, 136, 136);
 		return true;
 	}
 }
@@ -93,31 +93,35 @@ public class OverridesVirtualTextureCustomizer : VirtualTextureCustomizer
 	{
 		substs = settings.substitutions.Select(subst => new PageSubstitutionInstance(
 			subst.area,
-			subst.pagesFactory.Invoke(asset, subst.area)
+			subst.pagesFactory.Invoke(asset.m_mipCount, subst.area)
 		)).ToArray();
 	}
 
 	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageProvider? pages, out Rectangle overlap)
 	{
-		for (int i = substs.Length - 1; i >= 0; i--)
+		foreach (var sub in substs)
 		{
-			var inst = substs[i];
-			Rectangle area = new(
-				inst.area.X >> page.mip,
-				inst.area.Y >> page.mip,
-				inst.area.Width >> page.mip,
-				inst.area.Height >> page.mip
+			Rectangle textureArea = new(
+				(sub.area.X >> page.mip) - page.x * 128,
+				(sub.area.Y >> page.mip) - page.y * 128,
+				sub.area.Width >> page.mip,
+				sub.area.Height >> page.mip
 			);
-			if (!area.Contains(page.x * 136, page.y * 136)) continue;
+			Rectangle pageArea = new(
+				-4,
+				-4,
+				136,
+				136
+			);
 
-			pages = inst.pages;
-			overlap = Rectangle.FromLTRB(
-				Math.Max(0, area.X - page.x * 136),
-				Math.Max(0, area.Y - page.y * 136),
-				Math.Min(136, area.X - page.x * 136 + area.Width),
-				Math.Min(136, area.Y - page.y * 136 + area.Height)
-			);
-			return true;
+			overlap = Rectangle.Intersect(textureArea, pageArea);
+			DiscoRunner.Log.LogDebug($"{page.mip}#({page.x}, {page.y}) overlap: ({overlap.X}, {overlap.Y}) to ({overlap.Right}, {overlap.Bottom})");
+			if (overlap.Width != 0 && overlap.Height != 0)
+			{
+				pages = sub.pages;
+				return true;
+			}
+
 		}
 
 		pages = null;

@@ -58,7 +58,7 @@ public static class InherentProvider
 		CustomVirtualTextureManager.RegisterOverrides("e8f9498d308bbbac312e6be93ac820bd", new VirtualTextureOverrides()
 		{
 			substitutions = { new PageSubstitution(
-				new(1088, 1088, 2176, 2176),
+				new(1024, 1024, 2048, 2048),
 				BitmapPageProvider.FromFile(Location.Get("assets/textures/hello_revachol_page2.png")!)
 			) }
 		});
