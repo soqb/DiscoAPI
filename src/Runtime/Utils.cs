@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Dialogue;
+using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
 using UnityEngine;
@@ -182,15 +184,15 @@ public static class SkillUtils
 			ArticyBridge.ARTICY_ID_TO_SKILL_TYPE.Add(id, rawSkill);
 			ArticyBridge.ARTICY_ID_TO_SKILL_NAME.Add(id, skill.displayName);
 		}
-		
+
 		var newOrbMap = new SM.SkillType[Skill.VANILLA_SKILL_ORB_COUNT + SkillUtils.Skills.Count];
 		for (int i = Skill.VANILLA_SKILL_ORB_COUNT; i < newOrbMap.Length; i++)
 		{
-			newOrbMap[i-1] = (SM.SkillType)i;
+			newOrbMap[i - 1] = (SM.SkillType)i;
 		}
-		
-		System.Array.ConstrainedCopy(ArticyBridge.articyOrbSkillToSunshineOrbSkill, 0, 
-			newOrbMap, 0,ArticyBridge.articyOrbSkillToSunshineOrbSkill.Count);
+
+		System.Array.ConstrainedCopy(ArticyBridge.articyOrbSkillToSunshineOrbSkill, 0,
+			newOrbMap, 0, ArticyBridge.articyOrbSkillToSunshineOrbSkill.Count);
 		ArticyBridge.articyOrbSkillToSunshineOrbSkill = newOrbMap;
 	}
 }
@@ -258,3 +260,32 @@ public static class AssetUtils
 	}
 }
 
+/// <summary>
+/// A pretty heavy-handed tool to allow property customization of runtime-created <code>ScriptableObject</code>s.
+/// </summary>
+public static class ScriptableObjectHook<T> where T : ScriptableObject
+{
+	public static ThreadLocal<Action<T>?> cb = new();
+
+	public static T CreateInstanceWith(Action<T> onEnable)
+	{
+		cb.Value = onEnable;
+		return ScriptableObject.CreateInstance<T>();
+	}
+
+	private static void PreOnEnable(T __instance)
+	{
+		var c = cb.Value;
+		if (c == null) return;
+
+		c.Invoke(__instance);
+		cb.Value = null;
+	}
+
+	static ScriptableObjectHook()
+	{
+		var enable = typeof(T).GetMethod("OnEnable", 0, new Type[0]);
+		if (enable == null) throw new InvalidOperationException($"Could not hook into the creation of {typeof(T)} since it does not have an 'OnEnable' method");
+		DiscoRunner.Harmony.Patch(enable, prefix: new HarmonyMethod(SymbolExtensions.GetMethodInfo((T t) => PreOnEnable(t))));
+	}
+}

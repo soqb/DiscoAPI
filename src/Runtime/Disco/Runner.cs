@@ -1,6 +1,7 @@
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
+using HarmonyLib;
 
 namespace DiscoAPI.Runtime;
 
@@ -20,6 +21,8 @@ public static class DiscoRunner
     internal static DiscoHook sceneLoad = new("scene-load");
     internal static DiscoHook dialogueLoad = new("dialogue-load");
     internal static DiscoHook preDialogueLoad = new("pre-dialogue-load");
+
+    public static Harmony Harmony { get; } = new Harmony(DiscoAPIPlugin.GUID);
 
     public static DiscoSource SourceFromPlugin(BasePlugin plugin) => SourceFromPlugin(plugin, new());
     public static DiscoSource SourceFromPlugin(BasePlugin plugin, DiscoSource.Config cfg)

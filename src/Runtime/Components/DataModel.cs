@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using DiscoAPI.Common.Assets;
 using Il2CppInterop.Runtime.InteropTypes;
 
 namespace DiscoAPI.Runtime.Components;
@@ -10,21 +13,19 @@ public sealed class ComponentKey<D, T, P>
 	where P : Il2CppObjectBase
 	where D : notnull
 {
-
+	public AssetLocation Location { get; }
 	public ModEntityRegistry<T, P> Registry { get; }
 
-	internal Func<T, D> factory;
-
-	internal ComponentKey(ModEntityRegistry<T, P> registry, Func<T, D> factory)
+	internal ComponentKey(ModEntityRegistry<T, P> registry, AssetLocation location)
 	{
 		Registry = registry;
-		this.factory = factory;
+		Location = location;
 	}
 
-	public D AddTo(T t) => t.Add(this);
-	public D AddTo(P p) => AddTo(Registry.EntityOf(p));
 	public D? Of(T t) => t.Get<D>(this);
 	public D? Of(P p) => Of(Registry.EntityOf(p));
+	public bool TryOf(T t, [NotNullWhen(true)] out D? value) => t.TryGet<D>(this, out value);
+	public bool TryOf(P p, [NotNullWhen(true)] out D? value) => TryOf(Registry.EntityOf(p), out value);
 }
 
 public interface IEntityProvider<T, P> where T : ModEntity<T, P> where P : Il2CppObjectBase
@@ -44,21 +45,46 @@ public class CWTEntityMap<T, P> : IEntityProvider<T, P> where T : ModEntity<T, P
 		this.initializer = initializer;
 	}
 
-	public T Map(P p) => entities.GetValue(p, p => initializer(p));
+	public T Map(P p)
+	{
+		if (entities.TryGetValue(p, out T? t)) return t;
+		else return entities.GetValue(p, _ => initializer(p));
+	}
+}
+
+public class PersistentEntityMap<T, P> : IEntityProvider<T, P> where T : ModEntity<T, P> where P : UnityEngine.Object
+{
+	private ConcurrentDictionary<P, T> entities = new();
+	private Func<P, T> initializer;
+
+	public PersistentEntityMap(Func<P, T> initializer)
+	{
+		this.initializer = initializer;
+	}
+
+	public T Map(P p)
+	{
+		T? t;
+		if (entities.TryGetValue(p, out t)) return t;
+		t = initializer(p);
+		entities.TryAdd(p, t);
+		return t;
+	}
+
 }
 
 public class ModEntityRegistry<T, P> where T : notnull, ModEntity<T, P> where P : Il2CppObjectBase
 {
-	private IEntityProvider<T, P> entities;
+	internal IEntityProvider<T, P> entities;
 
 	public ModEntityRegistry(IEntityProvider<T, P> entities)
 	{
 		this.entities = entities;
 	}
 
-	public ComponentKey<D, T, P> Register<D>(Func<T, D> componentFactory) where D : notnull
+	public ComponentKey<D, T, P> Register<D>(string source, string id) where D : notnull
 	{
-		ComponentKey<D, T, P> key = new(this, componentFactory);
+		ComponentKey<D, T, P> key = new(this, new(new AssetType(typeof(ComponentKey<D, T, P>)), source, id));
 		// TBD: anything here?
 		return key;
 	}
@@ -70,6 +96,7 @@ public interface IComponentStore
 {
 	bool Contains(object key);
 	object? Get(object key);
+	bool TryGet(object key, [NotNullWhen(true)] out object? component);
 	void Add(object key, object component);
 	bool Remove(object key);
 	IEnumerable<object> Values { get; }
@@ -80,9 +107,10 @@ public class DictComponentStore : IComponentStore
 	private Dictionary<object, object> components = new();
 	public IEnumerable<object> Values => components.Values;
 
-	public void Add(object key, object component) => components.Add(key, component);
 	public bool Contains(object key) => components.ContainsKey(key);
 	public object? Get(object key) => components.GetValueOrDefault(key);
+	public bool TryGet(object key, [NotNullWhen(true)] out object? component) => components.TryGetValue(key, out component);
+	public void Add(object key, object component) => components.Add(key, component);
 	public bool Remove(object key) => components.Remove(key);
 }
 
@@ -91,7 +119,7 @@ public abstract class ModEntity<T, P>
 	where P : Il2CppObjectBase
 {
 	protected abstract IComponentStore Components { get; }
-	private ModEntityRegistry<T, P> registry;
+	protected ModEntityRegistry<T, P> registry;
 
 	protected ModEntity(ModEntityRegistry<T, P> registry, P entity)
 	{
@@ -99,19 +127,27 @@ public abstract class ModEntity<T, P>
 		EntityBase = entity;
 	}
 
-	public P EntityBase { get; }
+	public virtual P EntityBase { get; protected set; }
 
 	public static implicit operator P(ModEntity<T, P> entity) => entity.EntityBase;
 
 	public IEnumerable<object> ComponentData => Components.Values;
-	public D Add<D>(ComponentKey<D, T, P> key) where D : notnull
-	{
-		D d = key.factory((T)(object)this);
-		Components.Add(key, d);
-		return d;
-	}
+
 	public D? Get<D>(ComponentKey<D, T, P> key) where D : notnull => (D?)Components.Get(key);
-	public D GetOrAdd<D>(ComponentKey<D, T, P> key) where D : notnull => Components.Contains(key) ? Get(key)! : Add(key);
 	public bool Remove<D>(ComponentKey<D, T, P> key) where D : notnull => Components.Remove(key);
 	public bool Contains<D>(ComponentKey<D, T, P> key) where D : notnull => Components.Contains(key);
+	public void Add<D>(ComponentKey<D, T, P> key, D component) where D : notnull => Components.Add(key, component);
+	public bool TryGet<D>(ComponentKey<D, T, P> key, [NotNullWhen(true)] out D? component) where D : notnull
+	{
+		bool success = Components.TryGet(key, out object? a);
+		component = (D?)a;
+		return success;
+	}
+	public D GetOrCreate<D>(ComponentKey<D, T, P> key, Func<T, D> factory) where D : notnull
+	{
+		if (Components.TryGet(key, out object? component)) return (D)component;
+		D d = factory((T)this);
+		Add(key, d);
+		return d;
+	}
 }

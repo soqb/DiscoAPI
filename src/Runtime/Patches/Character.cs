@@ -212,7 +212,7 @@ public static class CharacterPatches
 		var sheet = ModCharacterSheet.Of(__instance);
 		if (__instance.intellect != null && !force && sheet.Contains(CharacterComponents.Skills)) return;
 
-		sheet.GetOrAdd(CharacterComponents.Skills).ReinitializeFromNativeInstance(__instance);
+		sheet.GetOrCreate(CharacterComponents.Skills, sh => new()).ReinitializeFromNativeInstance(__instance);
 	}
 
 	// most methods don't use the skill fields, but instead a certain array so we update that when we need to:

@@ -55,7 +55,7 @@ public sealed class SkillContainer
 public class ModCharacterSheet : ModEntity<ModCharacterSheet, SM.CharacterSheet>, IRecalculable
 {
 	public static ModEntityRegistry<ModCharacterSheet, SM.CharacterSheet> Registry { get; }
-		= new(new CWTEntityMap<ModCharacterSheet, SM.CharacterSheet>(s => new(s)));
+		= new(new PersistentEntityMap<ModCharacterSheet, SM.CharacterSheet>(s => new(s)));
 
 	protected override IComponentStore Components { get; } = new DictComponentStore();
 
@@ -70,5 +70,5 @@ public class ModCharacterSheet : ModEntity<ModCharacterSheet, SM.CharacterSheet>
 public static class CharacterComponents
 {
 	public static ComponentKey<SkillContainer, ModCharacterSheet, SM.CharacterSheet> Skills { get; }
-		= ModCharacterSheet.Registry.Register<SkillContainer>(_ => new());
+		= ModCharacterSheet.Registry.Register<SkillContainer>("discoapi", "skills");
 }
