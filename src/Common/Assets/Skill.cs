@@ -27,9 +27,10 @@ public record Skill : Asset, IAssetRef<Skill>
 	[JsonIgnore]
 	public new AssetLocation<Skill> Location => new(source, id);
 	Skill? IAssetRef<Skill>.Resolve(IDiscoManager mgr) => (Skill?)((IAssetRef)this).Resolve(mgr);
-
+	
 	public const int VANILLA_SKILL_COUNT = 29;
 	public const int VANILLA_SKILL_PORTRAIT_COUNT = 24;
+	public const int VANILLA_SKILL_ORB_COUNT = 27;
 	public const int VANILLA_MAX = 30;
 }
 

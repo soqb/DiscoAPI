@@ -173,14 +173,21 @@ public static class SkillUtils
 
 	public static void OnDialogueBundleLoad()
 	{
+		var newOrbMap = new SM.SkillType[Skill.VANILLA_SKILL_ORB_COUNT + SkillUtils.Skills.Count];
 		for (int i = SkillUtils.Skills.baseCount; i < SkillUtils.Skills.Count; i++)
 		{
 			Skill skill = SkillUtils.Skills[i]!;
+			SM.SkillType rawSkill = SkillUtils.Skills.GetRaw(i);
 			string id = skill.actor.ResolveCrushed()!.LookupValue(ArticyBridge.ARTICY_ID_FIELD);
 
-			ArticyBridge.ARTICY_ID_TO_SKILL_TYPE.Add(id, SkillUtils.Skills.GetRaw(i));
+			ArticyBridge.ARTICY_ID_TO_SKILL_TYPE.Add(id, rawSkill);
 			ArticyBridge.ARTICY_ID_TO_SKILL_NAME.Add(id, skill.displayName);
+			newOrbMap[Skill.VANILLA_SKILL_ORB_COUNT + 1 + i] = rawSkill;
 		}
+		
+		System.Array.ConstrainedCopy(ArticyBridge.articyOrbSkillToSunshineOrbSkill, 0, 
+			newOrbMap, 0,ArticyBridge.articyOrbSkillToSunshineOrbSkill.Count);
+		ArticyBridge.articyOrbSkillToSunshineOrbSkill = newOrbMap;
 	}
 }
 
