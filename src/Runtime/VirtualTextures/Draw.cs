@@ -116,10 +116,10 @@ public readonly record struct Il2CppRGBABuffer(int width, Il2CppArrayBase<byte> 
 	public Color this[int x, int y]
 	{
 		get => Color.FromArgb(
+			array[3 + 4 * (y * width + x)],
 			array[0 + 4 * (y * width + x)],
 			array[1 + 4 * (y * width + x)],
-			array[2 + 4 * (y * width + x)],
-			array[3 + 4 * (y * width + x)]
+			array[2 + 4 * (y * width + x)]
 		);
 		set
 		{
