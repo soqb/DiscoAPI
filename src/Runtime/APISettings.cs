@@ -133,6 +133,11 @@ public class DiscoAPISettings
 			"Draw colored borders on the edges of virtual textures to reveal their shape"
 		);
 
+		drawVirtualTextureBorders.SettingChanged += NowAndLater(() =>
+		{
+			VirtualTextures.CustomVirtualTextureManager.RebuildTextures();
+		});
+
 		Log.COMPONENT[] needsSwitching = Enum.GetValues<Log.COMPONENT>().Where(f => !Log.IsComponentActive(f)).ToArray();
 
 		logMore.SettingChanged += NowAndLater(() =>

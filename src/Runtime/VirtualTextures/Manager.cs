@@ -15,9 +15,6 @@ public enum VirtualTextureState
 
 public static class CustomVirtualTextureManager
 {
-	private delegate VirtualTextureCustomizer GetCustomizer(VirtualTexture asset);
-	private record struct VTEntry(VirtualTextureState state, GetCustomizer factory);
-
 	private static Dictionary<string, VirtualTextureOverrides> overriden = new();
 	public static Dictionary<string, VirtualTextureCollection> collections = new();
 
@@ -68,7 +65,7 @@ public static class CustomVirtualTextureManager
 
 	internal static void InitializeAdHoc(VirtualTexture asset, AdHocTextureConfig config)
 	{
-		asset.m_virtualSize = VirtualSize._8K_x_8K;
+		asset.m_virtualSize = VirtualSize._2K_x_2K;
 		asset.m_mipFilter = MipFilter.Nearest;
 		asset.m_layoutPreset = LayoutPreset.Unity_Standard;
 		asset.m_signature = new byte[16];
@@ -99,7 +96,6 @@ public static class CustomVirtualTextureManager
 
 		if (texture.Contains(ModVirtualTexture.CustomizerKey)) throw new InvalidOperationException("double virtual texture load");
 
-		DiscoRunner.Log.LogInfo($"{asset.name} now has overrides customizer");
 		texture.Add(ModVirtualTexture.CustomizerKey, new OverridesVirtualTextureCustomizer(asset, overrides));
 		return VirtualTextureState.Overriden;
 	}
@@ -108,5 +104,10 @@ public static class CustomVirtualTextureManager
 	{
 		// nothing to be done...
 	}
-}
 
+	public static void RebuildTextures()
+	{
+		if (AmplifyTextureManager.m_instance?.m_currentVirtualTextures == null) return;
+		foreach (var tx in AmplifyTextureManager.m_instance.m_currentVirtualTextures) tx.RequestRebuild();
+	}
+}

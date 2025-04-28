@@ -1,44 +1,32 @@
 using HarmonyLib;
 using AmplifyTexture;
 using DiscoAPI.Runtime.VirtualTextures;
-using System;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace DiscoAPI.Runtime.Patches;
 
 public class VirtualTexturePatches
 {
-	// [HarmonyPatch(typeof(PageSequencer), nameof(PageSequencer.ComputeIndex))]
-	// [HarmonyPostfix]
-	// private static void OnComputeIndex(int mip, int x, int y, int __result)
-	// {
-	// DiscoRunner.Log.LogDebug($"this is page {mip}#({x}, {y}) at index {__result}");
-	// }
-
 	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.ReadPage))]
 	[HarmonyPrefix]
 	private static bool PreReadPage2(
 		PageFile2 __instance,
 		int index,
 		PageRequest pageReq,
-		ref (System.Drawing.Rectangle, PageLocation, PageProvider?) __state
+		ref bool __result,
+		ref (System.Drawing.Rectangle, PageBuffers?) __state
 	)
 	{
-		if (!ModVirtualTexture.CustomizerKey.TryOf(__instance.m_asset, out var customizer))
-		{
-			return true;
-		}
+		if (!ModVirtualTexture.CustomizerKey.TryOf(__instance.m_asset, out var customizer)) return true;
 
 		PageLocation page = VirtualTextureCustomizer.InvertPageId(__instance.m_asset, index);
-		if (!customizer.TrySubstitute(page, out var pages, out var overlap)) return true;
-
-		__state = (overlap, page, pages);
+		if (!customizer.TrySubstitute(page, out var buffers, out var overlap)) return true;
+		__state = (overlap, buffers);
 
 		// if overlap is complete, don't bother with original decoding because it will all be replaced.
-		return overlap.Width != 136 || overlap.Height != 136;
+		__result = overlap.Width == 136 && overlap.Height == 136;
+		return !__result;
 	}
 
-	private delegate System.Drawing.Color GetPixel(PageLocation page, int x, int y);
 
 	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.ReadPage))]
 	[HarmonyPostfix]
@@ -46,62 +34,16 @@ public class VirtualTexturePatches
 		PageFile2 __instance,
 		int index,
 		PageRequest pageReq,
-		ref bool __result,
-		(System.Drawing.Rectangle, PageLocation, PageProvider?) __state
+		(System.Drawing.Rectangle, PageBuffers?) __state
 	)
 	{
-		const int DebugBorderWidth = 6;
-		(System.Drawing.Rectangle overlap, PageLocation page, PageProvider? pages) = __state;
+		(System.Drawing.Rectangle overlap, PageBuffers? buffers) = __state;
 
-		void SetPixel(Il2CppArrayBase<byte> array, int x, int y, System.Drawing.Color color)
-		{
-			array[0 + 4 * (y * 136 + x)] = color.R;
-			array[1 + 4 * (y * 136 + x)] = color.G;
-			array[2 + 4 * (y * 136 + x)] = color.B;
-			array[3 + 4 * (y * 136 + x)] = color.A;
-		}
+		Il2CppRGBABuffer diff = new(136, pageReq.diff);
+		Il2CppRGBABuffer norm = new(136, pageReq.norm);
+		Il2CppRGBABuffer spec = new(136, pageReq.spec);
 
-		void FillOverlap()
-		{
-			DiscoRunner.Log.LogDebug($"overlap at {page.mip}#({page.x}, {page.y})");
-			void FillWith(Il2CppArrayBase<byte> array, GetPixel getPixel)
-			{
-				for (int y = overlap.Y; y < overlap.Bottom; y++)
-					for (int x = overlap.X; x < overlap.Right; x++)
-						SetPixel(array, x + 4, y + 4, getPixel(page, x, y));
-			}
-
-			FillWith(pageReq.diff, pages.GetDiffusionPixel);
-			FillWith(pageReq.norm, pages.GetNormalPixel);
-			FillWith(pageReq.spec, pages.GetSpecularPixel);
-		}
-
-		void DebugFill()
-		{
-			System.Drawing.Color DebugColor(int x, int y)
-			{
-				int d = Math.Min(255, (x + y) * 16 / 17);
-				return System.Drawing.Color.FromArgb(d, 255 - d, d);
-			}
-
-			for (int y = 0; y < DebugBorderWidth; y++)
-				for (int x = 0; x < 136; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
-
-			for (int y = 136 - DebugBorderWidth; y < 136; y++)
-				for (int x = 0; x < 136; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
-
-			for (int y = DebugBorderWidth; y < 136 - DebugBorderWidth; y++)
-			{
-				for (int x = 0; x < DebugBorderWidth; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
-				for (int x = 136 - DebugBorderWidth; x < 136; x++) SetPixel(pageReq.diff, x, y, DebugColor(x, y));
-			}
-
-		}
-
-		if (pages != null) FillOverlap();
-		if (DiscoAPISettings.DrawVirtualTextureBorders) DebugFill();
-
-		__result = true;
+		new VirtualTextureBlitter(diff, norm, spec).Draw(overlap, buffers);
 	}
 
 	[HarmonyPatch(typeof(PageFile2), nameof(PageFile2.OpenRead))]

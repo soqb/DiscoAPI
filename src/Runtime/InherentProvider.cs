@@ -64,7 +64,7 @@ public static class InherentProvider
 		});
 
 		AdHocTextureConfig textureConfig = new(
-			new(4352, 4352),
+			new(4096, 4096),
 			BitmapPageProvider.FromFile(Location.Get("assets/textures/adhoc_bg.png")!)
 		);
 

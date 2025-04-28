@@ -36,12 +36,9 @@ public static class DiscoRunner
         string name = mgr.VirtualTextureCollections[mgr.VirtualTextureCollections.Count - 1].UniqueName;
         Log.LogInfo($"switching virtual texture collection to {name}...");
         mgr.SetActiveCollection(name);
+
+        // mgr.ActiveCollection.VirtualTextures[0].m_packer.;
         Log.LogInfo("switched virtual texture collection.");
-
-        var go = new UnityEngine.GameObject();
-        var sh = go.AddComponent<Sunshine.Metric.CharacterSheet>();
-        DiscoRunner.Log.LogDebug("sh: " + ModCharacterSheet.Of(sh));
-
     }
 
     public static DiscoSource SourceFromPlugin(BasePlugin plugin) => SourceFromPlugin(plugin, new());
@@ -116,7 +113,7 @@ public static class DiscoRunner
         sceneLoad.Invoke();
         if (sceneName == "Lobby") LobbyLoadExecutor.OnLoadLobbyPlease();
 
-        // if (sceneName == "Tent-int") Do();
+        if (sceneName == "Tent-int") Do();
     }
 
     public static void OnUpdate()
