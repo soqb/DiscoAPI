@@ -68,8 +68,6 @@ public static class CustomVirtualTextureManager
 		asset.m_virtualSize = VirtualSize._2K_x_2K;
 		asset.m_mipFilter = MipFilter.Nearest;
 		asset.m_layoutPreset = LayoutPreset.Unity_Standard;
-		asset.m_signature = new byte[16];
-		asset.m_version = new VersionInfo(2, 2, 4);
 		asset.m_assetIndex = 42;
 		asset.m_layoutSettings = layoutSettings;
 		asset.m_pageFile = new(asset);
@@ -86,17 +84,17 @@ public static class CustomVirtualTextureManager
 
 	public static VirtualTextureState TryLoadTexture(VirtualTexture asset)
 	{
-		var texture = ModVirtualTexture.Of(asset);
+		var texture = VirtualTextureComponents.Of(asset);
 		if (!overriden.TryGetValue(asset.m_hashName, out var overrides))
 		{
-			return texture.Contains(ModVirtualTexture.CustomizerKey)
+			return texture.Contains(VirtualTextureComponents.Customizer)
 				? VirtualTextureState.AdHoc
 				: VirtualTextureState.Vanilla;
 		}
 
-		if (texture.Contains(ModVirtualTexture.CustomizerKey)) throw new InvalidOperationException("double virtual texture load");
+		if (texture.Contains(VirtualTextureComponents.Customizer)) throw new InvalidOperationException("double virtual texture load");
 
-		texture.Add(ModVirtualTexture.CustomizerKey, new OverridesVirtualTextureCustomizer(asset, overrides));
+		texture.Add(VirtualTextureComponents.Customizer, new OverridesVirtualTextureCustomizer(asset, overrides));
 		return VirtualTextureState.Overriden;
 	}
 

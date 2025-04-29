@@ -2,7 +2,6 @@ using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
-using DiscoAPI.Runtime.VirtualTextures;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using PC = PixelCrushers.DialogueSystem;
@@ -42,6 +41,7 @@ public static class InherentProvider
 		assets.Register(new GenericArena<Area>(), false);
 		
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
+
 		DiscoHooks.OnSaveGame += save =>
 		{
 			var mod = save.GetModData(source.Guid);
@@ -55,21 +55,21 @@ public static class InherentProvider
 			WorldComponents.Of(global::World.singleton).TryDeserialize(mod.GetObject<JToken>("world"));
 		};
 
-		CustomVirtualTextureManager.RegisterOverrides("e8f9498d308bbbac312e6be93ac820bd", new VirtualTextureOverrides()
-		{
-			substitutions = { new PageSubstitution(
-				new(1024, 1024, 2048, 2048),
-				BitmapPageProvider.FromFile(Location.Get("assets/textures/hello_revachol_page2.png")!)
-			) }
-		});
+		// CustomVirtualTextureManager.RegisterOverrides("e8f9498d308bbbac312e6be93ac820bd", new VirtualTextureOverrides()
+		// {
+		// 	substitutions = { new PageSubstitution(
+		// 		new(1024, 1024, 2048, 2048),
+		// 		BitmapPageProvider.FromFile(Location.Get("assets/textures/hello_revachol_page2.png")!)
+		// 	) }
+		// });
 
-		AdHocTextureConfig textureConfig = new(
-			new(4096, 4096),
-			BitmapPageProvider.FromFile(Location.Get("assets/textures/adhoc_bg.png")!)
-		);
+		// AdHocTextureConfig textureConfig = new(
+		// 	new(4096, 4096),
+		// 	BitmapPageProvider.FromFile(Location.Get("assets/textures/adhoc_bg.png")!)
+		// );
 
-		var collection = CustomVirtualTextureManager.InternNewCollection("the-big-collection");
-		collection.VirtualTextures.Add(ModVirtualTexture.CreateAdHoc(textureConfig));
+		// var collection = CustomVirtualTextureManager.InternNewCollection("the-big-collection");
+		// collection.VirtualTextures.Add(ModVirtualTexture.CreateAdHoc(textureConfig));
 	}
 
 

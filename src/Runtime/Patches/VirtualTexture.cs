@@ -16,7 +16,7 @@ public class VirtualTexturePatches
 		ref (System.Drawing.Rectangle, PageBuffers?) __state
 	)
 	{
-		if (!ModVirtualTexture.CustomizerKey.TryOf(__instance.m_asset, out var customizer)) return true;
+		if (!VirtualTextureComponents.Customizer.TryOf(__instance.m_asset, out var customizer)) return true;
 
 		PageLocation page = VirtualTextureCustomizer.InvertPageId(__instance.m_asset, index);
 		if (!customizer.TrySubstitute(page, out var buffers, out var overlap)) return true;

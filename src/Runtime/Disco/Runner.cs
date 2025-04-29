@@ -30,17 +30,6 @@ public static class DiscoRunner
 
     public static Harmony Harmony { get; } = new Harmony(DiscoAPIPlugin.GUID);
 
-    public static void Do()
-    {
-        var mgr = AmplifyTextureManager.Instance;
-        string name = mgr.VirtualTextureCollections[mgr.VirtualTextureCollections.Count - 1].UniqueName;
-        Log.LogInfo($"switching virtual texture collection to {name}...");
-        mgr.SetActiveCollection(name);
-
-        // mgr.ActiveCollection.VirtualTextures[0].m_packer.;
-        Log.LogInfo("switched virtual texture collection.");
-    }
-
     public static DiscoSource SourceFromPlugin(BasePlugin plugin) => SourceFromPlugin(plugin, new());
     public static DiscoSource SourceFromPlugin(BasePlugin plugin, DiscoSource.Config cfg)
     {
@@ -112,8 +101,6 @@ public static class DiscoRunner
 
         sceneLoad.Invoke();
         if (sceneName == "Lobby") LobbyLoadExecutor.OnLoadLobbyPlease();
-
-        if (sceneName == "Tent-int") Do();
     }
 
     public static void OnUpdate()
