@@ -173,7 +173,6 @@ public static class SkillUtils
 
 	public static void OnDialogueBundleLoad()
 	{
-		var newOrbMap = new SM.SkillType[Skill.VANILLA_SKILL_ORB_COUNT + SkillUtils.Skills.Count];
 		for (int i = SkillUtils.Skills.baseCount; i < SkillUtils.Skills.Count; i++)
 		{
 			Skill skill = SkillUtils.Skills[i]!;
@@ -182,7 +181,12 @@ public static class SkillUtils
 
 			ArticyBridge.ARTICY_ID_TO_SKILL_TYPE.Add(id, rawSkill);
 			ArticyBridge.ARTICY_ID_TO_SKILL_NAME.Add(id, skill.displayName);
-			newOrbMap[Skill.VANILLA_SKILL_ORB_COUNT + 1 + i] = rawSkill;
+		}
+		
+		var newOrbMap = new SM.SkillType[Skill.VANILLA_SKILL_ORB_COUNT + SkillUtils.Skills.Count];
+		for (int i = Skill.VANILLA_SKILL_ORB_COUNT; i < newOrbMap.Length; i++)
+		{
+			newOrbMap[i-1] = (SM.SkillType)i;
 		}
 		
 		System.Array.ConstrainedCopy(ArticyBridge.articyOrbSkillToSunshineOrbSkill, 0, 
