@@ -14,6 +14,7 @@ public class DiscoAPISettings
 	private ConfigEntry<bool> logMore;
 	private ConfigEntry<bool> enableDeveloperMode;
 	private ConfigEntry<bool> allChecksPass;
+	private ConfigEntry<bool> componentLifecycleTracking;
 
 	public static bool AllowAchievements
 	{
@@ -44,6 +45,11 @@ public class DiscoAPISettings
 	{
 		get => Instance.allChecksPass.Value;
 		set => Instance.allChecksPass.Value = value;
+	}
+	public static bool ComponentLifecycleTracking
+	{
+		get => Instance.componentLifecycleTracking.Value;
+		set => Instance.componentLifecycleTracking.Value = value;
 	}
 
 	private EventHandler NowAndLater(Action something)
@@ -106,6 +112,13 @@ public class DiscoAPISettings
 			"ExtendedLogging",
 			false,
 			"Enable logging for more parts of the core game"
+		);
+
+		componentLifecycleTracking = cfg.Bind(
+			"Debug",
+			"ComponentLifecycleTracking",
+			false,
+			"Log the lifecycle stages of entities in the component system. May produce a lot of log messages."
 		);
 
 		Log.COMPONENT[] needsSwitching = Enum.GetValues<Log.COMPONENT>().Where(f => !Log.IsComponentActive(f)).ToArray();

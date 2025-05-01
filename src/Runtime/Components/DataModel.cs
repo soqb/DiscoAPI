@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using BepInEx.Logging;
 using DiscoAPI.Common.Assets;
 using Il2CppInterop.Runtime.InteropTypes;
 
@@ -125,6 +126,13 @@ public abstract class ModEntity<T, P>
 	{
 		this.registry = registry;
 		EntityBase = entity;
+
+		ComponentLifecycleTracker.EntitySpawned(this);
+	}
+
+	~ModEntity()
+	{
+		ComponentLifecycleTracker.EntityDespawned(this);
 	}
 
 	public virtual P EntityBase { get; protected set; }
@@ -134,9 +142,18 @@ public abstract class ModEntity<T, P>
 	public IEnumerable<object> ComponentData => Components.Values;
 
 	public D? Get<D>(ComponentKey<D, T, P> key) where D : notnull => (D?)Components.Get(key);
-	public bool Remove<D>(ComponentKey<D, T, P> key) where D : notnull => Components.Remove(key);
 	public bool Contains<D>(ComponentKey<D, T, P> key) where D : notnull => Components.Contains(key);
-	public void Add<D>(ComponentKey<D, T, P> key, D component) where D : notnull => Components.Add(key, component);
+	public bool Remove<D>(ComponentKey<D, T, P> key) where D : notnull
+	{
+		ComponentLifecycleTracker.ComponentRemoved(this, key);
+		return Components.Remove(key);
+	}
+
+	public void Add<D>(ComponentKey<D, T, P> key, D component) where D : notnull
+	{
+		ComponentLifecycleTracker.ComponentAdded(this, component);
+		Components.Add(key, component);
+	}
 	public bool TryGet<D>(ComponentKey<D, T, P> key, [NotNullWhen(true)] out D? component) where D : notnull
 	{
 		bool success = Components.TryGet(key, out object? a);
@@ -149,5 +166,51 @@ public abstract class ModEntity<T, P>
 		D d = factory((T)this);
 		Add(key, d);
 		return d;
+	}
+}
+
+public static class ComponentLifecycleTracker
+{
+	private static ManualLogSource log = new("DiscoAPI (CLT)");
+
+	private static string Entity<T, P>(ModEntity<T, P> entity)
+		where T : ModEntity<T, P>
+		where P : Il2CppObjectBase
+	{
+		return $"entity {entity} for object {entity.EntityBase}";
+	}
+
+	public static void EntitySpawned<T, P>(ModEntity<T, P> entity)
+		where T : ModEntity<T, P>
+		where P : Il2CppObjectBase
+	{
+		if (!DiscoAPISettings.ComponentLifecycleTracking) return;
+		log.LogDebug($"SPAWN ${Entity(entity)}");
+	}
+
+	public static void EntityDespawned<T, P>(ModEntity<T, P> entity)
+		where T : ModEntity<T, P>
+		where P : Il2CppObjectBase
+	{
+		if (!DiscoAPISettings.ComponentLifecycleTracking) return;
+		log.LogDebug($"DESPAWN ${Entity(entity)}");
+	}
+
+	public static void ComponentAdded<D, T, P>(ModEntity<T, P> entity, D d)
+		where T : ModEntity<T, P>
+		where P : Il2CppObjectBase
+		where D : notnull
+	{
+		if (!DiscoAPISettings.ComponentLifecycleTracking) return;
+		log.LogDebug($"ADD component {d} ON {Entity(entity)}");
+	}
+
+	public static void ComponentRemoved<D, T, P>(ModEntity<T, P> entity, ComponentKey<D, T, P> key)
+		where T : ModEntity<T, P>
+		where P : Il2CppObjectBase
+		where D : notnull
+	{
+		if (!DiscoAPISettings.ComponentLifecycleTracking) return;
+		log.LogDebug($"REMOVE component {entity.Get(key)} ON {Entity(entity)}");
 	}
 }
