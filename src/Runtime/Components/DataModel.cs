@@ -171,7 +171,7 @@ public abstract class ModEntity<T, P>
 
 public static class ComponentLifecycleTracker
 {
-	private static ManualLogSource log = new("DiscoAPI (CLT)");
+	private static ManualLogSource log = Logger.CreateLogSource("DiscoAPI (CLT)");
 
 	private static string Entity<T, P>(ModEntity<T, P> entity)
 		where T : ModEntity<T, P>
