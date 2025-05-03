@@ -27,4 +27,17 @@
         <None Include="src/Editor/**/*.cs" />
         <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     </ItemGroup>
+
+    <Target Name="CopyLooseAssets" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+        <Message Text="* copying loose assets to '$(OutputFolder)/assets'" Importance="high" />
+
+        <ItemGroup>
+            <AssetFiles Include="assets/**/*.*" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(OutputFolder)/assets" />
+        <Copy SourceFiles="@(AssetFiles)"
+              DestinationFolder="$(OutputFolder)/assets/%(RecursiveDir)" />
+    </Target>
+    
 </Project>

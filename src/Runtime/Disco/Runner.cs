@@ -2,6 +2,8 @@ using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
 using HarmonyLib;
+using Il2CppSystem;
+using Sunshine.Views;
 
 namespace DiscoAPI.Runtime;
 
@@ -21,6 +23,8 @@ public static class DiscoRunner
     internal static DiscoHook sceneLoad = new("scene-load");
     internal static DiscoHook dialogueLoad = new("dialogue-load");
     internal static DiscoHook preDialogueLoad = new("pre-dialogue-load");
+    internal static DiscoHook viewChanging = new ("view-changing");
+    internal static DiscoHook viewChangeComplete = new ("view-change-complete");
 
     public static Harmony Harmony { get; } = new Harmony(DiscoAPIPlugin.GUID);
 
@@ -41,6 +45,10 @@ public static class DiscoRunner
         IL2CPPChainloader.Instance.Finished += () => load.Invoke();
 
         FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad);
+        ViewController.OnChangeView =
+            Delegate.Combine(ViewController.OnChangeView, (Il2CppSystem.Action<ViewType>)OnViewChanging).Cast<Il2CppSystem.Action<ViewType>>();
+        ViewController.OnSwitchedView = 
+            Delegate.Combine(ViewController.OnSwitchedView,  (Il2CppSystem.Action<ViewType>)OnViewChanged).Cast<Il2CppSystem.Action<ViewType>>();
 
         InherentProvider.Provide();
 
@@ -103,5 +111,16 @@ public static class DiscoRunner
         update.Invoke();
 
         MainThreadExecutor.DequeueOnMainThreadPlease();
+    }
+
+    public static void OnViewChanging(ViewType nextView)
+    {
+        viewChanging.Invoke();
+        Log.LogInfo("Switching to view " + nextView.ToString());
+    }
+
+    public static void OnViewChanged(ViewType nextView)
+    {
+        viewChangeComplete.Invoke();
     }
 }

@@ -51,4 +51,16 @@ public static class DiscoHooks
 		add => DiscoRunner.dialogueLoad.Add(value);
 		remove => DiscoRunner.dialogueLoad.Remove(value);
 	}
+	
+	public static event Action OnViewChanging
+	{
+		add => DiscoRunner.viewChanging.Add(value);
+		remove => DiscoRunner.viewChanging.Remove(value);
+	}
+	
+	public static event Action OnViewChangeComplete
+	{
+		add => DiscoRunner.viewChangeComplete.Add(value);
+		remove => DiscoRunner.viewChangeComplete.Remove(value);
+	} 
 }
