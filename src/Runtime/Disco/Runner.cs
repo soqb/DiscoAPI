@@ -1,3 +1,4 @@
+using System;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
@@ -16,11 +17,11 @@ public static class DiscoRunner
     public static DiscoManager manager = new();
     public static DiscoSource? GetSource(string guid) => manager[guid];
 
-    internal static DiscoHook update = new("update");
-    internal static DiscoHook load = new("load");
-    internal static DiscoHook sceneLoad = new("scene-load");
-    internal static DiscoHook dialogueLoad = new("dialogue-load");
-    internal static DiscoHook preDialogueLoad = new("pre-dialogue-load");
+    internal static DiscoHook<Action> update = new("update");
+    internal static DiscoHook<Action> load = new("load");
+    internal static DiscoHook<Action> sceneLoad = new("scene-load");
+    internal static DiscoHook<Action> dialogueLoad = new("dialogue-load");
+    internal static DiscoHook<Action> preDialogueLoad = new("pre-dialogue-load");
 
     public static Harmony Harmony { get; } = new Harmony(DiscoAPIPlugin.GUID);
 
