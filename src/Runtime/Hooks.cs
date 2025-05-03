@@ -18,9 +18,9 @@ internal class DelegateConsumer<D> where D : Delegate
 		this.delegates = hook.actions.GetEnumerator();
 	}
 
-
-	public static void Acknowledge(string status) => DiscoRunner.Log.LogInfo($"i'm a real boy but {status}");
-
+	// it seems absurd..
+	// there's literally no non-asm way to "wrap" the execution of arbitrary delegates. it is simply not possible.
+	// thus, we go whole-hog and il generate as much as possible to keep performance in check.
 	private static DynamicMethod GenerateInvocationMethod()
 	{
 		MethodInfo dlg = typeof(D).GetMethod("Invoke")!;
@@ -107,6 +107,11 @@ public class DiscoHook<D> where D : Delegate
 		DiscoRunner.Log.LogError($"error in hook '{id}':");
 		DiscoRunner.Log.LogError(e);
 	}
+}
+
+public class DiscoHook : DiscoHook<Action>
+{
+	public DiscoHook(string id) : base(id) { }
 }
 
 public static class DiscoHooks
