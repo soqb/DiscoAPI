@@ -185,7 +185,7 @@ public static class ComponentLifecycleTracker
 		where P : Il2CppObjectBase
 	{
 		if (!DiscoAPISettings.ComponentLifecycleTracking) return;
-		log.LogDebug($"SPAWN ${Entity(entity)}");
+		log.LogDebug($"SPAWN {Entity(entity)}");
 	}
 
 	public static void EntityDespawned<T, P>(ModEntity<T, P> entity)
@@ -193,7 +193,7 @@ public static class ComponentLifecycleTracker
 		where P : Il2CppObjectBase
 	{
 		if (!DiscoAPISettings.ComponentLifecycleTracking) return;
-		log.LogDebug($"DESPAWN ${Entity(entity)}");
+		log.LogDebug($"DESPAWN {Entity(entity)}");
 	}
 
 	public static void ComponentAdded<D, T, P>(ModEntity<T, P> entity, D d)
