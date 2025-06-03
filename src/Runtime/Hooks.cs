@@ -136,4 +136,16 @@ public static class DiscoHooks
 		add => DiscoRunner.dialogueLoad.Add(value);
 		remove => DiscoRunner.dialogueLoad.Remove(value);
 	}
+	
+	public static event Action<string> OnSaveGame
+	{
+		add => DiscoRunner.saveGame.Add(value);
+		remove => DiscoRunner.saveGame.Remove(value);
+	}
+	
+	public static event Action<string> OnLoadSavedGame
+	{
+		add => DiscoRunner.loadSavedGame.Add(value);
+		remove => DiscoRunner.loadSavedGame.Remove(value);
+	}
 }

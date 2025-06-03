@@ -5,41 +5,78 @@ namespace DiscoAPI.Common.SaveSystem;
 
 public class ModSaveData
 {
-    public readonly int version;
+    public int version { get; private set; }
     private Dictionary<string, JToken> entries;
 
-    public int RetrieveInt(string key)
+    public bool KeyExists(string key) => entries.ContainsKey(key);
+
+    public int GetInt(string key)
     {
         if (!entries.TryGetValue(key, out var value)) return default;
         return value.Type == JTokenType.Integer ? value.Value<int>() : default;
     }
 
-    public string? RetrieveString(string key)
+    public string? GetString(string key)
     {
         if (!entries.TryGetValue(key, out var value)) return default;
         return value.Type == JTokenType.String ? value.Value<string>() : default;
     }
 
-    public T[]? RetrieveArray<T>(string key)
+    public IList<T>? GetCollection<T>(string key)
     {
         if (!entries.TryGetValue(key, out var value)) return default;
-        return value.Type == JTokenType.Array ? value.Value<T[]>() : default;
+        return value.Type == JTokenType.Array ? value.Value<List<T>>() : default;
     }
 
-    public T? RetrieveObject<T>(string key)
+    public T? GetObject<T>(string key)
     {
         if (!entries.TryGetValue(key, out var value)) return default;
         return value.Type == JTokenType.Object ? value.Value<T>() : default;
     }
 
-    public bool RetrieveBool(string key)
+    public bool GetBool(string key)
     {
         if (!entries.TryGetValue(key, out var value)) return default;
         return value.Type == JTokenType.Boolean ? value.Value<bool>() : default;
     }
 
-    public JToken? RetrieveJson(string key)
+    public JToken? GetJson(string key)
     {
         return entries.GetValueOrDefault(key);
+    }
+
+    public void SetDataVersion(int newVersion)
+    {
+        version = newVersion;
+    }
+
+    public void SetInt(string key, int value)
+    {
+        entries[key] = value;
+    }
+
+    public void SetString(string key, string value)
+    {
+        entries[key] = value;
+    }
+
+    public void SetCollection<T>(string key, IList<T> value)
+    {
+        entries[key] = JToken.FromObject(value);
+    }
+
+    public void SetObject<T>(string key, T obj)
+    {
+        entries[key] = JToken.FromObject(obj!);
+    }
+
+    public void SetBool(string key, bool value)
+    {
+        entries[key] = value;
+    }
+
+    public void SetJson(string key, JToken value)
+    {
+        entries[key] = value;
     }
 }

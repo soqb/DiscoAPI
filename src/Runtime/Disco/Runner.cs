@@ -2,6 +2,8 @@ using System;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Patches;
+using DiscoAPI.Runtime.SaveSystem;
 using HarmonyLib;
 
 namespace DiscoAPI.Runtime;
@@ -11,6 +13,8 @@ public static class DiscoRunner
     public static GlobalDiscoConfig globalConfig = new();
 
     public static ModWorld? world;
+
+    public static ModSaveSystem? saveSystem;
 
     public static ManualLogSource Log => DiscoAPIPlugin.Instance.Log;
 
@@ -22,6 +26,8 @@ public static class DiscoRunner
     internal static DiscoHook<Action> sceneLoad = new("scene-load");
     internal static DiscoHook<Action> dialogueLoad = new("dialogue-load");
     internal static DiscoHook<Action> preDialogueLoad = new("pre-dialogue-load");
+    internal static DiscoHook<Action<string>> saveGame = new("save-game");
+    internal static DiscoHook<Action<string>> loadSavedGame = new("load-saved-game");
 
     public static Harmony Harmony { get; } = new Harmony(DiscoAPIPlugin.GUID);
 

@@ -5,6 +5,7 @@ using DiscoAPI.Common.Assets;
 using UnityEngine;
 using LocalizationCustomSystem;
 using System;
+using System.Text;
 using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -18,8 +19,33 @@ public static class CharacterPatches
 		foreach (object datum in ModCharacterSheet.Of(__instance).ComponentData)
 			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
 	}
+	
+	// debugging function for skill value mismatch
+	[HarmonyPatch(typeof(SM.Modifiable), nameof(SM.Modifiable.Recalc))]
+	[HarmonyPostfix]
+	public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
+	{
+		StringBuilder sb = new();
+		if (__instance.TryCast<SM.Skill>() != null)
+		{
+			var skill = __instance.Cast<SM.Skill>();
+			sb.AppendLine($"Recalcing skill {skill.skillType.ToString()}");
+		}
+		else
+		{
+			sb.AppendLine("Ability recalc...");
+		}
+		
+		foreach (var mod in __instance.modifiers)
+		{
+			sb.AppendLine($"    MOD -> AMT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause.GetDisplayName()}");
+		}
 
-	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
+		sb.AppendLine($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers.Count}");
+		DiscoRunner.Log.LogInfo(sb.ToString());
+	}
+	
+    [HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
 	[HarmonyPrefix]
 	private static bool OnPassiveSuccess(ref bool __result, PC.DialogueEntry entry)
 	{
