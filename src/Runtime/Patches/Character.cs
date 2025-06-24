@@ -26,22 +26,32 @@ public static class CharacterPatches
 	public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
 	{
 		StringBuilder sb = new();
-		if (__instance.TryCast<SM.Skill>() != null)
+		var maybeSkill = __instance.TryCast<SM.Skill>();
+		var maybeAbility = __instance.TryCast<SM.Ability>();
+		if (maybeSkill != null)
 		{
-			var skill = __instance.Cast<SM.Skill>();
-			sb.AppendLine($"Recalcing skill {skill.skillType.ToString()}");
+			var modSkill = SkillUtils.Lookup(maybeSkill.skillType);
+			if (modSkill != null)
+			{
+				sb.Append($"Recalcing skill {modSkill.displayName}\n");
+			}
+			else
+			{
+				sb.Append($"Recalcing skill {maybeSkill.skillType.ToString()}\n");
+			}
 		}
-		else
+		else if (maybeAbility != null)
 		{
-			sb.AppendLine("Ability recalc...");
+			sb.Append($"Recalcing ability {maybeAbility.abilityType.ToString()}\n");
 		}
 		
-		foreach (var mod in __instance.modifiers)
+		for (int i = 0; i < __instance.modifiers.Count; i++)
 		{
-			sb.AppendLine($"    MOD -> AMT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause.GetDisplayName()}");
+			var mod = __instance.modifiers[i];
+			sb.Append($"    MODIFIER {i} |  AMOUNT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause.GetDisplayName()}\n");
 		}
 
-		sb.AppendLine($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers.Count}");
+		sb.Append($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers.Count}\n\n");
 		DiscoRunner.Log.LogInfo(sb.ToString());
 	}
 	

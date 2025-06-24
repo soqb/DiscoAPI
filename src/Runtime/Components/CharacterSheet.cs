@@ -1,6 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using DiscoAPI.Common.Assets;
+using Voidforge;
+using JsonUtil = Sunshine.JsonUtil;
 using SM = Sunshine.Metric;
+using Il2CppCollection = Il2CppSystem.Collections.Generic;
 
 namespace DiscoAPI.Runtime.Components;
 
@@ -16,6 +20,12 @@ public sealed class SkillContainer
 	public SM.Skill? GetRawSkill(IAssetRef<Skill> skill) => skillMap.GetValueOrDefault(skill.Location);
 	public SM.Skill MoraleRaw => GetRawSkill(DiscoRunner.globalConfig.MoraleSkill)!;
 	public SM.Skill HealthRaw => GetRawSkill(DiscoRunner.globalConfig.HealthSkill)!;
+
+	public SkillContainer()
+	{
+		DiscoRunner.saveGame.Add(SaveSkillSunshineData);
+		DiscoRunner.loadSavedGame.Add(LoadSkillSunshineData);
+	}
 
 	internal void ReinitializeFromNativeInstance(SM.CharacterSheet sheet)
 	{
@@ -49,6 +59,123 @@ public sealed class SkillContainer
 		}
 
 		sheet.skills = skills;
+	}
+
+	private void SaveSkillSunshineData()
+	{
+		var smSkillsForSerialize = new Il2CppCollection.List<SM.Skill>();
+		var skillModifierStateMap = new Il2CppCollection.Dictionary<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>();
+		
+		foreach (var modSkill in SkillUtils.Skills)
+		{
+			var smSkill = GetRawSkill(modSkill.Location);
+			if (smSkill == null || SkillUtils.SkillIsVanilla(smSkill.skillType)) continue;
+			
+			DiscoRunner.Log.LogInfo("Saving " + modSkill.displayName);
+			skillModifierStateMap.Add(smSkill.skillType, new Il2CppCollection.List<CharacterSheetPersister.ModifierState>());
+			
+			foreach (var mod in smSkill.modifiers)
+			{
+				var modState = CharacterSheetPersister.ConvertModifierToModifierState(mod);
+				skillModifierStateMap[smSkill.skillType].Add(modState);
+				smSkill.ClearModifiersForPersistence();
+			}
+			
+			smSkillsForSerialize.Add(smSkill);
+		}
+
+		var saveData = DiscoRunner.saveSystem.GetModData("disco");
+		// builtin serializer used here bc it obeys Modifiable serializer attribs
+		var dumbSerializerMods = JsonUtil.Serialize(skillModifierStateMap);
+		saveData.SetString("modifierStateMap", dumbSerializerMods);
+		var dumbSerializerJson = JsonUtil.Serialize(smSkillsForSerialize);
+		saveData.SetString("sunshineSkills", dumbSerializerJson);
+	}
+
+	private void LoadSkillSunshineData()
+	{
+		var saveData = DiscoRunner.saveSystem.GetModData("disco");
+		string? modifierStatesJson = saveData.GetString("modifierStateMap");
+		string? serializedSkillsJson = saveData.GetString("sunshineSkills");
+		if (modifierStatesJson == null || serializedSkillsJson == null)
+		{
+			DiscoRunner.Log.LogWarning("failed to load mod skill data for this savegame. aborting!");
+			return;
+		}
+
+		var modStates = JsonUtil.Deserialize<Il2CppCollection.Dictionary
+				<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>>
+				(modifierStatesJson);
+		var smSkills = JsonUtil.Deserialize<Il2CppCollection.List<SM.Skill>>(serializedSkillsJson);
+
+		var characterSheet = SingletonComponent<World>.Singleton.you;
+
+		foreach (var smSkill in smSkills)
+		{
+			smSkill.characterSheet = characterSheet;
+			smSkill.modifiers = new Il2CppCollection.List<SM.Modifier>();
+			foreach (var modState in modStates[smSkill.skillType])
+			{
+				var builtMod = BuildModifierFromState(characterSheet, modState);
+				if (builtMod != null) smSkill.modifiers.Add(builtMod);
+			}
+			
+			// repopulate into mod skills
+			var modSkill = SkillUtils.Lookup(smSkill.skillType);
+			if (modSkill != null)
+			{
+				skillMap[modSkill.Location] = smSkill;
+			}
+		}
+		
+		RepopulateNativeInstanceLists(characterSheet);
+	}
+
+	private static SM.Modifier? BuildModifierFromState(SM.CharacterSheet sheet, CharacterSheetPersister.ModifierState modState)
+	{
+		IModifierCause? modifierCause = modState.modifierCause?.GetModifierCause(SingletonComponent<World>.Singleton.you);
+		SM.Modifier? modifier = null;
+		if (modState.type == SM.ModifierType.ITEM)
+		{
+			SM.InventoryItem byName = SingletonComponent<InventoryItemList>.Singleton.GetByName(modState.modifierCause.ModifierKey);
+			SM.CharacterEffect? effect = byName.equipEffects.FirstOrDefault(e => e.skillType == modState.skillType);
+			if (effect != null)
+			{
+				modifier = new SM.Modifier(
+					modState.type, 
+					effect.parameter, 
+					(Il2CppSystem.Func<string>)effect.EffectName(), 
+					modifierCause, 
+					modState.skillType);
+			}
+		}
+		else if (modState.type != SM.ModifierType.THC)
+		{
+			if (modState.type != SM.ModifierType.ELECTROCHEMISTRY)
+				modifier = new SM.Modifier(modState.type, modState.amount, null, modifierCause, modState.skillType);
+			else
+				modifier = new SM.Modifier(modState.type, modState.amount,
+					(Il2CppSystem.Func<string>)modState.explanation, modifierCause, modState.skillType);
+		}
+		else
+		{
+			SM.ThoughtCabinetProject byName2 = SingletonComponent<ThoughtCabinetProjectList>.Singleton.GetByName(modState.modifierCause?.ModifierKey);
+			SM.CharacterEffect? effect2 = null;
+			if (sheet.thoughts.ThoughtCooking(byName2))
+			{
+				effect2 = byName2.researchEffects.FirstOrDefault(e => e.skillType == modState.skillType);
+			}
+			else if (sheet.thoughts.ThoughtFixed(byName2))
+			{
+				effect2 = byName2.completionEffects.FirstOrDefault(e => e.skillType == modState.skillType);
+			}
+			if (effect2 != null)
+			{
+				modifier = new SM.Modifier(modState.type, effect2.parameter, (Il2CppSystem.Func<string>)effect2.EffectName(), modifierCause, modState.skillType);
+			}
+		}
+
+		return modifier;
 	}
 }
 

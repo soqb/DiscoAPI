@@ -6,6 +6,7 @@ using BepInEx.Logging;
 using DiscoAPI.Common;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
+using DiscoAPI.Common.SaveSystem;
 using DiscoAPI.Runtime.Assets;
 using PC = PixelCrushers.DialogueSystem;
 
@@ -36,6 +37,10 @@ public class DiscoSource : IMutableAssets
     public ManualLogSource Log => cfg.log ?? NowheresvilleLogger;
     public ConfigFile? ConfigFile => cfg.configFile;
 
+    public delegate void ModSaveDelegate(ModSaveData saveData);
+    public event ModSaveDelegate OnGameSave;
+    public event ModSaveDelegate OnGameLoad;
+
     public DiscoManager Manager { get; }
     IDiscoManager IDiscoSource.Manager => Manager;
 
@@ -51,7 +56,7 @@ public class DiscoSource : IMutableAssets
 
         this.cfg = cfg;
         Router = cfg.router != null ? new MemoizedAssetRouter(cfg.router) : new EmptyAssetRouter();
-
+        
         if (isVanilla) tables = Enumerable.ToDictionary(manager.Assets.GetDefaultVanillaTables(this), value => value.AssetType);
         else tables = new();
     }

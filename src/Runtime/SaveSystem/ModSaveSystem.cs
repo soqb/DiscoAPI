@@ -1,21 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using DiscoAPI.Common.SaveSystem;
 using Newtonsoft.Json;
 using File = System.IO.File;
+using Path = Il2CppSystem.IO.Path;
 
 namespace DiscoAPI.Runtime.SaveSystem;
 
 public class ModSaveSystem
 {
-    private Dictionary<string, ModSaveData>? modSaveDatas;
-    private string? _discoFilename;
-
-    public ModSaveSystem()
-    {
-        DiscoHooks.OnLoadSavedGame += LoadSaveGameModData;
-        DiscoHooks.OnSaveGame += SaveGameModData;
-    }
+    public Dictionary<string, ModSaveData>? modSaveDatas;
+    private Location _saveDataLocation;
 
     public ModSaveData GetModData(string modGuid)
     {
@@ -25,27 +22,60 @@ public class ModSaveSystem
                 "ModSaveSystem: Retrieval of mod data called outside of save/load hook!");
         }
 
-        return modSaveDatas.TryGetValue(modGuid, out var data) ? data : new ModSaveData();
+        if (modSaveDatas.TryGetValue(modGuid, out var data)) return data;
+        
+        var newData = new ModSaveData(modGuid);
+        modSaveDatas.Add(modGuid, newData);
+        return newData;
     }
 
-    private void LoadSaveGameModData(string discoFilename)
-    {
-        _discoFilename = discoFilename;
-    }
-
-    private void SaveGameModData(string discoFilename)
+    public void TriggerSaveEvent(string discoFilename)
     {
         modSaveDatas = new();
-        _discoFilename = discoFilename;
+        _saveDataLocation = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance).Location.Get($"SaveGames/{discoFilename}.json");
+        foreach (var modSources in DiscoRunner.manager.linearSources)
+        {
+            var newData = new ModSaveData(modSources.Guid);
+            modSaveDatas.Add(modSources.Guid, newData);
+        }
+        DiscoRunner.saveGame.Invoke();
+        Task.Run(WriteSaveData);
     }
 
-    private void WriteSaveData()
+    public void TriggerLoadEvent(string discoFilename)
     {
-        var json = JsonConvert.SerializeObject(modSaveDatas);
-        File.WriteAllTextAsync($"SaveGames/{_discoFilename}.json", json);
+        modSaveDatas = new();
+        _saveDataLocation = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance).Location.Get($"SaveGames/{discoFilename}.json");
+        modSaveDatas = LoadSaveData();
+        DiscoRunner.loadSavedGame.Invoke();
         
         modSaveDatas = null;
-        DiscoHooks.OnLoadSavedGame -= LoadSaveGameModData;
-        DiscoHooks.OnSaveGame -= SaveGameModData;
+        GC.Collect();
+    }
+
+    private Dictionary<string, ModSaveData> LoadSaveData()
+    {
+        if (File.Exists(_saveDataLocation))
+        {
+            var saveText = File.ReadAllText(_saveDataLocation!);
+            var converted = JsonConvert.DeserializeObject<Dictionary<string, ModSaveData>>(saveText);
+            if (converted == null)
+            {
+                DiscoRunner.Log.LogError($"ModSaveSystem : Failed to deserialize valid data from {_saveDataLocation.path}");
+            }
+        }
+
+        return new();
+    }
+
+    private async Task WriteSaveData()
+    {
+        DiscoRunner.Log.LogInfo("Writing save data to disk...");
+        Directory.CreateDirectory(Path.GetDirectoryName(_saveDataLocation));
+        var json = JsonConvert.SerializeObject(modSaveDatas, Formatting.Indented, 
+            new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore});
+        await File.WriteAllTextAsync(_saveDataLocation!, json);
+        modSaveDatas = null;
+        GC.Collect();
     }
 }
