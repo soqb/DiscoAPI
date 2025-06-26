@@ -44,6 +44,6 @@ public static class InherentProvider
 	public static void OnDialogueBundleLoad()
 	{
 		// we have to introduce a dummy actor with a simple portrait for the case where no skill is used in the portrait grid.
-		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "assets/textures/portrait_none.png" });
+		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "assets/images/portrait_none.png" });
 	}
 }
