@@ -16,10 +16,10 @@ public static class CharacterPatches
 	[HarmonyPostfix]
 	private static void OnRecalc(SM.CharacterSheet __instance)
 	{
-		foreach (object datum in ModCharacterSheet.Of(__instance).ComponentData)
+		foreach ((_, object datum) in ModCharacterSheet.Of(__instance).ComponentData)
 			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
 	}
-	
+
 	// debugging function for skill value mismatch
 	[HarmonyPatch(typeof(SM.Modifiable), nameof(SM.Modifiable.Recalc))]
 	[HarmonyPostfix]
@@ -44,7 +44,7 @@ public static class CharacterPatches
 		{
 			sb.Append($"Recalcing ability {maybeAbility.abilityType.ToString()}\n");
 		}
-		
+
 		for (int i = 0; i < __instance.modifiers.Count; i++)
 		{
 			var mod = __instance.modifiers[i];
@@ -54,8 +54,8 @@ public static class CharacterPatches
 		sb.Append($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers.Count}\n\n");
 		DiscoRunner.Log.LogInfo(sb.ToString());
 	}
-	
-    [HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
+
+	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
 	[HarmonyPrefix]
 	private static bool OnPassiveSuccess(ref bool __result, PC.DialogueEntry entry)
 	{

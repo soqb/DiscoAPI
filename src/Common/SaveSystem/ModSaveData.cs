@@ -21,7 +21,7 @@ public class ModSaveData
 
     public int GetInt(string key)
     {
-        if (!entries.TryGetValue(key, out var value))        
+        if (!entries.TryGetValue(key, out var value))
         {
             WarnIfKeyNotExists(key);
             return default;
@@ -31,7 +31,7 @@ public class ModSaveData
 
     public string? GetString(string key)
     {
-        if (!entries.TryGetValue(key, out var value))        
+        if (!entries.TryGetValue(key, out var value))
         {
             WarnIfKeyNotExists(key);
             return default;
@@ -51,7 +51,7 @@ public class ModSaveData
 
     public T? GetObject<T>(string key)
     {
-        if (!entries.TryGetValue(key, out var value))       
+        if (!entries.TryGetValue(key, out var value))
         {
             WarnIfKeyNotExists(key);
             return default;
@@ -65,7 +65,7 @@ public class ModSaveData
         {
             WarnIfKeyNotExists(key);
             return default;
-        };
+        }
         return value.Type == JTokenType.Boolean ? value.Value<bool>() : default;
     }
 
@@ -75,7 +75,8 @@ public class ModSaveData
         {
             WarnIfKeyNotExists(key);
             return default;
-        };
+        }
+        ;
         return value;
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using DiscoAPI.Runtime.SaveSystem;
 using HarmonyLib;
 
 namespace DiscoAPI.Runtime;
@@ -136,14 +137,14 @@ public static class DiscoHooks
 		add => DiscoRunner.dialogueLoad.Add(value);
 		remove => DiscoRunner.dialogueLoad.Remove(value);
 	}
-	
-	public static event Action OnSaveGame
+
+	public static event Action<ModSaveSystem> OnSaveGame
 	{
 		add => DiscoRunner.saveGame.Add(value);
 		remove => DiscoRunner.saveGame.Remove(value);
 	}
-	
-	public static event Action OnLoadSavedGame
+
+	public static event Action<ModSaveSystem> OnLoadSavedGame
 	{
 		add => DiscoRunner.loadSavedGame.Add(value);
 		remove => DiscoRunner.loadSavedGame.Remove(value);
