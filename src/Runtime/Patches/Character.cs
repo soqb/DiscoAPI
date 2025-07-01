@@ -25,6 +25,7 @@ public static class CharacterPatches
 	[HarmonyPostfix]
 	public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
 	{
+		return;
 		StringBuilder sb = new();
 		var maybeSkill = __instance.TryCast<SM.Skill>();
 		var maybeAbility = __instance.TryCast<SM.Ability>();
@@ -44,14 +45,18 @@ public static class CharacterPatches
 		{
 			sb.Append($"Recalcing ability {maybeAbility.abilityType.ToString()}\n");
 		}
-		
-		for (int i = 0; i < __instance.modifiers.Count; i++)
+
+		if (__instance.modifiers != null)
 		{
-			var mod = __instance.modifiers[i];
-			sb.Append($"    MODIFIER {i} |  AMOUNT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause.GetDisplayName()}\n");
+			for (int i = 0; i < __instance.modifiers.Count; i++)
+			{
+				var mod = __instance.modifiers[i];
+				sb.Append(
+					$"    MODIFIER {i} |  AMOUNT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause?.GetDisplayName() ?? "UNKNOWN"}\n");
+			}
 		}
 
-		sb.Append($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers.Count}\n\n");
+		sb.Append($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers?.Count}\n\n");
 		DiscoRunner.Log.LogInfo(sb.ToString());
 	}
 	

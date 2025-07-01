@@ -63,6 +63,10 @@ public class ModSaveSystem
             {
                 DiscoRunner.Log.LogError($"ModSaveSystem : Failed to deserialize valid data from {_saveDataLocation.path}");
             }
+            else
+            {
+                return converted;
+            }
         }
 
         return new();
