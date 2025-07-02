@@ -84,6 +84,7 @@ public sealed class SkillContainer
 				}
 			}
 
+			// todo: verify modifiers are not being cleared before the on-exit autosave (once double hook invocation is fixed)
 			smSkill.ClearModifiersForPersistence();
 			smSkill.bonusOnlyValues = null;
 			smSkillsForSerialize.Add(smSkill);
