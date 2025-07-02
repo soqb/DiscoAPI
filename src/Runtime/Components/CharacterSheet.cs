@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.SaveSystem.Serialization;
-using Newtonsoft.Json;
 using Voidforge;
 using JsonUtil = Sunshine.JsonUtil;
 using SM = Sunshine.Metric;
@@ -65,8 +63,8 @@ public sealed class SkillContainer
 
 	private void SaveSkillSunshineData()
 	{
-		var smSkillsForSerialize = new List<SM.Skill>();
-		var skillModifierStateMap = new Dictionary<SM.SkillType, List<CharacterSheetPersister.ModifierState>>();
+		var smSkillsForSerialize = new Il2CppCollection.List<SM.Skill>();
+		var skillModifierStateMap = new Il2CppCollection.Dictionary<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>();
 		
 		foreach (var modSkill in SkillUtils.Skills)
 		{
@@ -74,28 +72,30 @@ public sealed class SkillContainer
 			if (smSkill == null || SkillUtils.SkillIsVanilla(smSkill.skillType)) continue;
 			
 			DiscoRunner.Log.LogInfo("Saving " + modSkill.displayName);
-			skillModifierStateMap.Add(smSkill.skillType, []);
-			
-			foreach (var mod in smSkill.modifiers)
+			skillModifierStateMap.Add(smSkill.skillType, new Il2CppCollection.List<CharacterSheetPersister.ModifierState>());
+
+			if (smSkill.modifiers != null)
 			{
-				var modState = CharacterSheetPersister.ConvertModifierToModifierState(mod);
-				skillModifierStateMap[smSkill.skillType].Add(modState);
+				foreach (var mod in smSkill.modifiers)
+				{
+					if (mod == null) continue;
+					var modState = CharacterSheetPersister.ConvertModifierToModifierState(mod);
+					skillModifierStateMap[smSkill.skillType].Add(modState);
+				}
 			}
-			
+
 			smSkill.ClearModifiersForPersistence();
 			smSkill.bonusOnlyValues = null;
 			smSkillsForSerialize.Add(smSkill);
 		}
 
 		var saveData = DiscoRunner.saveSystem.GetModData("disco");
-		var modStateJson = JsonConvert.SerializeObject(skillModifierStateMap, Formatting.Indented);
+		JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
+		var modStateJson = JsonUtil.Serialize(skillModifierStateMap);
 		saveData.SetString("modifierStateMap", modStateJson);
-		var skillJson = JsonConvert.SerializeObject(smSkillsForSerialize, Formatting.Indented,
-			new JsonSerializerSettings()
-			{
-				Converters = [new SunshineSkillConverter()]
-			});
+		var skillJson = JsonUtil.Serialize(smSkillsForSerialize);
 		saveData.SetString("sunshineSkills", skillJson);
+		JsonUtil.serializer.Config.SerializeEnumsAsInteger = false;
 	}
 
 	private void LoadSkillSunshineData()
@@ -105,21 +105,16 @@ public sealed class SkillContainer
 		string? serializedSkillsJson = saveData.GetString("sunshineSkills");
 		if (modifierStatesJson == null || serializedSkillsJson == null)
 		{
-			DiscoRunner.Log.LogWarning("failed to fetch mod skill data for this savegame. aborting!");
+			DiscoRunner.Log.LogWarning("CharacterSheet: failed to fetch mod skill data for this savegame. aborting!");
 			return;
 		}
 
-		var modStates = JsonConvert.DeserializeObject<Dictionary
-				<SM.SkillType, List<CharacterSheetPersister.ModifierState>>>
-				(modifierStatesJson);
-		var smSkills = JsonConvert.DeserializeObject<List<SM.Skill>>(serializedSkillsJson, new JsonSerializerSettings()
-		{
-			Converters = [new SunshineSkillConverter()]
-		});
 
+		var modStates = JsonUtil.Deserialize<Il2CppCollection.Dictionary<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>>(modifierStatesJson);
+		var smSkills = JsonUtil.Deserialize<Il2CppCollection.List<SM.Skill>>(serializedSkillsJson);
 		if (modStates == null || smSkills == null)
 		{
-			DiscoRunner.Log.LogError("failed to deserialize mod skill data for this savegame. aborting!");
+			DiscoRunner.Log.LogError("CharacterSheet: failed to deserialize mod skill data for this savegame. aborting!");
 			return;
 		}
 
