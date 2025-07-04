@@ -28,7 +28,7 @@ internal class DelegateConsumer<D> where D : Delegate
 		if (dlg.ReturnType != typeof(void))
 			throw new ArgumentException($"cannot create a hook from a delegate with a return type (it returns {dlg.ReturnType}).");
 
-		Type[] parameters = dlg.GetParameters().Select(param => param.GetType()).ToArray();
+		Type[] parameters = dlg.GetParameters().Select(param => param.ParameterType).ToArray();
 		DynamicMethod method = new(
 			"InvokeDelegates",
 			null,
@@ -86,7 +86,7 @@ internal class DelegateConsumer<D> where D : Delegate
 
 	private static DynamicMethod method = GenerateInvocationMethod();
 
-	public D Invocation => (D)method.CreateDelegate(typeof(D), this);
+	public static D NewInvocation(DiscoHook<D> hook) => method.CreateDelegate<D>(new DelegateConsumer<D>(hook));
 }
 
 public class DiscoHook<D> where D : Delegate
@@ -94,7 +94,7 @@ public class DiscoHook<D> where D : Delegate
 	internal readonly List<D> actions = new();
 
 	public string id;
-	public D Invoke => new DelegateConsumer<D>(this).Invocation;
+	public D Invoke => DelegateConsumer<D>.NewInvocation(this);
 
 	public DiscoHook(string id)
 	{

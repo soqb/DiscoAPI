@@ -14,7 +14,7 @@ public class ModSaveData
     public ModSaveData(string modGuid)
     {
         this.modGuid = modGuid;
-        this.entries = [];
+        this.entries = new();
     }
 
     public bool KeyExists(string key) => entries.ContainsKey(key);
