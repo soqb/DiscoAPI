@@ -16,7 +16,7 @@ public record struct SkillPanelConfig(
 	string? portraitOverride = null
 )
 {
-	public SkillLabelSettings? labelSettings;
+	public SkillLabelSettings? labelSettings = default;
 	public Flags flags = skill != null ? Flags.None : Flags.Inert;
 
 	[Flags]

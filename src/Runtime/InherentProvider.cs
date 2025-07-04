@@ -1,6 +1,8 @@
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
+using DiscoAPI.Runtime.Components;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using PC = PixelCrushers.DialogueSystem;
 using SM = Sunshine.Metric;
@@ -38,6 +40,18 @@ public static class InherentProvider
 		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
 
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
+		DiscoHooks.OnSaveGame += save =>
+		{
+			var mod = save.GetModData(source.Guid);
+			mod.SetObject("you", DiscoRunner.world!.You.Serialize());
+			mod.SetObject("world", DiscoRunner.world.Serialize());
+		};
+		DiscoHooks.OnLoadSavedGame += save =>
+		{
+			var mod = save.GetModData(source.Guid);
+			ModCharacterSheet.Registry.TryDeserialize(mod.GetObject<JToken>("you"), global::World.singleton.you);
+			ModWorld.Registry.TryDeserialize(mod.GetObject<JToken>("world"), global::World.singleton);
+		};
 	}
 
 

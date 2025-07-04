@@ -38,8 +38,16 @@ public class DiscoSource : IMutableAssets
     public ConfigFile? ConfigFile => cfg.configFile;
 
     public delegate void ModSaveDelegate(ModSaveData saveData);
-    public event ModSaveDelegate OnGameSave;
-    public event ModSaveDelegate OnGameLoad;
+    public event ModSaveDelegate OnGameSave
+    {
+        add => DiscoHooks.OnSaveGame += sys => value(sys.GetModData(this.Guid));
+        remove => DiscoHooks.OnSaveGame -= sys => value(sys.GetModData(this.Guid));
+    }
+    public event ModSaveDelegate OnGameLoad
+    {
+        add => DiscoHooks.OnLoadSavedGame += sys => value(sys.GetModData(this.Guid));
+        remove => DiscoHooks.OnLoadSavedGame -= sys => value(sys.GetModData(this.Guid));
+    }
 
     public DiscoManager Manager { get; }
     IDiscoManager IDiscoSource.Manager => Manager;
@@ -56,7 +64,7 @@ public class DiscoSource : IMutableAssets
 
         this.cfg = cfg;
         Router = cfg.router != null ? new MemoizedAssetRouter(cfg.router) : new EmptyAssetRouter();
-        
+
         if (isVanilla) tables = Enumerable.ToDictionary(manager.Assets.GetDefaultVanillaTables(this), value => value.AssetType);
         else tables = new();
     }

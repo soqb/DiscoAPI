@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using DiscoAPI.Common.Assets;
 using Voidforge;
-using JsonUtil = Sunshine.JsonUtil;
 using SM = Sunshine.Metric;
 using Il2CppCollection = Il2CppSystem.Collections.Generic;
+using DiscoAPI.Runtime.SaveSystem;
+using Newtonsoft.Json.Linq;
 
 namespace DiscoAPI.Runtime.Components;
 
@@ -13,19 +14,13 @@ public interface IRecalculable
 	void Recalc();
 }
 
-public sealed class SkillContainer
+public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharacterSheet>
 {
 	private Dictionary<AssetLocation, SM.Skill> skillMap = new();
 
 	public SM.Skill? GetRawSkill(IAssetRef<Skill> skill) => skillMap.GetValueOrDefault(skill.Location);
 	public SM.Skill MoraleRaw => GetRawSkill(DiscoRunner.globalConfig.MoraleSkill)!;
 	public SM.Skill HealthRaw => GetRawSkill(DiscoRunner.globalConfig.HealthSkill)!;
-
-	public SkillContainer()
-	{
-		DiscoRunner.saveGame.Add(SaveSkillSunshineData);
-		DiscoRunner.loadSavedGame.Add(LoadSkillSunshineData);
-	}
 
 	internal void ReinitializeFromNativeInstance(SM.CharacterSheet sheet)
 	{
@@ -34,11 +29,11 @@ public sealed class SkillContainer
 		for (int i = 0; i < skillArena.Count; i++)
 		{
 			var sk = skillArena[i];
-			if (sk == null) continue;
+			if (sk == null || skillMap.ContainsKey(sk.Location)) continue;
 
 			var type = skillArena.GetRaw(i);
-			var skill = sheet.GetSkill(type);
-			skillMap[sk.Location] = skill ?? new SM.Skill(type, sheet);
+			var skill = i < skillArena.baseCount ? sheet.GetSkill(type) : new SM.Skill(type, sheet);
+			skillMap.Add(sk.Location, skill);
 		}
 	}
 
@@ -61,16 +56,16 @@ public sealed class SkillContainer
 		sheet.skills = skills;
 	}
 
-	private void SaveSkillSunshineData()
+	public JToken Serialize()
 	{
 		var smSkillsForSerialize = new Il2CppCollection.List<SM.Skill>();
 		var skillModifierStateMap = new Il2CppCollection.Dictionary<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>();
-		
+
 		foreach (var modSkill in SkillUtils.Skills)
 		{
 			var smSkill = GetRawSkill(modSkill.Location);
 			if (smSkill == null || SkillUtils.SkillIsVanilla(smSkill.skillType)) continue;
-			
+
 			DiscoRunner.Log.LogInfo("Saving " + modSkill.displayName);
 			skillModifierStateMap.Add(smSkill.skillType, new Il2CppCollection.List<CharacterSheetPersister.ModifierState>());
 
@@ -89,52 +84,38 @@ public sealed class SkillContainer
 			smSkill.bonusOnlyValues = null;
 			smSkillsForSerialize.Add(smSkill);
 		}
-		// JsonSerializerSettings charSheetSerializer = new ()
-		// {
-		// 	ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-		// 	Converters = [new SunshineSkillConverter()]
-		// };
-		
-		var saveData = DiscoRunner.saveSystem.GetModData("disco");
+
 		JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
-		var modStateJson = JsonUtil.Serialize(skillModifierStateMap);
-		JsonUtil.serializer.Config.SerializeEnumsAsInteger = false;
-		saveData.SetString("modifierStateMap", modStateJson);
-		//var skillJson = JsonConvert.SerializeObject(smSkillsForSerialize, charSheetSerializer);
-		var skillJson = JsonUtil.Serialize(smSkillsForSerialize);
-		saveData.SetString("sunshineSkills", skillJson);
+		// builtin serializer used here bc it obeys Modifiable serializer attribs
+		return new JObject {
+			{ "modifierStateMap", Sunshine.JsonUtil.Serialize(skillModifierStateMap) },
+			{ "sunshineSkills", Sunshine.JsonUtil.Serialize(smSkillsForSerialize) },
+		};
 	}
 
-	private void LoadSkillSunshineData()
+
+	public bool TryDeserialize(JToken token, ModCharacterSheet sheet)
 	{
-		var saveData = DiscoRunner.saveSystem.GetModData("disco");
-		string? modifierStatesJson = saveData.GetString("modifierStateMap");
-		string? serializedSkillsJson = saveData.GetString("sunshineSkills");
+		JObject obj = (JObject)token;
+		string? modifierStatesJson = obj.GetValue("modifierStateMap")?.Value<string>();
+		string? serializedSkillsJson = obj.GetValue("sunshineSkills")?.Value<string>();
 		if (modifierStatesJson == null || serializedSkillsJson == null)
 		{
-			DiscoRunner.Log.LogWarning("CharacterSheet: failed to fetch mod skill data for this savegame. aborting!");
-			return;
+			DiscoRunner.Log.LogWarning("failed to load mod skill data for this savegame. aborting!");
+			return false;
 		}
 
-		// JsonSerializerSettings serializerSettings = new ()
-		// {
-		// 	ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-		// 	Converters = [new SunshineSkillConverter()]
-		// };
-		var modStates =
-			JsonUtil
-				.Deserialize<
-					Il2CppCollection.Dictionary<SM.SkillType,
-						Il2CppCollection.List<CharacterSheetPersister.ModifierState>>>(modifierStatesJson);
-		//var smSkills = JsonConvert.DeserializeObject<List<SM.Skill>>(serializedSkillsJson, serializerSettings);
-		var smSkills = JsonUtil.Deserialize<Il2CppCollection.List<SM.Skill>>(serializedSkillsJson);
+		var modStates = Sunshine.JsonUtil.Deserialize<Il2CppCollection.Dictionary
+				<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>>
+				(modifierStatesJson);
+		var smSkills = Sunshine.JsonUtil.Deserialize<Il2CppCollection.List<SM.Skill>>(serializedSkillsJson);
 		if (modStates == null || smSkills == null)
 		{
 			DiscoRunner.Log.LogError("CharacterSheet: failed to deserialize mod skill data for this savegame. aborting!");
-			return;
+			return false;
 		}
-
-		var characterSheet = SingletonComponent<World>.Singleton.you;
+		
+		var characterSheet = sheet.EntityBase;
 
 		foreach (var smSkill in smSkills)
 		{
@@ -156,6 +137,7 @@ public sealed class SkillContainer
 		}
 		
 		RepopulateNativeInstanceLists(characterSheet);
+		return true;
 	}
 
 	private static SM.Modifier? BuildModifierFromState(SM.CharacterSheet sheet, CharacterSheetPersister.ModifierState modState)
@@ -169,10 +151,10 @@ public sealed class SkillContainer
 			if (effect != null)
 			{
 				modifier = new SM.Modifier(
-					modState.type, 
-					effect.parameter, 
-					(Il2CppSystem.Func<string>)effect.EffectName(), 
-					modifierCause, 
+					modState.type,
+					effect.parameter,
+					(Il2CppSystem.Func<string>)effect.EffectName(),
+					modifierCause,
 					modState.skillType);
 			}
 		}
@@ -206,7 +188,8 @@ public sealed class SkillContainer
 	}
 }
 
-public class ModCharacterSheet : ModEntity<ModCharacterSheet, SM.CharacterSheet>, IRecalculable
+public class ModCharacterSheet : ModEntity<ModCharacterSheet, SM.CharacterSheet>,
+	IRecalculable
 {
 	public static ModEntityRegistry<ModCharacterSheet, SM.CharacterSheet> Registry { get; }
 		= new(new PersistentEntityMap<ModCharacterSheet, SM.CharacterSheet>(s => new(s)));
