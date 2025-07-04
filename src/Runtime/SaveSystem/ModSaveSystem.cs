@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using DiscoAPI.Common.SaveSystem;
-using DiscoAPI.Runtime.SaveSystem.Serialization;
 using Newtonsoft.Json;
 using File = System.IO.File;
 using Path = Il2CppSystem.IO.Path;
@@ -16,7 +15,7 @@ public class ModSaveSystem
     public JsonSerializerSettings serializerSettings = new ()
     {
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-        Converters = [new SunshineSkillConverter()]
+        Converters = []
     };
     private Location _saveDataLocation;
 
