@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using DiscoAPI.Common.SaveSystem;
+using DiscoAPI.Runtime.SaveSystem.Serialization;
 using Newtonsoft.Json;
 using File = System.IO.File;
 using Path = Il2CppSystem.IO.Path;
@@ -12,6 +13,11 @@ namespace DiscoAPI.Runtime.SaveSystem;
 public class ModSaveSystem
 {
     public Dictionary<string, ModSaveData>? modSaveDatas;
+    public JsonSerializerSettings serializerSettings = new ()
+    {
+        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+        Converters = [new SunshineSkillConverter()]
+    };
     private Location _saveDataLocation;
 
     public ModSaveData GetModData(string modGuid)
@@ -45,6 +51,7 @@ public class ModSaveSystem
     public void TriggerLoadEvent(string discoFilename)
     {
         modSaveDatas = new();
+        DiscoRunner.Log.LogInfo("Loading mod save data from " + discoFilename);
         _saveDataLocation = DiscoRunner.SourceFromPlugin(DiscoAPIPlugin.Instance).Location.Get($"SaveGames/{discoFilename}.json");
         modSaveDatas = LoadSaveData();
         DiscoRunner.loadSavedGame.Invoke();
@@ -58,7 +65,7 @@ public class ModSaveSystem
         if (File.Exists(_saveDataLocation))
         {
             var saveText = File.ReadAllText(_saveDataLocation!);
-            var converted = JsonConvert.DeserializeObject<Dictionary<string, ModSaveData>>(saveText);
+            var converted = JsonConvert.DeserializeObject<Dictionary<string, ModSaveData>>(saveText, serializerSettings);
             if (converted == null)
             {
                 DiscoRunner.Log.LogError($"ModSaveSystem : Failed to deserialize valid data from {_saveDataLocation.path}");
@@ -76,8 +83,7 @@ public class ModSaveSystem
     {
         DiscoRunner.Log.LogInfo("Writing save data to disk...");
         Directory.CreateDirectory(Path.GetDirectoryName(_saveDataLocation));
-        var json = JsonConvert.SerializeObject(modSaveDatas, Formatting.Indented, 
-            new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore});
+        var json = JsonConvert.SerializeObject(modSaveDatas, Formatting.Indented, serializerSettings);
         await File.WriteAllTextAsync(_saveDataLocation!, json);
         modSaveDatas = null;
         GC.Collect();

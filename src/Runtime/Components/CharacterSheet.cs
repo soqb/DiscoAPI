@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Patches;
+using DiscoAPI.Runtime.SaveSystem.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Voidforge;
 using JsonUtil = Sunshine.JsonUtil;
 using SM = Sunshine.Metric;
@@ -34,11 +38,11 @@ public sealed class SkillContainer
 		for (int i = 0; i < skillArena.Count; i++)
 		{
 			var sk = skillArena[i];
-			if (sk == null || skillMap.ContainsKey(sk.Location)) continue;
+			if (sk == null) continue;
 
 			var type = skillArena.GetRaw(i);
-			var skill = i < skillArena.baseCount ? sheet.GetSkill(type) : new SM.Skill(type, sheet);
-			skillMap.Add(sk.Location, skill);
+			var skill = sheet.GetSkill(type);
+			skillMap[sk.Location] = skill ?? new SM.Skill(type, sheet);
 		}
 	}
 
@@ -89,14 +93,20 @@ public sealed class SkillContainer
 			smSkill.bonusOnlyValues = null;
 			smSkillsForSerialize.Add(smSkill);
 		}
-
+		// JsonSerializerSettings charSheetSerializer = new ()
+		// {
+		// 	ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+		// 	Converters = [new SunshineSkillConverter()]
+		// };
+		
 		var saveData = DiscoRunner.saveSystem.GetModData("disco");
 		JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
 		var modStateJson = JsonUtil.Serialize(skillModifierStateMap);
+		JsonUtil.serializer.Config.SerializeEnumsAsInteger = false;
 		saveData.SetString("modifierStateMap", modStateJson);
+		//var skillJson = JsonConvert.SerializeObject(smSkillsForSerialize, charSheetSerializer);
 		var skillJson = JsonUtil.Serialize(smSkillsForSerialize);
 		saveData.SetString("sunshineSkills", skillJson);
-		JsonUtil.serializer.Config.SerializeEnumsAsInteger = false;
 	}
 
 	private void LoadSkillSunshineData()
@@ -110,8 +120,17 @@ public sealed class SkillContainer
 			return;
 		}
 
-
-		var modStates = JsonUtil.Deserialize<Il2CppCollection.Dictionary<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>>(modifierStatesJson);
+		// JsonSerializerSettings serializerSettings = new ()
+		// {
+		// 	ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+		// 	Converters = [new SunshineSkillConverter()]
+		// };
+		var modStates =
+			JsonUtil
+				.Deserialize<
+					Il2CppCollection.Dictionary<SM.SkillType,
+						Il2CppCollection.List<CharacterSheetPersister.ModifierState>>>(modifierStatesJson);
+		//var smSkills = JsonConvert.DeserializeObject<List<SM.Skill>>(serializedSkillsJson, serializerSettings);
 		var smSkills = JsonUtil.Deserialize<Il2CppCollection.List<SM.Skill>>(serializedSkillsJson);
 		if (modStates == null || smSkills == null)
 		{
@@ -123,7 +142,7 @@ public sealed class SkillContainer
 
 		foreach (var smSkill in smSkills)
 		{
-			smSkill.characterSheet = characterSheet;
+			smSkill.SetCharacterSheetFromPersistence(characterSheet);
 			smSkill.modifiers = new Il2CppCollection.List<SM.Modifier>();
 			foreach (var modState in modStates[smSkill.skillType])
 			{
@@ -137,6 +156,7 @@ public sealed class SkillContainer
 			{
 				skillMap[modSkill.Location] = smSkill;
 			}
+			//CharacterPatches.PrintModifiable(smSkill);
 		}
 		
 		RepopulateNativeInstanceLists(characterSheet);

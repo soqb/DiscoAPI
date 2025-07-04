@@ -5,8 +5,11 @@ using DiscoAPI.Common.Assets;
 using UnityEngine;
 using LocalizationCustomSystem;
 using System;
+using System.Linq;
 using System.Text;
 using DiscoAPI.Runtime.Components;
+using Il2CppInterop.Runtime;
+using Il2CppSystem.Collections.Generic;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -20,15 +23,19 @@ public static class CharacterPatches
 			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
 	}
 	
-	// debugging function for skill value mismatch
+	//debugging function for skill value mismatch
 	[HarmonyPatch(typeof(SM.Modifiable), nameof(SM.Modifiable.Recalc))]
 	[HarmonyPostfix]
 	public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
 	{
-		return;
+		PrintModifiable(__instance);
+	}
+
+	public static void PrintModifiable(SM.Modifiable modifiable)
+	{
 		StringBuilder sb = new();
-		var maybeSkill = __instance.TryCast<SM.Skill>();
-		var maybeAbility = __instance.TryCast<SM.Ability>();
+		var maybeSkill = modifiable.TryCast<SM.Skill>();
+		var maybeAbility = modifiable.TryCast<SM.Ability>();
 		if (maybeSkill != null)
 		{
 			var modSkill = SkillUtils.Lookup(maybeSkill.skillType);
@@ -46,17 +53,17 @@ public static class CharacterPatches
 			sb.Append($"Recalcing ability {maybeAbility.abilityType.ToString()}\n");
 		}
 
-		if (__instance.modifiers != null)
+		if (modifiable.modifiers != null)
 		{
-			for (int i = 0; i < __instance.modifiers.Count; i++)
+			for (int i = 0; i < modifiable.modifiers.Count; i++)
 			{
-				var mod = __instance.modifiers[i];
+				var mod = modifiable.modifiers[i];
 				sb.Append(
 					$"    MODIFIER {i} |  AMOUNT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause?.GetDisplayName() ?? "UNKNOWN"}\n");
 			}
 		}
 
-		sb.Append($"RECALC RESULTS -> CalculatedAbility:{__instance.calculatedAbility} Value:{__instance.value} Modifiers:{__instance.modifiers?.Count}\n\n");
+		sb.Append($"RECALC RESULTS -> CalculatedAbility:{modifiable.calculatedAbility} Value:{modifiable.value} Modifiers:{modifiable.modifiers?.Count}\n\n");
 		DiscoRunner.Log.LogInfo(sb.ToString());
 	}
 	
@@ -291,5 +298,25 @@ public static class CharacterPatches
 		__result = SkillUtils.AbilityToSunshine(SkillUtils.Lookup(skillType)!.ability);
 		return false;
 	}
+
+	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.MakeSkills))]
+	[HarmonyPrefix]
+	private static bool OnMakeSkills(SM.CharacterSheet __instance)
+	{
+		// nb: this is probably a workaround to a discoAPI issue where skills hold on to previous data
+		for (var i = 0; i < __instance.skills.Count; i++)
+		{
+			var smSkill = __instance.skills[i];
+			if (!SkillUtils.SkillIsVanilla(smSkill.skillType))
+			{
+				smSkill.modifiers = new List<SM.Modifier>();
+			};
+			var newMod = new SM.Modifier(SM.ModifierType.CALCULATED_ABILITY, 0, null, __instance.GetAbility(smSkill.abilityType).Cast<IModifierCause>(), smSkill.skillType);
+			smSkill.modifiers.Add(newMod);
+		}
+		
+		return false;
+	}
+	
 }
 
