@@ -85,7 +85,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 			smSkillsForSerialize.Add(smSkill);
 		}
 
-		JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
+		Sunshine.JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
 		// builtin serializer used here bc it obeys Modifiable serializer attribs
 		return new JObject {
 			{ "modifierStateMap", Sunshine.JsonUtil.Serialize(skillModifierStateMap) },

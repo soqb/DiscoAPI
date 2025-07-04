@@ -20,6 +20,11 @@ public abstract class ComponentKey<T, P>
 	public AssetLocation Location { get; }
 	public ModEntityRegistry<T, P> Registry { get; }
 
+	public override string ToString()
+	{
+		return Location.ToString();
+	}
+
 	internal ComponentKey(ModEntityRegistry<T, P> registry, AssetLocation location)
 	{
 		Registry = registry;

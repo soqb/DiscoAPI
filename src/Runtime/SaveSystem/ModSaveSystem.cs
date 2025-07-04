@@ -38,7 +38,6 @@ public enum SaveLoadState
 
 public class ModSaveSystem
 {
-    public Dictionary<string, ModSaveData>? modSaveDatas;
     public JsonSerializerSettings serializerSettings = new ()
     {
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -79,7 +78,7 @@ public class ModSaveSystem
 
         if (state != SaveLoadState.Saving && modSaveDatas.TryGetValue(modGuid, out var data)) return data;
 
-        // if saving, return a reference to blank data, since we want to completely overwrite.
+        // if saving, return a reference to blank data since we want to completely overwrite.
         var newData = new ModSaveData(modGuid);
         modSaveDatas[modGuid] = newData;
         return newData;
@@ -153,9 +152,8 @@ public class ModSaveSystem
     private async Task WriteSaveData(string path)
     {
         DiscoRunner.Log.LogInfo("Writing save data to disk...");
-        Directory.CreateDirectory(Path.GetDirectoryName(_saveDataLocation)!);
-        var json = JsonConvert.SerializeObject(modSaveDatas, Formatting.Indented,
-            serializerSettings);
-        await File.WriteAllTextAsync(_saveDataLocation!, json);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var json = JsonConvert.SerializeObject(modSaveDatas, Formatting.Indented, serializerSettings);
+        await File.WriteAllTextAsync(path, json);
     }
 }

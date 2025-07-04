@@ -7,6 +7,7 @@ using LocalizationCustomSystem;
 using System;
 using System.Text;
 using DiscoAPI.Runtime.Components;
+using Il2CppSystem.Collections.Generic;
 
 namespace DiscoAPI.Runtime.Patches;
 
