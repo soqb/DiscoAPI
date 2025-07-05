@@ -60,13 +60,12 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 	{
 		var smSkillsForSerialize = new Il2CppCollection.List<SM.Skill>();
 		var skillModifierStateMap = new Il2CppCollection.Dictionary<SM.SkillType, Il2CppCollection.List<CharacterSheetPersister.ModifierState>>();
-
 		foreach (var modSkill in SkillUtils.Skills)
 		{
 			var smSkill = GetRawSkill(modSkill.Location);
 			if (smSkill == null || SkillUtils.SkillIsVanilla(smSkill.skillType)) continue;
 
-			DiscoRunner.Log.LogInfo("Saving " + modSkill.displayName);
+			smSkill = smSkill.MemberwiseClone().Cast<SM.Skill>(); // cloning to not modify the real skills if the game resumes
 			skillModifierStateMap.Add(smSkill.skillType, new Il2CppCollection.List<CharacterSheetPersister.ModifierState>());
 
 			if (smSkill.modifiers != null)
@@ -78,19 +77,21 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 					skillModifierStateMap[smSkill.skillType].Add(modState);
 				}
 			}
-
-			// todo: verify modifiers are not being cleared before the on-exit autosave (once double hook invocation is fixed)
+			
 			smSkill.ClearModifiersForPersistence();
 			smSkill.bonusOnlyValues = null;
 			smSkillsForSerialize.Add(smSkill);
 		}
 
-		Sunshine.JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
 		// builtin serializer used here bc it obeys Modifiable serializer attribs
-		return new JObject {
+		Sunshine.JsonUtil.serializer.Config.SerializeEnumsAsInteger = true;
+		var serializerResult = new JObject {
 			{ "modifierStateMap", Sunshine.JsonUtil.Serialize(skillModifierStateMap) },
 			{ "sunshineSkills", Sunshine.JsonUtil.Serialize(smSkillsForSerialize) },
 		};
+		Sunshine.JsonUtil.serializer.Config.SerializeEnumsAsInteger = false;
+		
+		return serializerResult;
 	}
 
 
@@ -113,7 +114,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 		var smSkills = Sunshine.JsonUtil.Deserialize<Il2CppCollection.List<SM.Skill>>(serializedSkillsJson);
 		if (modStates == null || smSkills == null)
 		{
-			DiscoRunner.Log.LogError("CharacterSheet: failed to deserialize mod skill data for this savegame. aborting!");
+			DiscoRunner.Log.LogError("failed to deserialize mod skill data for this savegame. aborting!");
 			return false;
 		}
 
@@ -129,13 +130,11 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 				if (builtMod != null) smSkill.modifiers.Add(builtMod);
 			}
 
-			// repopulate into mod skills
 			var modSkill = SkillUtils.Lookup(smSkill.skillType);
 			if (modSkill != null)
 			{
 				skillMap[modSkill.Location] = smSkill;
 			}
-			//CharacterPatches.PrintModifiable(smSkill);
 		}
 
 		RepopulateNativeInstanceLists(characterSheet);

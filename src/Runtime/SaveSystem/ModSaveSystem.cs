@@ -55,7 +55,7 @@ public class ModSaveSystem
     public static MethodInfo? FindDeserializer(Type target, Type? context)
     {
         Type iface = typeof(ISaveSerializable<,>).MakeGenericType(target, context ?? typeof(object));
-        Log.LogInfo($"is {target} assignable to {iface}? = " + target.IsAssignableTo(iface));
+        Log.LogInfo($"is {target.FullName} assignable to {iface.FullName}? = " + target.IsAssignableTo(iface));
         if (!target.IsAssignableTo(iface)) return null;
 
         return iface?.GetMethod("TryDeserialize", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);

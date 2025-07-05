@@ -21,9 +21,9 @@ public static class PersistencePatches
         lastLoadFilename = fileName;
     }
 
-    [HarmonyPatch(typeof(SunshinePersistenceLoadDataManager), nameof(SunshinePersistenceLoadDataManager.ApplyLoadedDataFromMemory))]
-    [HarmonyPostfix] // alternative method patched due ensure basegame data loaded
-    private static void OnApplyLoadedDataFromMemory()
+    [HarmonyPatch(typeof(SunshinePersistenceLoadDataManager), nameof(SunshinePersistenceLoadDataManager.LoadDataAfterLoadingArea))]
+    [HarmonyPostfix] // this patch triggers after the basegame completely finishes loading the gameworld
+    private static void OnLoadDataAfterLoadingArea()
     {
         DiscoRunner.Log.LogInfo("LoadCoR called !");
         DiscoRunner.saveSystem.TriggerLoadEvent(lastLoadFilename!);
