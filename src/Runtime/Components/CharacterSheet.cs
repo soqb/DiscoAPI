@@ -117,7 +117,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 			DiscoRunner.Log.LogError("failed to deserialize mod skill data for this savegame. aborting!");
 			return false;
 		}
-
+		
 		var characterSheet = sheet.EntityBase;
 
 		foreach (var smSkill in smSkills)
@@ -129,14 +129,14 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 				var builtMod = BuildModifierFromState(characterSheet, modState);
 				if (builtMod != null) smSkill.modifiers.Add(builtMod);
 			}
-
+			
 			var modSkill = SkillUtils.Lookup(smSkill.skillType);
 			if (modSkill != null)
 			{
 				skillMap[modSkill.Location] = smSkill;
 			}
 		}
-
+		
 		RepopulateNativeInstanceLists(characterSheet);
 		return true;
 	}

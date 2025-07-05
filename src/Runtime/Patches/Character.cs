@@ -22,12 +22,12 @@ public static class CharacterPatches
 	}
 
 	// debugging function for skill value mismatch
-	[HarmonyPatch(typeof(SM.Modifiable), nameof(SM.Modifiable.Recalc))]
-	[HarmonyPostfix]
-	public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
-	{
-		PrintModifiable(__instance);
-	}
+	// [HarmonyPatch(typeof(SM.Modifiable), nameof(SM.Modifiable.Recalc))]
+	// [HarmonyPostfix]
+	// public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
+	// {
+	// 	PrintModifiable(__instance);
+	// }
 
 	public static void PrintModifiable(SM.Modifiable modifiable)
 	{
@@ -61,7 +61,7 @@ public static class CharacterPatches
 			}
 		}
 
-		sb.Append($"RECALC RESULTS -> CalculatedAbility:{modifiable.calculatedAbility} Value:{modifiable.value} Modifiers:{modifiable.modifiers?.Count}\n\n");
+		sb.Append($"RECALC RESULTS -> CalculatedAbility:{modifiable.calculatedAbility} Value:{modifiable.value} MaxValue:{modifiable.maximumValue} Modifiers:{modifiable.modifiers?.Count}\n\n");
 		DiscoRunner.Log.LogInfo(sb.ToString());
 	}
 
@@ -301,7 +301,7 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static bool OnMakeSkills(SM.CharacterSheet __instance)
 	{
-		// nb: this is probably a workaround to a discoAPI issue where skills hold on to previous data
+		// nb: ensures mod skills have their modifiers reset since their lifetimes are managed separately
 		for (var i = 0; i < __instance.skills.Count; i++)
 		{
 			var smSkill = __instance.skills[i];
@@ -312,7 +312,6 @@ public static class CharacterPatches
 			var newMod = new SM.Modifier(SM.ModifierType.CALCULATED_ABILITY, 0, null, __instance.GetAbility(smSkill.abilityType).Cast<IModifierCause>(), smSkill.skillType);
 			smSkill.modifiers.Add(newMod);
 		}
-		
 		return false;
 	}
 	
