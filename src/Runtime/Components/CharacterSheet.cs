@@ -135,6 +135,12 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 			{
 				skillMap[modSkill.Location] = smSkill;
 			}
+
+			// nb: there is an inexplicable bug where the basegame loader cannot deserialize a signature ability
+			if (smSkill.isSignature)
+			{
+				characterSheet.GetAbility(smSkill.skillType).isSignature = true;
+			}
 		}
 		
 		RepopulateNativeInstanceLists(characterSheet);

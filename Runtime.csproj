@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <ModPath>DiscoAPI</ModPath>
-        <LangVersion>default</LangVersion>
     </PropertyGroup>
     
     <Import Project="./config.targets" />
@@ -10,6 +9,7 @@
     <PropertyGroup>
         <Version>0.0.1</Version>
         <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
         <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
         <AssemblyName>DiscoAPI</AssemblyName>
