@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using DiscoAPI.Runtime;
+using BepInEx.Logging;
+using DiscoAPI.Runtime.SaveSystem;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -7,6 +8,8 @@ namespace DiscoAPI.Common.SaveSystem;
 
 public class ModSaveData
 {
+    private static ManualLogSource Log => ModSaveSystem.Log;
+
     public int version { get; private set; }
     public string modGuid { get; private set; }
     [JsonProperty] private Dictionary<string, JToken> entries;
@@ -125,7 +128,7 @@ public class ModSaveData
     {
         if (KeyExists(key))
         {
-            DiscoRunner.Log.LogWarning($"ModSaveData ({modGuid}): Key {key} already has a value, overwriting anyways.");
+            Log.LogWarning($"({modGuid}): Key \"{key}\" already has a value, overwriting anyway.");
         }
     }
 
@@ -133,7 +136,7 @@ public class ModSaveData
     {
         if (!KeyExists(key))
         {
-            DiscoRunner.Log.LogWarning($"ModSaveData ({modGuid}): Key {key} does not exist, returning default value.");
+            Log.LogWarning($"({modGuid}): Key \"{key}\" does not exist, returning default value.");
         }
     }
 }

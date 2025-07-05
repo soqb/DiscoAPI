@@ -96,6 +96,8 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 
 	public bool TryDeserialize(JToken token, ModCharacterSheet sheet)
 	{
+		ReinitializeFromNativeInstance(sheet);
+
 		JObject obj = (JObject)token;
 		string? modifierStatesJson = obj.GetValue("modifierStateMap")?.Value<string>();
 		string? serializedSkillsJson = obj.GetValue("sunshineSkills")?.Value<string>();
@@ -114,7 +116,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 			DiscoRunner.Log.LogError("CharacterSheet: failed to deserialize mod skill data for this savegame. aborting!");
 			return false;
 		}
-		
+
 		var characterSheet = sheet.EntityBase;
 
 		foreach (var smSkill in smSkills)
@@ -126,7 +128,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 				var builtMod = BuildModifierFromState(characterSheet, modState);
 				if (builtMod != null) smSkill.modifiers.Add(builtMod);
 			}
-			
+
 			// repopulate into mod skills
 			var modSkill = SkillUtils.Lookup(smSkill.skillType);
 			if (modSkill != null)
@@ -135,7 +137,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 			}
 			//CharacterPatches.PrintModifiable(smSkill);
 		}
-		
+
 		RepopulateNativeInstanceLists(characterSheet);
 		return true;
 	}

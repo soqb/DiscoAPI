@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using BepInEx.Logging;
 using DiscoAPI.Common.SaveSystem;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -16,11 +17,11 @@ public interface ISaveSerializable
     JToken Serialize();
 }
 
-public interface ISaveSerializable<T, in C> : ISaveSerializable where T : ISaveSerializable<T, C>
+public interface ISaveSerializable<out T, in C> : ISaveSerializable where T : ISaveSerializable<T, C>
 {
     bool TryDeserialize(JToken token, C context);
 }
-public interface ISaveSerializable<T> : ISaveSerializable<T, object?> where T : ISaveSerializable<T>
+public interface ISaveSerializable<out T> : ISaveSerializable<T, object?> where T : ISaveSerializable<T>
 {
     bool TryDeserialize(JToken token);
     bool ISaveSerializable<T, object?>.TryDeserialize(JToken token, object? context)
@@ -38,12 +39,14 @@ public enum SaveLoadState
 
 public class ModSaveSystem
 {
-    public JsonSerializerSettings serializerSettings = new ()
+    public static ManualLogSource Log { get; } = Logger.CreateLogSource("DiscoAPI (save system)");
+
+    public JsonSerializerSettings serializerSettings = new()
     {
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         Converters = []
     };
-    
+
     private Location _saveDataLocation;
     public readonly object saveLock = new();
     public Dictionary<string, ModSaveData> modSaveDatas = new();
@@ -52,9 +55,10 @@ public class ModSaveSystem
     public static MethodInfo? FindDeserializer(Type target, Type? context)
     {
         Type iface = typeof(ISaveSerializable<,>).MakeGenericType(target, context ?? typeof(object));
+        Log.LogInfo($"is {target} assignable to {iface}? = " + target.IsAssignableTo(iface));
         if (!target.IsAssignableTo(iface)) return null;
 
-        return iface?.GetMethod("TryDeserialize", BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
+        return iface?.GetMethod("TryDeserialize", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
     }
 
     public static bool TryDeserializeUntyped(Type type, JToken token, object? context, object result)
@@ -134,11 +138,12 @@ public class ModSaveSystem
     {
         if (File.Exists(path))
         {
+            Log.LogInfo($"Reading save data from {path}...");
             var saveText = File.ReadAllText(path!);
             var converted = JsonConvert.DeserializeObject<Dictionary<string, ModSaveData>>(saveText);
             if (converted == null)
             {
-                DiscoRunner.Log.LogError($"ModSaveSystem : Failed to deserialize valid data from {path}");
+                Log.LogError($"Failed to deserialize valid data from {path}");
             }
             else
             {
@@ -151,7 +156,7 @@ public class ModSaveSystem
 
     private async Task WriteSaveData(string path)
     {
-        DiscoRunner.Log.LogInfo("Writing save data to disk...");
+        Log.LogInfo($"Writing save data to {path}...");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var json = JsonConvert.SerializeObject(modSaveDatas, Formatting.Indented, serializerSettings);
         await File.WriteAllTextAsync(path, json);

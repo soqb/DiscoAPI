@@ -118,21 +118,6 @@ public class ModEntityRegistry<T, P> where T : notnull, ModEntity<T, P> where P 
 	public IEnumerable<ComponentKey<T, P>> Keys => registered.Values;
 
 	public T EntityOf(P p) => entities.Map(p);
-
-	public bool TryDeserialize(JToken? token, P p)
-	{
-		if (token == null || !(token is JObject obj)) return false;
-		T cx = EntityOf(p);
-
-		foreach (var key in Keys)
-		{
-			if (!(obj.GetValue(key.ToString()) is JToken token2)) continue;
-			object datum = Activator.CreateInstance(key.DataType)!;
-			if (ModSaveSystem.TryDeserializeUntyped(key.DataType, token2, cx, datum)) cx.AddUntyped(key, datum);
-		}
-
-		return true;
-	}
 }
 
 public interface IComponentStore
@@ -153,11 +138,11 @@ public class DictComponentStore : IComponentStore
 	public bool Contains(AssetLocation key) => components.ContainsKey(key);
 	public object? Get(AssetLocation key) => components.GetValueOrDefault(key);
 	public bool TryGet(AssetLocation key, [NotNullWhen(true)] out object? component) => components.TryGetValue(key, out component);
-	public void Add(AssetLocation key, object component) => components.Add(key, component);
+	public void Add(AssetLocation key, object component) => components[key] = component;
 	public bool Remove(AssetLocation key) => components.Remove(key);
 }
 
-public abstract class ModEntity<T, P>
+public abstract class ModEntity<T, P> : ISaveSerializable<T>
 	where T : ModEntity<T, P>
 	where P : Il2CppObjectBase
 {
@@ -226,6 +211,19 @@ public abstract class ModEntity<T, P>
 		return obj;
 	}
 
+	public bool TryDeserialize(JToken? token)
+	{
+		if (token == null || !(token is JObject obj)) return false;
+
+		foreach (var key in registry.Keys)
+		{
+			if (!(obj.GetValue(key.ToString()) is JToken token2)) continue;
+			object datum = Activator.CreateInstance(key.DataType)!;
+			if (ModSaveSystem.TryDeserializeUntyped(key.DataType, token2, this, datum)) AddUntyped(key, datum);
+		}
+
+		return true;
+	}
 }
 
 public static class ComponentLifecycleTracker
