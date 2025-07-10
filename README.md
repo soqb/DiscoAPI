@@ -14,9 +14,6 @@ A work-in-progress modding framework for Disco Elysium.
   * This will automatically copy the compiled plugin to the correct folder, overwriting any old version present.
 - Launch the game!
 
-# Examples
-- The best, most concise example the project provides is found [here](src/Runtime/Examples/Transgener.cs).
-
 # License
 
 This project is permissively dual-licensed under either of the following at your option:
