@@ -37,18 +37,6 @@ public class DiscoSource : IMutableAssets
     public ManualLogSource Log => cfg.log ?? NowheresvilleLogger;
     public ConfigFile? ConfigFile => cfg.configFile;
 
-    public delegate void ModSaveDelegate(ModSaveData saveData);
-    public event ModSaveDelegate OnGameSave
-    {
-        add => DiscoHooks.OnSaveGame += sys => value(sys.GetModData(this.Guid));
-        remove => DiscoHooks.OnSaveGame -= sys => value(sys.GetModData(this.Guid));
-    }
-    public event ModSaveDelegate OnGameLoad
-    {
-        add => DiscoHooks.OnLoadSavedGame += sys => value(sys.GetModData(this.Guid));
-        remove => DiscoHooks.OnLoadSavedGame -= sys => value(sys.GetModData(this.Guid));
-    }
-
     public DiscoManager Manager { get; }
     IDiscoManager IDiscoSource.Manager => Manager;
 
