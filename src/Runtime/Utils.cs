@@ -117,7 +117,6 @@ namespace DiscoAPI.Runtime
 				DiscoRunner.Log.LogWarning("unexpected null modifiable");
 				return null;
 			}
-
 			// excellent example of why il2cpp is a bit weird:
 			if (modifiable.GetIl2CppType() == Il2CppType.Of<SM.Skill>())
 				return GetActorSkillName(modifiable.Cast<SM.Skill>().skillType);
@@ -159,7 +158,7 @@ namespace DiscoAPI.Runtime
 		public static bool SkillIsReal(SM.SkillType skill) => skill switch
 		{
 			SM.SkillType.NONE
-				or SM.SkillType.ALT => false,
+			or SM.SkillType.ALT => false,
 			_ => true
 		};
 
@@ -168,17 +167,16 @@ namespace DiscoAPI.Runtime
 		public static bool IsExcludedFromPortraits(SM.SkillType type) => type switch
 		{
 			SM.SkillType.NONE
-				or SM.SkillType.CONVALESCENCE
-				or SM.SkillType.HEARING
-				or SM.SkillType.SIGHT
-				or SM.SkillType.SMELL
-				or SM.SkillType.TASTE
-				or SM.SkillType.ALT => true,
+			or SM.SkillType.CONVALESCENCE
+			or SM.SkillType.HEARING
+			or SM.SkillType.SIGHT
+			or SM.SkillType.SMELL
+			or SM.SkillType.TASTE
+			or SM.SkillType.ALT => true,
 			_ => false,
 		};
 
-		public static EnumArena<SM.SkillType, Skill> Skills =>
-			(EnumArena<SM.SkillType, Skill>)DiscoRunner.manager.Assets.GetArena<Skill>();
+		public static EnumArena<SM.SkillType, Skill> Skills => (EnumArena<SM.SkillType, Skill>)DiscoRunner.manager.Assets.GetArena<Skill>();
 
 		public static Skill? Lookup(SM.SkillType st) => Skills[Skills.ReverseId(st)];
 
@@ -215,29 +213,26 @@ namespace DiscoAPI.Runtime
 	public static class AssetUtils
 	{
 		public const string EXTRA_TEXTURE_PREFIX = "\0EXTRA\0";
-
-		public static AsyncOperationHandle<Sprite?> LoadPortrait(string textureName,
-			Il2CppSystem.Action<AsyncOperationHandle<Sprite?>>? del)
+		public static AsyncOperationHandle<Sprite?> LoadPortrait(string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite?>> del)
 		{
 			if (PixelsToDisco.TryDecodeTextureName(textureName, out string? source, out string? path))
 			{
 				var handle = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
-				if (del != null) handle.add_Completed(del);
+				handle.add_Completed(del);
 				return handle;
 			}
 			else return ActorsPortraitsBundleManager.LoadPortraitSpriteAsync(textureName, del);
+
 		}
 
 		public delegate void Complete<T>(T? result, string? error);
 
-		public static AsyncOperationHandle<T?> SpoofHandle<T>(System.Action<Complete<T>> execute)
-			where T : Il2CppObjectBase
+		public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute) where T : Il2CppObjectBase
 		{
 			return SpoofHandle<T>(execute, new());
 		}
 
-		public static AsyncOperationHandle<T?> SpoofHandle<T>(System.Action<Complete<T>> execute,
-			AsyncOperationHandle dep) where T : Il2CppObjectBase
+		public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute, AsyncOperationHandle dep)
 		{
 			// please don't ask why this is like this.
 
@@ -259,7 +254,7 @@ namespace DiscoAPI.Runtime
 				execute((res, err) =>
 				{
 					bool success = string.IsNullOrEmpty(err);
-					if (!success) res = null;
+					if (!success) res = default(T);
 					op.Complete(res, success, err, false);
 				});
 				op.HasExecuted = true;
@@ -374,7 +369,7 @@ namespace DiscoAPI.Runtime
 
 namespace System.Runtime.CompilerServices
 {
-	
+
 	internal class IsUnmanagedAttribute : Attribute
 	{
 		public IsUnmanagedAttribute()
