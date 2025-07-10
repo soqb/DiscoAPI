@@ -123,7 +123,6 @@ public readonly record struct Il2CppRGBABuffer(int width, Il2CppArrayBase<byte> 
 		);
 		set
 		{
-
 			array[0 + 4 * (y * width + x)] = value.R;
 			array[1 + 4 * (y * width + x)] = value.G;
 			array[2 + 4 * (y * width + x)] = value.B;
