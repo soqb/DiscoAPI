@@ -1,15 +1,16 @@
+using SM = Sunshine.Metric;
+
 namespace DiscoAPI.Runtime.Components;
 
-public class ModWorld : ModEntity<ModWorld, global::World>
+public static class WorldComponents
 {
-	public static ModEntityRegistry<ModWorld, global::World> Registry { get; }
-		= new(new CWTEntityMap<ModWorld, global::World>(s => new(s)));
-	public static ModWorld Of(global::World w) => Registry.EntityOf(w);
+	public static ModEntityRegistry<World> Registry { get; }
+		= new(new PersistentEntityMap<World>(s => new(Registry!, s)));
 
-	protected override IComponentStore Components { get; } = new DictComponentStore();
+	public static ModEntity<World> Of(World s) => Registry.EntityOf(s);
 
-	public bool IsRunning => EntityBase.isRunning;
-	public ModCharacterSheet You => ModCharacterSheet.Of(EntityBase.you);
-
-	private ModWorld(World disco) : base(Registry, disco) { }
+	public static ModEntity<SM.CharacterSheet> You(this ModEntity<World> s)
+	{
+		return CharacterComponents.Of(s.EntityBase.you);
+	}
 }

@@ -14,7 +14,20 @@ public interface IRecalculable
 	void Recalc();
 }
 
-public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharacterSheet>
+public static class CharacterComponents
+{
+	public static ModEntityRegistry<SM.CharacterSheet> Registry { get; }
+		= new(new PersistentEntityMap<SM.CharacterSheet>(s => new(Registry!, s)));
+
+	public static ModEntity<SM.CharacterSheet> Of(SM.CharacterSheet s) => Registry.EntityOf(s);
+
+	// components...
+
+	public static ComponentKey<SkillContainer, SM.CharacterSheet> Skills { get; }
+		= Registry.Register<SkillContainer>("discoapi", "skills");
+}
+
+public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModEntity<SM.CharacterSheet>>
 {
 	private Dictionary<AssetLocation, SM.Skill> skillMap = new();
 
@@ -95,7 +108,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 	}
 
 
-	public bool TryDeserialize(JToken token, ModCharacterSheet sheet)
+	public bool TryDeserialize(JToken token, ModEntity<SM.CharacterSheet> sheet)
 	{
 		ReinitializeFromNativeInstance(sheet);
 
@@ -193,26 +206,4 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModCharac
 
 		return modifier;
 	}
-}
-
-public class ModCharacterSheet : ModEntity<ModCharacterSheet, SM.CharacterSheet>,
-	IRecalculable
-{
-	public static ModEntityRegistry<ModCharacterSheet, SM.CharacterSheet> Registry { get; }
-		= new(new PersistentEntityMap<ModCharacterSheet, SM.CharacterSheet>(s => new(s)));
-
-	protected override IComponentStore Components { get; } = new DictComponentStore();
-
-	public static ModCharacterSheet Of(SM.CharacterSheet s) => Registry.EntityOf(s);
-
-	// NB: The base method is hooked to recalculate all components.
-	public void Recalc() => EntityBase.Recalc();
-
-	private ModCharacterSheet(SM.CharacterSheet disco) : base(Registry, disco) { }
-}
-
-public static class CharacterComponents
-{
-	public static ComponentKey<SkillContainer, ModCharacterSheet, SM.CharacterSheet> Skills { get; }
-		= ModCharacterSheet.Registry.Register<SkillContainer>("discoapi", "skills");
 }

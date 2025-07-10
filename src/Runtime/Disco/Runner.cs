@@ -11,7 +11,7 @@ public static class DiscoRunner
 {
     public static GlobalDiscoConfig globalConfig = new();
 
-    public static ModWorld? world;
+    public static ModEntity<World>? world;
 
     public static ModSaveSystem saveSystem = new();
 
@@ -98,7 +98,7 @@ public static class DiscoRunner
 
         var w = global::World.Singleton;
         if (w == null) return;
-        if (world == null) world = ModWorld.Of(w);
+        if (world == null) world = WorldComponents.Of(w);
 
         sceneLoad.Invoke();
         if (sceneName == "Lobby") LobbyLoadExecutor.OnLoadLobbyPlease();

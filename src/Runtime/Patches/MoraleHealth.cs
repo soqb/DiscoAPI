@@ -8,7 +8,7 @@ namespace DiscoAPI.Runtime.Patches;
 
 public static class MoraleHealthPatches
 {
-	private static ModCharacterSheet You = DiscoRunner.world!.You;
+	private static ModEntity<SM.CharacterSheet> You = DiscoRunner.world!.You();
 	private static SkillContainer YouSkills = CharacterComponents.Skills.Of(You)!;
 
 	[HarmonyPatch(typeof(EnddayHealing), nameof(EnddayHealing.VolitionHealAmount))]
@@ -35,7 +35,7 @@ public static class MoraleHealthPatches
 		if (amount > 0)
 		{
 			YouSkills.MoraleRaw.DamageValue(amount);
-			You.Recalc();
+			You.EntityBase.Recalc();
 			CharacterManipulations.PlayVolitionDamageVisual();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedMorale, (-amount).ToString());
@@ -51,7 +51,7 @@ public static class MoraleHealthPatches
 		{
 			SM.Skill morale = YouSkills.MoraleRaw;
 			morale.HealValue(Math.Min(amount, morale.maximumValue - morale.value));
-			You.Recalc();
+			You.EntityBase.Recalc();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedMorale, $"+{amount}");
 		}
@@ -66,7 +66,7 @@ public static class MoraleHealthPatches
 		if (amount > 0)
 		{
 			YouSkills.HealthRaw.DamageValue(amount);
-			You.Recalc();
+			You.EntityBase.Recalc();
 			CharacterManipulations.PlayVolitionDamageVisual();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.DamagedHealth, (-amount).ToString());
@@ -82,7 +82,7 @@ public static class MoraleHealthPatches
 		{
 			SM.Skill health = YouSkills.HealthRaw;
 			health.HealValue(Math.Min(amount, health.maximumValue - health.value));
-			You.Recalc();
+			You.EntityBase.Recalc();
 			HudController.Singleton.RefreshAll();
 			NotificationSystem.NotificationManager.Singleton.ShowNotification(NotificationSystem.NotificationType.HealedHealth, $"+{amount}");
 		}

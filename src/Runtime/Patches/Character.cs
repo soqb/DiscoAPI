@@ -17,7 +17,7 @@ public static class CharacterPatches
 	[HarmonyPostfix]
 	private static void OnRecalc(SM.CharacterSheet __instance)
 	{
-		foreach ((_, object datum) in ModCharacterSheet.Of(__instance).ComponentData)
+		foreach ((_, object datum) in CharacterComponents.Of(__instance).ComponentData)
 			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
 	}
 
@@ -50,7 +50,7 @@ public static class CharacterPatches
 		{
 			sb.Append($"Recalcing ability {maybeAbility.abilityType.ToString()}\n");
 		}
-		
+
 		if (modifiable.modifiers != null)
 		{
 			for (int i = 0; i < modifiable.modifiers.Count; i++)
@@ -255,7 +255,7 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static void OnInitialize(SM.CharacterSheet __instance, bool force)
 	{
-		var sheet = ModCharacterSheet.Of(__instance);
+		var sheet = CharacterComponents.Of(__instance);
 		if (__instance.intellect != null && !force && sheet.Contains(CharacterComponents.Skills)) return;
 
 		sheet.GetOrCreate(CharacterComponents.Skills, sh => new()).ReinitializeFromNativeInstance(__instance);
@@ -308,12 +308,12 @@ public static class CharacterPatches
 			if (!SkillUtils.SkillIsVanilla(smSkill.skillType))
 			{
 				smSkill.modifiers = new List<SM.Modifier>();
-			};
+			}
 			var newMod = new SM.Modifier(SM.ModifierType.CALCULATED_ABILITY, 0, null, __instance.GetAbility(smSkill.abilityType).Cast<IModifierCause>(), smSkill.skillType);
 			smSkill.modifiers.Add(newMod);
 		}
 		return false;
 	}
-	
+
 }
 
