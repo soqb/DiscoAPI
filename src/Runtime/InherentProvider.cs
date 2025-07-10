@@ -43,14 +43,14 @@ public static class InherentProvider
 		DiscoHooks.OnSaveGame += save =>
 		{
 			var mod = save.GetModData(source.Guid);
-			mod.SetObject("you", DiscoRunner.world!.You.Serialize());
+			mod.SetObject("you", DiscoRunner.world!.You().Serialize());
 			mod.SetObject("world", DiscoRunner.world.Serialize());
 		};
 		DiscoHooks.OnLoadSavedGame += save =>
 		{
 			var mod = save.GetModData(source.Guid);
-			ModCharacterSheet.Of(global::World.singleton.you).TryDeserialize(mod.GetObject<JToken>("you"));
-			ModWorld.Of(global::World.singleton).TryDeserialize(mod.GetObject<JToken>("world"));
+			CharacterComponents.Of(global::World.singleton.you).TryDeserialize(mod.GetObject<JToken>("you"));
+			WorldComponents.Of(global::World.singleton).TryDeserialize(mod.GetObject<JToken>("world"));
 		};
 	}
 
