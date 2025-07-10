@@ -1,8 +1,10 @@
 using SM = Sunshine.Metric;
+using DiscoAPI.Common.Assets;
 
-namespace DiscoAPI.Runtime.Components;
-
-public static class WorldComponents
+=======
+using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Assets;
+>>>>>>> e335c7b (feat(areas): better constructors, arena fetching func)public static class WorldComponents
 {
 	public static ModEntityRegistry<World> Registry { get; }
 		= new(new PersistentEntityMap<World>(s => new(Registry!, s)));
@@ -13,4 +15,7 @@ public static class WorldComponents
 	{
 		return CharacterComponents.Of(s.EntityBase.you);
 	}
+
+	public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
+
 }
