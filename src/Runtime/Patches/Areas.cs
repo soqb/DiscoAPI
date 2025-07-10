@@ -1,16 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using AddressablesTools;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
 using FortressOccident;
 using HarmonyLib;
-using Sunshine;
+using Il2CppSystem.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -22,7 +18,7 @@ public static class AreaPatches
     [HarmonyPrefix]
     private static void OnChangeArea(string areaId, string destinationId, ref bool isGameLoad)
     {
-        Area? foundArea = ModWorld.Areas.FirstOrDefault(a => a.id == areaId);
+        Area? foundArea = ModAreaState.Areas.FirstOrDefault(a => a.id == areaId);
         if (foundArea == default)
         {
             ModAreaState.isLoadingModState = false;
@@ -31,9 +27,9 @@ public static class AreaPatches
 
         ModAreaState.isLoadingModState = true;
         ApplicationManager.Singleton.ScenePropertiesList.Add(foundArea.GetSceneProperties());
-        // resolve navmesh asset
-        FastLoadManager.m_FastLoadManager.navMeshDataCollection.NavMeshes.Add(null);
-        FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.sceneName, null);
+        
+        var navMesh = LoadNavmeshData(foundArea.navMeshLocation, ModAreaState.bundleName);
+        FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.sceneName, navMesh);
     }
 
 
@@ -49,32 +45,43 @@ public static class AreaPatches
     
     [HarmonyPatch(typeof(SceneTransitionManager), nameof(SceneTransitionManager.LoadSceneCoR))]
     [HarmonyPostfix]
-    private static void OnLoadSceneCoRPostfix(string sceneName, string destinationId, bool showLoadingScreen,
-        bool hideLoadingScreen, bool isMapChanging)
+    private static System.Collections.IEnumerator OnLoadSceneCoRPostfix(string sceneName, string destinationId, bool showLoadingScreen,
+        bool hideLoadingScreen, bool isMapChanging, IEnumerator __result)
     {
-        if (!ModAreaState.isLoadingModState) return;
+        while (__result.MoveNext())
+            yield return __result.Current;
+        
+        if (!ModAreaState.isLoadingModState) yield break;
         NavMesh.RemoveAllNavMeshData();
         NavMesh.AddNavMeshData(FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict[sceneName]);
     }
 
     private static Scene LoadModScene(string sceneName, string bundleName, string aliasPrefix = "")
     {
-        var bundle = new AssetBundleRoute<Scene>(bundleName, aliasPrefix);
-        var loadOp = bundle.Get(sceneName);
-        var result = loadOp.WaitForCompletion();
+        ModAreaState.sceneBundle ??= AssetBundle.LoadFromFile(bundleName);
+        var scenePath = ModAreaState.sceneBundle.GetAllScenePaths().FirstOrDefault(s => s == sceneName);
 
-        if (loadOp.Status == AsyncOperationStatus.Failed)
+        if (scenePath == default)
         {
             DiscoRunner.Log.LogError($"could not load {sceneName} from bundle {bundleName}!");
             return default;
         }
 
-        return result;
+        return SceneManager.LoadScene(sceneName, new LoadSceneParameters() { loadSceneMode = LoadSceneMode.Additive });
+    }
+
+    private static NavMeshData LoadNavmeshData(string meshPath, string bundleName)
+    {
+        ModAreaState.sceneBundle ??= AssetBundle.LoadFromFile(bundleName);
+
+        return ModAreaState.sceneBundle.LoadAsset<NavMeshData>(meshPath);
     }
 }
 
 internal static class ModAreaState
 {
-    public static string bundleName = "scenes";
+    public static string bundleName = "BepInEx/plugins/dca/assetbundles/scenes";
     public static bool isLoadingModState;
+    public static AssetBundle? sceneBundle;
+    public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
 }
