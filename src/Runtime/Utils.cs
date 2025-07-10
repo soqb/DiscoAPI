@@ -151,6 +151,8 @@ public static class SkillUtils
 		or SM.SkillType.ALT => false,
 		_ => true
 	};
+	
+	public static bool SkillIsVanilla(SM.SkillType skillType) => (int)skillType <= Skill.VANILLA_MAX;
 
 	public static bool IsExcludedFromPortraits(SM.SkillType type) => type switch
 	{
