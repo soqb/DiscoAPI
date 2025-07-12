@@ -38,13 +38,14 @@ public static class InherentProvider
 		assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables), true);
 		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal), true);
 		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
-		
+		assets.Register(new AssetArena<Area>(), false);
+
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 		DiscoHooks.OnSaveGame += save =>
 		{
 			var mod = save.GetModData(source.Guid);
 			mod.SetObject("you", DiscoRunner.world!.You().Serialize());
-			mod.SetObject("world", DiscoRunner.world.Serialize());
+			mod.SetObject("world", DiscoRunner.world!.Serialize());
 		};
 		DiscoHooks.OnLoadSavedGame += save =>
 		{

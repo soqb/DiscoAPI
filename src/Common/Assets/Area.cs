@@ -35,6 +35,7 @@ public record Area : Asset, IAssetRef<Area>
 
     public SceneProperties GetSceneProperties()
     {
+        // note: SceneProperties.DisplayName returns null due to missing localization
         return new SceneProperties()
         {
             SceneName = sceneName,

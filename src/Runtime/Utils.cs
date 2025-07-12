@@ -13,6 +13,7 @@ using Il2CppInterop.Runtime.InteropTypes;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AI;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using static UnityEngine.ResourceManagement.ResourceManager;
@@ -382,23 +383,39 @@ namespace System.Runtime.CompilerServices
 
 public static class AreaUtils
 {
-	const string bundleName = "BepInEx/plugins/dca/assetbundles/scenes";
+	const string sceneBundlePath = "BepInEx/plugins/dca/assetbundles/scenes";
+	const string navmeshBundlePath = "BepInEx/plugins/dca/assetbundles/navmeshes";
 	public static AssetBundle? sceneBundle;
+	public static AssetBundle? navmeshBundle;
 	public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
 	public static bool IsModdedArea(string sceneName) => Areas.Any(a => a.sceneName == sceneName);
-	
-	public static Scene LoadModScene(Area area)
+
+	public static bool TryFromSceneName(string sceneName, out Area area)
 	{
-		AreaUtils.sceneBundle ??= AssetBundle.LoadFromFile(bundleName);
+		var found = Areas.FirstOrDefault(a => a.sceneName == sceneName);
+		area = found!;
+		return found != null;
+	}
+	
+	public static AsyncOperation? LoadModScene(Area area)
+	{
+		AreaUtils.sceneBundle ??= AssetBundle.LoadFromFile(sceneBundlePath);
 		var scenePath = AreaUtils.sceneBundle.GetAllScenePaths().FirstOrDefault(s => s == area.sceneName);
 
-		if (scenePath == default)
+		if (scenePath == null)
 		{
-			DiscoRunner.Log.LogError($"could not load {area.sceneName} from bundle {bundleName}!");
-			return default;
+			DiscoRunner.Log.LogError($"could not load {area.sceneName} from bundle {sceneBundlePath}!");
+			return null;
 		}
-
-		return SceneManager.LoadScene(area.sceneName, new LoadSceneParameters() { loadSceneMode = LoadSceneMode.Additive });
+		
+		return SceneManager.LoadSceneAsync(area.sceneName, LoadSceneMode.Additive);
+	}
+	
+	public static NavMeshData LoadNavmeshData(Area area)
+	{
+		AreaUtils.navmeshBundle ??= AssetBundle.LoadFromFile(navmeshBundlePath);
+		var mesh = AreaUtils.navmeshBundle.LoadAsset<NavMeshData>(area.navMeshLocation);
+		return mesh;
 	}
 }
 
