@@ -1,4 +1,5 @@
 using System.Linq;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
@@ -19,47 +20,54 @@ public static class AreaPatches
     private static void OnChangeArea(string areaId, string destinationId, ref bool isGameLoad)
     {
         Area? foundArea = AreaUtils.Areas.FirstOrDefault(a => a.id == areaId);
-        if (foundArea == default)
+        if (foundArea == null)
         {
             return;
         }
         
         ApplicationManager.Singleton.ScenePropertiesList.Add(foundArea.GetSceneProperties());
-        
-        var navMesh = LoadNavmeshData(foundArea.navMeshLocation, "");
-        FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.sceneName, navMesh);
-    }
-
-
-    [HarmonyPatch(typeof(SceneTransitionManager), nameof(SceneTransitionManager.LoadSceneCoR))]
-    [HarmonyPrefix]
-    private static void OnLoadSceneCoR(string sceneName, string destinationId, bool showLoadingScreen,
-        bool hideLoadingScreen, bool isMapChanging)
-    {
-        if (!AreaUtils.IsModdedArea(sceneName)) return;
-        
-        var scene = AreaUtils.LoadModScene(AreaUtils.Areas.First(a => a.sceneName == sceneName));
-        FastLoadManager.m_FastLoadManager.allScenes.Add(sceneName, scene);
     }
     
     [HarmonyPatch(typeof(SceneTransitionManager), nameof(SceneTransitionManager.LoadSceneCoR))]
     [HarmonyPostfix]
-    private static System.Collections.IEnumerator OnLoadSceneCoRPostfix(string sceneName, string destinationId, bool showLoadingScreen,
-        bool hideLoadingScreen, bool isMapChanging, IEnumerator __result)
+    private static void OnLoadSceneCoRPostfix(ref IEnumerator __result, IEnumerator __state, string sceneName, string destinationId, bool showLoadingScreen,
+        bool hideLoadingScreen, bool isMapChanging)
     {
-        while (__result.MoveNext())
-            yield return __result.Current;
+        if (!AreaUtils.TryFromSceneName(sceneName, out Area foundArea))
+        {
+            return;
+        }
         
-        if (!AreaUtils.IsModdedArea(sceneName)) yield break;
-        NavMesh.RemoveAllNavMeshData();
-        NavMesh.AddNavMeshData(FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict[sceneName]);
+        __result = SpecialRoutine(__result, foundArea).WrapToIl2Cpp();
+    }
+
+    private static System.Collections.IEnumerator SpecialRoutine(IEnumerator original, Area foundArea)
+    {
+        yield return AreaUtils.LoadModScene(foundArea);
+        FastLoadManager.m_FastLoadManager.allScenes.Add(foundArea.sceneName, SceneManager.GetSceneAt(SceneManager.sceneCount - 1));
+
+        yield return null;
+        
+        while (original.MoveNext())
+            yield return original.Current;
+    }
+
+    [HarmonyPatch(typeof(NavMeshDataCollection), nameof(NavMeshDataCollection.GetNavMeshDataByScene))]
+    [HarmonyPrefix]
+    private static bool OnGetNavMeshDataByScene(ref NavMeshData __result, string scenePath)
+    {
+        var sceneWithNoPathHardcode = scenePath[14..^6];
+        var trueScenePath =
+            FastLoadManager.m_FastLoadManager.allScenes.entries.FirstOrDefault(s => s.key.Contains(sceneWithNoPathHardcode));
+        if (trueScenePath == null || !AreaUtils.TryFromSceneName(trueScenePath.key, out Area foundArea))
+        {
+            return true;
+        }
+        
+        var navMesh = AreaUtils.LoadNavmeshData(foundArea);
+        FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.sceneName, navMesh);
+        __result = navMesh;
+        return false;
     }
     
-
-    private static NavMeshData LoadNavmeshData(string meshPath, string bundleName)
-    {
-        AreaUtils.sceneBundle ??= AssetBundle.LoadFromFile(bundleName);
-
-        return AreaUtils.sceneBundle.LoadAsset<NavMeshData>(meshPath);
-    }
 }

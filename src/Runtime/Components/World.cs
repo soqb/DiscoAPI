@@ -1,10 +1,10 @@
 using SM = Sunshine.Metric;
 using DiscoAPI.Common.Assets;
-
-=======
-using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Assets;
->>>>>>> e335c7b (feat(areas): better constructors, arena fetching func)public static class WorldComponents
+
+namespace DiscoAPI.Runtime.Components;
+
+public static class WorldComponents
 {
 	public static ModEntityRegistry<World> Registry { get; }
 		= new(new PersistentEntityMap<World>(s => new(Registry!, s)));
