@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using DiscoAPI.Common.Assets;
@@ -13,6 +14,7 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.SceneManagement;
 using static UnityEngine.ResourceManagement.ResourceManager;
 using Action = System.Action;
 using Exception = System.Exception;
@@ -377,3 +379,26 @@ namespace System.Runtime.CompilerServices
 		}
 	}
 }
+
+public static class AreaUtils
+{
+	const string bundleName = "BepInEx/plugins/dca/assetbundles/scenes";
+	public static AssetBundle? sceneBundle;
+	public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
+	public static bool IsModdedArea(string sceneName) => Areas.Any(a => a.sceneName == sceneName);
+	
+	public static Scene LoadModScene(Area area)
+	{
+		AreaUtils.sceneBundle ??= AssetBundle.LoadFromFile(bundleName);
+		var scenePath = AreaUtils.sceneBundle.GetAllScenePaths().FirstOrDefault(s => s == area.sceneName);
+
+		if (scenePath == default)
+		{
+			DiscoRunner.Log.LogError($"could not load {area.sceneName} from bundle {bundleName}!");
+			return default;
+		}
+
+		return SceneManager.LoadScene(area.sceneName, new LoadSceneParameters() { loadSceneMode = LoadSceneMode.Additive });
+	}
+}
+
