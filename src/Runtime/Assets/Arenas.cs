@@ -96,7 +96,7 @@ public interface IRawArena<T>
 	IAssetArena<T> Raw { get; }
 }
 
-public class AssetArena<T> : IAssetArena<T>
+public class GenericArena<T> : IAssetArena<T>
 {
 	public readonly List<T> Items = new();
 	public int Count => Items.Count;
