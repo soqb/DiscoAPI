@@ -7,6 +7,7 @@ using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Dialogue;
+using FortressOccident;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
@@ -16,6 +17,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.AI;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
+using Voidforge;
 using static UnityEngine.ResourceManagement.ResourceManager;
 using Action = System.Action;
 using Exception = System.Exception;
@@ -388,34 +390,35 @@ public static class AreaUtils
 	public static AssetBundle? sceneBundle;
 	public static AssetBundle? navmeshBundle;
 	public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
-	public static bool IsModdedArea(string sceneName) => Areas.Any(a => a.sceneName == sceneName);
-
-	public static bool TryFromSceneName(string sceneName, out Area area)
-	{
-		var found = Areas.FirstOrDefault(a => a.sceneName == sceneName);
-		area = found!;
-		return found != null;
-	}
+	public static bool IsModdedArea(string scenePath) => Areas.Any(a => a.scenePath == scenePath);
+	public static Area? FromScenePath(string scenePath) => Areas.FirstOrDefault(a => a.scenePath == scenePath);
+	public static Area? FromSceneName(string sceneName) => Areas.FirstOrDefault(a => a.scenePath.Contains(sceneName));
 	
 	public static AsyncOperation? LoadModScene(Area area)
 	{
 		AreaUtils.sceneBundle ??= AssetBundle.LoadFromFile(sceneBundlePath);
-		var scenePath = AreaUtils.sceneBundle.GetAllScenePaths().FirstOrDefault(s => s == area.sceneName);
+		var scenePath = AreaUtils.sceneBundle.GetAllScenePaths().FirstOrDefault(s => s == area.scenePath);
 
 		if (scenePath == null)
 		{
-			DiscoRunner.Log.LogError($"could not load {area.sceneName} from bundle {sceneBundlePath}!");
+			DiscoRunner.Log.LogError($"could not load {area.scenePath} from bundle {sceneBundlePath}!");
 			return null;
 		}
 		
-		return SceneManager.LoadSceneAsync(area.sceneName, LoadSceneMode.Additive);
+		return SceneManager.LoadSceneAsync(area.scenePath, LoadSceneMode.Additive);
 	}
 	
 	public static NavMeshData LoadNavmeshData(Area area)
 	{
 		AreaUtils.navmeshBundle ??= AssetBundle.LoadFromFile(navmeshBundlePath);
-		var mesh = AreaUtils.navmeshBundle.LoadAsset<NavMeshData>(area.navMeshLocation);
+		var mesh = AreaUtils.navmeshBundle.LoadAsset<NavMeshData>(area.navMeshPath);
 		return mesh;
+	}
+	
+	public static void ChangeArea(string areaId, string destinationId, bool isGameLoad, bool showLoadingScreen,
+		bool hideLoadingScreen)
+	{
+		SingletonScriptable<ApplicationManager>.Singleton.ChangeArea(areaId, destinationId, isGameLoad, showLoadingScreen, hideLoadingScreen);
 	}
 }
 
