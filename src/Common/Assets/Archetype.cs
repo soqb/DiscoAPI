@@ -6,6 +6,7 @@ public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
 {
     public readonly IList<(AssetLocation<Skill>, int)>? skillBonuses;
     public readonly AssetLocation<Skill> signatureSkill;
+    public ArchetypeMode mode;
     public readonly int intellect;
     public readonly int psyche;
     public readonly int fysique;
@@ -15,11 +16,12 @@ public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
     public readonly string portraitLocation;
     
     public CharacterArchetype(string id, AssetLocation<Skill> signatureSkill, int intellect, int psyche, int fysique, int motorics, 
-        string description, string name, string portraitLocation, IList<(AssetLocation<Skill>, int)>? skillBonuses = null) 
+        string description, string name, string portraitLocation, ArchetypeMode mode = ArchetypeMode.Template, IList<(AssetLocation<Skill>, int)>? skillBonuses = null) 
         : base(id)
     {
         this.skillBonuses = skillBonuses;
         this.signatureSkill = signatureSkill;
+        this.mode = mode;
         this.intellect = intellect;
         this.psyche = psyche;
         this.fysique = fysique;
@@ -29,28 +31,12 @@ public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
         this.portraitLocation = portraitLocation;
     }
 
-    // needs to move to runtime
-    // public SunshineCharacterTemplate ToSunshineTemplate()
-    // {
-    //     var template = ScriptableObject.CreateInstance<SunshineCharacterTemplate>();
-    //     template.Description = description;
-    //     template.name = name;
-    //     template.Intellect = intellect;
-    //     template.Psyche = psyche;
-    //     template.Fysique = fysique;
-    //     template.Motorics = motorics;
-    //     template.signatureSkill = SkillUtils.Skills.GetRaw(signatureSkill.ResolveId());
-    //
-    //     if (skillBonuses == null) return template;
-    //     
-    //     foreach ((AssetLocation<Skill> skill, int bonus) in skillBonuses)
-    //     {
-    //         var resolved = skill.Resolve(DiscoRunner.manager);
-    //     }
-    //     
-    //     return template;
-    // }
-
     public new AssetLocation<CharacterArchetype> Location => new(source, id);
     CharacterArchetype? IAssetRef<CharacterArchetype>.Resolve(IDiscoManager mgr) => (CharacterArchetype?)((IAssetRef)this).Resolve(mgr);
+    
+    public enum ArchetypeMode
+    {
+        Template,
+        CustomCharacter
+    }
 }

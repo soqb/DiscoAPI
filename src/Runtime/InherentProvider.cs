@@ -36,7 +36,8 @@ public static class InherentProvider
 		assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables), true);
 		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal), true);
 		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
-
+		assets.Register(new GenericArena<CharacterArchetype>(), false);
+		
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 	}
 

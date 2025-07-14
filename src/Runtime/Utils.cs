@@ -289,3 +289,35 @@ public static class ScriptableObjectHook<T> where T : ScriptableObject
 		DiscoRunner.Harmony.Patch(enable, prefix: new HarmonyMethod(SymbolExtensions.GetMethodInfo((T t) => PreOnEnable(t))));
 	}
 }
+
+public static class ArchetypeUtils
+{
+	public static GenericArena<CharacterArchetype> ModArchetypes =>
+		(GenericArena<CharacterArchetype>)DiscoRunner.manager.Assets.GetArena<CharacterArchetype>();
+	public static SunshineCharacterTemplate ToSunshineTemplate(CharacterArchetype archetype)
+	{
+	    var template = ScriptableObject.CreateInstance<SunshineCharacterTemplate>();
+	    template.Description = archetype.description;
+	    template.name = archetype.name;
+	    template.Intellect = archetype.intellect;
+	    template.Psyche = archetype.psyche;
+	    template.Fysique = archetype.fysique;
+	    template.Motorics = archetype.motorics;
+	    template.signatureSkill = SkillUtils.Skills.GetRaw(archetype.signatureSkill.ResolveId());
+	
+	    // if (archetype.skillBonuses == null) return template;
+	    //
+	    // foreach ((AssetLocation<Skill> skill, int bonus) in archetype.skillBonuses)
+	    // {
+	    //     var skillType = SkillUtils.Skills.GetRaw(archetype.signatureSkill.ResolveId());
+	    //     
+	    // }
+	    
+	    return template;
+	}
+
+	public static Sprite LoadArchetypeSprite(CharacterArchetype archetype)
+	{
+		return InherentProvider.source.Router.Portraits.Get(archetype.portraitLocation).WaitForCompletion() ?? new Sprite();
+	}
+}
