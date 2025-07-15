@@ -9,6 +9,7 @@ using DiscoAPI.Runtime.Dialogue;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -292,6 +293,8 @@ public static class ScriptableObjectHook<T> where T : ScriptableObject
 
 public static class ArchetypeUtils
 {
+	private const string portraitBundlePath = "BepInEx/plugins/dca/assetbundles/portraits";
+	private static AssetBundle? portraitBundle;
 	public static GenericArena<CharacterArchetype> ModArchetypes =>
 		(GenericArena<CharacterArchetype>)DiscoRunner.manager.Assets.GetArena<CharacterArchetype>();
 	public static SunshineCharacterTemplate ToSunshineTemplate(CharacterArchetype archetype)
@@ -318,6 +321,28 @@ public static class ArchetypeUtils
 
 	public static Sprite LoadArchetypeSprite(CharacterArchetype archetype)
 	{
-		return InherentProvider.source.Router.Portraits.Get(archetype.portraitLocation).WaitForCompletion() ?? new Sprite();
+		portraitBundle ??= AssetBundle.LoadFromFile(portraitBundlePath);
+		return portraitBundle.LoadAsset<Sprite>(archetype.portraitLocation);
+	}
+}
+
+public static class Il2CppExtensions
+{
+	public static Il2CppReferenceArray<T> Resize<T>(this Il2CppReferenceArray<T> original, int newSize) where T : Il2CppObjectBase
+	{
+		// i am trusting that this does not leak 'original'
+		var newArr = new T[newSize];
+		if (newSize >= original.Length)
+		{
+			original.CopyTo(newArr, 0);
+		}
+		else
+		{
+			for (int i = 0; i < newArr.Length; i++)
+			{
+				newArr[i] = original[i];
+			}
+		}
+		return newArr;
 	}
 }

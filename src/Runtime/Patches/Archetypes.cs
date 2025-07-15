@@ -1,11 +1,10 @@
 ﻿using System;
-using Cpp2IL.Core;
+using System.Linq;
 using DiscoAPI.Common.Assets;
 using HarmonyLib;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppSystem.Dynamic.Utils;
+using LocalizationCustomSystem;
+using TMPro;
 using UnityEngine;
-using Array = Il2CppSystem.Array;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -17,9 +16,10 @@ public static class ArchetypePatches
     private static bool OnSetArchetype(ArchetypeSelectButton __instance, SunshineCharacterTemplate archetype)
     {
         __instance.Archetype = archetype;
-        __instance.NameLocalization.Term = $"\0RAW\0{archetype.name}";
-        __instance.DescriptionLocalization.Term = $"\0RAW\0{archetype.Description}";
-        __instance.SignatureSkillLocalization.Term = $"\0RAW\0{SkillUtils.GetActorSkillName(archetype.signatureSkill)}";
+        __instance.NameLocalization.mLocalizeTarget.Cast<TextMeshProUGUI>().text = archetype.name;
+        __instance.DescriptionLocalization.mLocalizeTarget.Cast<TextMeshProUGUI>().text = archetype.Description;
+        __instance.SignatureSkillLocalization.mLocalizeTarget.Cast<TextMeshProUGUI>().text = 
+            SkillUtils.GetActorSkillName(archetype.signatureSkill);
         __instance.Int.SetData(SM.AbilityType.INT, __instance.Archetype);
         __instance.Psy.SetData(SM.AbilityType.PSY, __instance.Archetype);
         __instance.Phq.SetData(SM.AbilityType.FYS, __instance.Archetype);
@@ -32,8 +32,15 @@ public static class ArchetypePatches
     private static void OnInitializeButtons(ref FourArchetypeSelector __instance)
     {
         var modTypes = ArchetypeUtils.ModArchetypes;
+        var typeCount = modTypes.Count;
 
-        for (var i = 0; i < Math.Min(4, modTypes.Count); i++)
+        if (typeCount >= 4) // these arrays only account for 3 archetypes but we let modders provide 4
+        {
+            __instance.portraits = __instance.portraits.Resize(typeCount);
+            __instance.archetypes = __instance.archetypes.Resize(typeCount);
+        }
+
+        for (var i = 0; i < Math.Min(4, typeCount); i++)
         {
             var modType = modTypes[i];
             if (modType == null) continue;
@@ -41,28 +48,10 @@ public static class ArchetypePatches
             var template = ArchetypeUtils.ToSunshineTemplate(modType);
             var portrait = ArchetypeUtils.LoadArchetypeSprite(modType);
             
-            if (i < __instance.archetypes.Length)
-            {
-                __instance.archetypes[i] = template;
-            }
-            else
-            {
-                __instance.archetypes.AddLast(template);
-            }
-            
-            if (i < __instance.portraits.Length)
-            {
-                __instance.portraits[i] = portrait;
-            }
-            else
-            {
-                var newArray = new Sprite[i + 1];
-                __instance.portraits.CopyTo(newArray, 0);
-                newArray[i] = portrait;
-                __instance.portraits = newArray;
-            }
-
+            __instance.archetypes[i] = template;
+            __instance.portraits[i] = portrait;
         }
+        
     }
     
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
@@ -70,35 +59,39 @@ public static class ArchetypePatches
     private static void OnInitializeButtonsPostfix(ref FourArchetypeSelector __instance)
     {
         var modTypes = ArchetypeUtils.ModArchetypes;
-
-        for (var i = 0; i < Math.Min(4, modTypes.Count); i++)
+        var typeCount = modTypes.Count;
+        
+        if (typeCount >= 4) // ignore vanilla custom button in favor of our own but keep the positioning 
         {
-            var modType = modTypes[i];
+            var customChar = __instance.CustomCharacterButton;
+            __instance.archetypeButtons.Remove(customChar);
+            __instance.archetypeButtons[3].transform.parent = customChar.transform.parent;
+            __instance.archetypeButtons[3].transform.position = new Vector3(1.21f, 58.6486f, 101.0723f); 
+            customChar.gameObject.SetActive(false); 
+        }
+
+        for (var i = 0; i < Math.Min(4, typeCount); i++)
+        {
+            var createdButton = __instance.archetypeButtons[i];
+            if (createdButton.Archetype == null) continue;
+
+            var modType = modTypes.FirstOrDefault(a => a.name == createdButton.Archetype.name);
             if (modType == null) continue;
 
-            var createdButton = __instance.archetypeButtons[i];
+            if (modType.mode == CharacterArchetype.ArchetypeMode.CustomCharacter)
+            {
+                createdButton.IsCustomCharacterButton = true;
+                createdButton.Int.gameObject.SetActive(false);
+                createdButton.Psy.gameObject.SetActive(false);
+                createdButton.Mot.gameObject.SetActive(false);
+                createdButton.Phq.gameObject.SetActive(false);
+                createdButton.transform.GetChild(0).GetChild(8).gameObject.SetActive(false);
+            }
+            
+            // createdButton.SetPortrait(__instance.portraits[i]);
 
-            createdButton.IsCustomCharacterButton = modType.mode == CharacterArchetype.ArchetypeMode.CustomCharacter;
-            createdButton.SetPortrait(__instance.portraits[i]);
-            __instance.archetypeButtons[i] = createdButton;
         }
+        
     }
-
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(ArchetypeSelectButton), nameof(ArchetypeSelectButton.PlayShowAnimation))]
-    private static void OnShowAnimation(ArchetypeSelectButton __instance)
-    {
-        if (!__instance.IsCustomCharacterButton)
-        {
-            __instance.Int.FlipClockNumber.Clear();
-            __instance.Int.FlipClockNumber.SetValue(__instance.Archetype.Intellect);
-            __instance.Psy.FlipClockNumber.Clear();
-            __instance.Psy.FlipClockNumber.SetValue(__instance.Archetype.Psyche);
-            __instance.Phq.FlipClockNumber.Clear();
-            __instance.Phq.FlipClockNumber.SetValue(__instance.Archetype.Fysique);
-            __instance.Mot.FlipClockNumber.Clear();
-            __instance.Mot.FlipClockNumber.SetValue(__instance.Archetype.Motorics);
-        }
-        __instance.animatorHelper.Visible = true;
-    }
+    
 }
