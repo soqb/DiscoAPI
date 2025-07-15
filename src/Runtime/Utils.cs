@@ -303,7 +303,7 @@ public static class ArchetypeUtils
 	    template.Psyche = archetype.psyche;
 	    template.Fysique = archetype.fysique;
 	    template.Motorics = archetype.motorics;
-	    template.signatureSkill = SkillUtils.Skills.GetRaw(archetype.signatureSkill.ResolveId());
+	    template.signatureSkill = archetype.signatureSkill != null ? SkillUtils.Skills.GetRaw(archetype.signatureSkill.ResolveId()) : SM.SkillType.NONE;
 	
 	    // if (archetype.skillBonuses == null) return template;
 	    //

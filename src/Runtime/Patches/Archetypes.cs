@@ -1,5 +1,11 @@
-﻿using DiscoAPI.Common.Assets;
+﻿using System;
+using Cpp2IL.Core;
+using DiscoAPI.Common.Assets;
 using HarmonyLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppSystem.Dynamic.Utils;
+using UnityEngine;
+using Array = Il2CppSystem.Array;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -23,11 +29,11 @@ public static class ArchetypePatches
 
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
     [HarmonyPrefix]
-    private static void OnSetPortrait(FourArchetypeSelector __instance)
+    private static void OnInitializeButtons(ref FourArchetypeSelector __instance)
     {
         var modTypes = ArchetypeUtils.ModArchetypes;
 
-        for (var i = 0; i < modTypes.Count; i++)
+        for (var i = 0; i < Math.Min(4, modTypes.Count); i++)
         {
             var modType = modTypes[i];
             if (modType == null) continue;
@@ -41,7 +47,7 @@ public static class ArchetypePatches
             }
             else
             {
-                __instance.archetypes.AddItem(template);
+                __instance.archetypes.AddLast(template);
             }
             
             if (i < __instance.portraits.Length)
@@ -50,7 +56,10 @@ public static class ArchetypePatches
             }
             else
             {
-                __instance.portraits.AddItem(portrait);
+                var newArray = new Sprite[i + 1];
+                __instance.portraits.CopyTo(newArray, 0);
+                newArray[i] = portrait;
+                __instance.portraits = newArray;
             }
 
         }
@@ -58,11 +67,11 @@ public static class ArchetypePatches
     
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
     [HarmonyPostfix]
-    private static void OnSetPortraitPostfix(FourArchetypeSelector __instance)
+    private static void OnInitializeButtonsPostfix(ref FourArchetypeSelector __instance)
     {
         var modTypes = ArchetypeUtils.ModArchetypes;
 
-        for (var i = 0; i < modTypes.Count; i++)
+        for (var i = 0; i < Math.Min(4, modTypes.Count); i++)
         {
             var modType = modTypes[i];
             if (modType == null) continue;
@@ -71,6 +80,25 @@ public static class ArchetypePatches
 
             createdButton.IsCustomCharacterButton = modType.mode == CharacterArchetype.ArchetypeMode.CustomCharacter;
             createdButton.SetPortrait(__instance.portraits[i]);
+            __instance.archetypeButtons[i] = createdButton;
         }
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(ArchetypeSelectButton), nameof(ArchetypeSelectButton.PlayShowAnimation))]
+    private static void OnShowAnimation(ArchetypeSelectButton __instance)
+    {
+        if (!__instance.IsCustomCharacterButton)
+        {
+            __instance.Int.FlipClockNumber.Clear();
+            __instance.Int.FlipClockNumber.SetValue(__instance.Archetype.Intellect);
+            __instance.Psy.FlipClockNumber.Clear();
+            __instance.Psy.FlipClockNumber.SetValue(__instance.Archetype.Psyche);
+            __instance.Phq.FlipClockNumber.Clear();
+            __instance.Phq.FlipClockNumber.SetValue(__instance.Archetype.Fysique);
+            __instance.Mot.FlipClockNumber.Clear();
+            __instance.Mot.FlipClockNumber.SetValue(__instance.Archetype.Motorics);
+        }
+        __instance.animatorHelper.Visible = true;
     }
 }
