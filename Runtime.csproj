@@ -8,8 +8,8 @@
 
     <PropertyGroup>
         <Version>0.0.1</Version>
-        <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
         <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
         <AssemblyName>DiscoAPI</AssemblyName>
@@ -27,4 +27,18 @@
         <None Include="src/Editor/**/*.cs" />
         <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     </ItemGroup>
+
+    <Target Name="CopyLooseAssets" AfterTargets="Build">
+        <ItemGroup>
+            <AssetFiles
+                    Include="assets/**/*"
+                    Exclude="**/*.meta"/>
+        </ItemGroup>
+
+        <Message Text="Copying loose assets to $(OutputFolder):%0A    * @(AssetFiles, '%0A    * ')" Importance="high" />
+
+        <MakeDir Directories="$(OutputFolder)/assets" />
+        <Copy SourceFiles="@(AssetFiles)"
+              DestinationFolder="$(OutputFolder)/assets/%(RecursiveDir)" />
+    </Target>
 </Project>

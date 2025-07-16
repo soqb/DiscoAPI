@@ -6,6 +6,7 @@ using BepInEx.Logging;
 using DiscoAPI.Common;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
+using DiscoAPI.Common.SaveSystem;
 using DiscoAPI.Runtime.Assets;
 using PC = PixelCrushers.DialogueSystem;
 
