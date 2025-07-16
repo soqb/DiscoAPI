@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="./config.targets"/>
+    
+    <PropertyGroup>
+        <Version>0.0.1</Version>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>DiscoAPI</AssemblyName>
+        <Description>Modding API for Disco Elysium (separate Runtime-agnostic components only)</Description>
+        <Version>0.0.1</Version>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
+        <RootNamespace>DiscoAPI</RootNamespace>
+        <Nullable>enable</Nullable>
+        
+        <OutputFolder Condition="'$(OutputFolder)' == ''">$(UnityProject)/Packages/DiscoAPI</OutputFolder>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
+        <Compile Include="./**/*.cs"/>
+    </ItemGroup>
+</Project>
