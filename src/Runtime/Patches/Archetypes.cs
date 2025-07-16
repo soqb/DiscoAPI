@@ -104,5 +104,25 @@ public static class ArchetypePatches
         }
         
     }
+
+    [HarmonyPatch(typeof(SM.CharacterSheetFactory), nameof(SM.CharacterSheetFactory.TransferLeveledSkills))]
+    [HarmonyPostfix]
+    private static void OnTransferLeveledSkills(SunshineCharacterTemplate p, SM.CharacterSheet targetSheet)
+    {
+        var modType = ArchetypeUtils.ModArchetypes.FirstOrDefault(a => a.name == p.name);
+        if (modType?.skillBonuses == null) return;
+
+        var sheetSkills = CharacterComponents.Skills.Of(targetSheet);
+        if (sheetSkills == null)
+        {
+            DiscoRunner.Log.LogError("TransferLeveledSkills : your character sheet does not have any skills!");
+            return;
+        }
+        foreach (var (skill, bonus) in modType.skillBonuses)
+        {
+            var rawSkill = sheetSkills.GetRawSkill(skill);
+            SM.CharacterSheetFactory.TransferLeveledSkill(bonus, rawSkill);
+        }
+    }
     
 }
