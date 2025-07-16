@@ -44,8 +44,8 @@ public static class ArchetypePatches
 
         if (typeCount >= 4) // these arrays only account for 3 archetypes but we let modders provide 4
         {
-            __instance.portraits = __instance.portraits.Resize(typeCount);
-            __instance.archetypes = __instance.archetypes.Resize(typeCount);
+            __instance.portraits = __instance.portraits.Resize(4);
+            __instance.archetypes = __instance.archetypes.Resize(4);
         }
 
         for (var i = 0; i < Math.Min(4, typeCount); i++)
@@ -115,7 +115,7 @@ public static class ArchetypePatches
         var sheetSkills = CharacterComponents.Skills.Of(targetSheet);
         if (sheetSkills == null)
         {
-            DiscoRunner.Log.LogError("TransferLeveledSkills : your character sheet does not have any skills!");
+            DiscoRunner.Log.LogError("TransferLeveledSkills : your character sheet is invalid!");
             return;
         }
         foreach (var (skill, bonus) in modType.skillBonuses)

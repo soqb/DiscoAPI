@@ -16,7 +16,7 @@ public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
     public readonly string portraitLocation;
     
     public CharacterArchetype(string id, IAssetRef<Skill>? signatureSkill, int intellect, int psyche, int fysique, int motorics, 
-        string description, string name, string portraitLocation, ArchetypeMode mode = ArchetypeMode.Template, IList<(IAssetRef<Skill>, int)>? skillBonuses = null) 
+        string name, string description, string portraitLocation, ArchetypeMode mode = ArchetypeMode.Template, IList<(IAssetRef<Skill>, int)>? skillBonuses = null) 
         : base(id)
     {
         this.skillBonuses = skillBonuses;
@@ -30,6 +30,10 @@ public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
         this.name = name;
         this.portraitLocation = portraitLocation;
     }
+
+    public static CharacterArchetype CustomCharacter(string id, string name, string description, string portraitLocation) 
+        => new(id, null, 0, 0, 0, 0, name, description, portraitLocation, ArchetypeMode.CustomCharacter);
+    
 
     public new AssetLocation<CharacterArchetype> Location => new(source, id);
     CharacterArchetype? IAssetRef<CharacterArchetype>.Resolve(IDiscoManager mgr) => (CharacterArchetype?)((IAssetRef)this).Resolve(mgr);
