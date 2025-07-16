@@ -85,14 +85,13 @@ public static class CustomVirtualTextureManager
 	public static VirtualTextureState TryLoadTexture(VirtualTexture asset)
 	{
 		var texture = VirtualTextureComponents.Of(asset);
+		bool loaded = texture.Contains(VirtualTextureComponents.Customizer);
 		if (!overriden.TryGetValue(asset.m_hashName, out var overrides))
 		{
-			return texture.Contains(VirtualTextureComponents.Customizer)
-				? VirtualTextureState.AdHoc
-				: VirtualTextureState.Vanilla;
+			return loaded ? VirtualTextureState.AdHoc : VirtualTextureState.Vanilla;
 		}
 
-		if (texture.Contains(VirtualTextureComponents.Customizer)) throw new InvalidOperationException("double virtual texture load");
+		if (loaded) throw new InvalidOperationException("double virtual texture load");
 
 		texture.Add(VirtualTextureComponents.Customizer, new OverridesVirtualTextureCustomizer(asset, overrides));
 		return VirtualTextureState.Overriden;
