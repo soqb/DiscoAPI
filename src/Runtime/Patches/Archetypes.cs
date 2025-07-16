@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Components;
 using HarmonyLib;
-using LocalizationCustomSystem;
-using TMPro;
+using I2.Loc;
 using UnityEngine;
 using SM = Sunshine.Metric;
 
@@ -11,20 +11,28 @@ namespace DiscoAPI.Runtime.Patches;
 
 public static class ArchetypePatches
 {
+    
     [HarmonyPatch(typeof(ArchetypeSelectButton), nameof(ArchetypeSelectButton.SetArchetype))]
     [HarmonyPrefix]
     private static bool OnSetArchetype(ArchetypeSelectButton __instance, SunshineCharacterTemplate archetype)
     {
         __instance.Archetype = archetype;
-        __instance.NameLocalization.mLocalizeTarget.Cast<TextMeshProUGUI>().text = archetype.name;
-        __instance.DescriptionLocalization.mLocalizeTarget.Cast<TextMeshProUGUI>().text = archetype.Description;
-        __instance.SignatureSkillLocalization.mLocalizeTarget.Cast<TextMeshProUGUI>().text = 
-            SkillUtils.GetActorSkillName(archetype.signatureSkill);
+        __instance.DescriptionLocalization.LocalizeEvent.AddListener(
+            new Action(() => BogusLocalizationOverrideDelegate(archetype.Description)));
+        __instance.NameLocalization.LocalizeEvent.AddListener(
+            new Action(() => BogusLocalizationOverrideDelegate(archetype.name)));
+        __instance.SignatureSkillLocalization.LocalizeEvent.AddListener(
+            new Action(() => BogusLocalizationOverrideDelegate(SkillUtils.Lookup(archetype.signatureSkill)?.displayName ?? "NONE")));
         __instance.Int.SetData(SM.AbilityType.INT, __instance.Archetype);
         __instance.Psy.SetData(SM.AbilityType.PSY, __instance.Archetype);
         __instance.Phq.SetData(SM.AbilityType.FYS, __instance.Archetype);
         __instance.Mot.SetData(SM.AbilityType.MOT, __instance.Archetype);
         return false;
+    }
+    
+    private static void BogusLocalizationOverrideDelegate(string trueString)
+    {
+        Localize.MainTranslation = trueString;
     }
 
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
@@ -61,13 +69,19 @@ public static class ArchetypePatches
         var modTypes = ArchetypeUtils.ModArchetypes;
         var typeCount = modTypes.Count;
         
+        var customChar = __instance.CustomCharacterButton;
+        __instance.archetypeButtons.Remove(customChar);
+        
         if (typeCount >= 4) // ignore vanilla custom button in favor of our own but keep the positioning 
         {
-            var customChar = __instance.CustomCharacterButton;
-            __instance.archetypeButtons.Remove(customChar);
-            __instance.archetypeButtons[3].transform.parent = customChar.transform.parent;
-            __instance.archetypeButtons[3].transform.position = new Vector3(1.21f, 58.6486f, 101.0723f); 
             customChar.gameObject.SetActive(false); 
+            
+            var fourthButton = __instance.archetypeButtons[3].transform.Cast<RectTransform>();
+            fourthButton.parent = customChar.transform.parent;
+            fourthButton.anchoredPosition = new Vector2(850, 53);
+            fourthButton.pivot = new Vector2(1, 0.5f);
+            fourthButton.anchorMax = new Vector2(0.5f, 0.5f);
+            fourthButton.anchorMin = new Vector2(0.5f, 0.5f);
         }
 
         for (var i = 0; i < Math.Min(4, typeCount); i++)
@@ -87,9 +101,6 @@ public static class ArchetypePatches
                 createdButton.Phq.gameObject.SetActive(false);
                 createdButton.transform.GetChild(0).GetChild(8).gameObject.SetActive(false);
             }
-            
-            // createdButton.SetPortrait(__instance.portraits[i]);
-
         }
         
     }
