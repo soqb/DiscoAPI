@@ -187,9 +187,6 @@
 
         <Copy SourceFiles="@(ArtefactFiles)"
               DestinationFolder="$(OutputFolder)/%(RecursiveDir)" />
-        
-        <Copy SourceFiles="$(TargetDir)Newtonsoft.Json.dll" Condition="Exists('$(TargetDir)Newtonsoft.Json.dll')"
-              DestinationFolder="$(BepInExInterop)" />
     </Target>
 </Project>
 
