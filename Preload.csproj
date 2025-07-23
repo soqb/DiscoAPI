@@ -32,13 +32,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="$(BepInExCore)/BepInEx.Core.dll" Private="false"/>
         <Reference Include="$(BepInExCore)/BepInEx.Preloader.Core.dll" Private="false"/>
-        <Reference Include="$(BepInExCore)/BepInEx.Unity.IL2CPP.dll" Private="false"/>
-        <Reference Include="$(BepInExCore)/Mono.Cecil.dll" Private="false"/>
-        <Reference Include="$(BepInExCore)/Mono.Cecil.Mdb.dll" Private="false"/>
-        <Reference Include="$(BepInExCore)/Mono.Cecil.Pdb.dll" Private="false"/>
-        <Reference Include="$(BepInExCore)/Mono.Cecil.Rocks.dll" Private="false"/>
     </ItemGroup>
 
     <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
