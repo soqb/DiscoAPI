@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using BepInEx.Preloader.Core.Patching;
 
@@ -10,6 +11,12 @@ public class DllConflictResolverPatch : BasePatcher
     
     public override void Initialize()
     {
+        if (!File.Exists(ProvidedNewtonsoftPath))
+        {
+            this.Log.LogWarning("Attempted to patch Newtonsoft.Json but the replacement library cannot be found! Path: " + ProvidedNewtonsoftPath);
+            return;
+        }
+        
         Assembly.LoadFrom(ProvidedNewtonsoftPath);
     }
 }

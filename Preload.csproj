@@ -32,6 +32,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="$(BepInExCore)/BepInEx.Core.dll" Private="false"/>
         <Reference Include="$(BepInExCore)/BepInEx.Preloader.Core.dll" Private="false"/>
     </ItemGroup>
 
