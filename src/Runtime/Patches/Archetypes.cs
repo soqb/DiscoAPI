@@ -2,9 +2,12 @@
 using System.Linq;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Dialogue;
 using HarmonyLib;
 using I2.Loc;
+using Il2CppInterop.Runtime;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -37,7 +40,7 @@ public static class ArchetypePatches
 
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
     [HarmonyPrefix]
-    private static void OnInitializeButtons(ref FourArchetypeSelector __instance)
+    private static void OnInitializeButtons(FourArchetypeSelector __instance)
     {
         var modTypes = ArchetypeUtils.ModArchetypes;
         var typeCount = modTypes.Count;
@@ -54,17 +57,21 @@ public static class ArchetypePatches
             if (modType == null) continue;
 
             var template = ArchetypeUtils.ToSunshineTemplate(modType);
-            var portrait = ArchetypeUtils.LoadArchetypeSprite(modType);
+            var portrait = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modType.source, modType.portraitLocation), null).WaitForCompletion();
             
             __instance.archetypes[i] = template;
             __instance.portraits[i] = portrait;
         }
+    }
+
+    private static void AssignPortrait(AsyncOperationHandle<Sprite?> handle)
+    {
         
     }
     
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
     [HarmonyPostfix]
-    private static void OnInitializeButtonsPostfix(ref FourArchetypeSelector __instance)
+    private static void OnInitializeButtonsPostfix(FourArchetypeSelector __instance)
     {
         var modTypes = ArchetypeUtils.ModArchetypes;
         var typeCount = modTypes.Count;
