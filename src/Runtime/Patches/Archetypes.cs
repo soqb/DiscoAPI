@@ -5,10 +5,10 @@ using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Dialogue;
 using HarmonyLib;
 using I2.Loc;
-using Il2CppInterop.Runtime;
+using Il2CppSystem.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using SM = Sunshine.Metric;
+using Task = Il2CppSystem.Threading.Tasks.Task;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -57,16 +57,19 @@ public static class ArchetypePatches
             if (modType == null) continue;
 
             var template = ArchetypeUtils.ToSunshineTemplate(modType);
-            var portrait = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modType.source, modType.portraitLocation), null).WaitForCompletion();
-            
+            var op = AssetUtils.LoadPortrait(
+                DiscoToPixels.EncodeTextureName(modType.source, modType.portraitLocation),
+                null);
+            int idx = i;
+            op.Task.ContinueWith((Action<Task>)(task => AssignPortrait(task, idx)));
             __instance.archetypes[i] = template;
-            __instance.portraits[i] = portrait;
         }
-    }
-
-    private static void AssignPortrait(AsyncOperationHandle<Sprite?> handle)
-    {
         
+        void AssignPortrait(Task handle, int idx)
+        {
+            var result = handle.Cast<Task<Sprite?>>().Result;
+            FourArchetypeSelector.Singleton.archetypeButtons[idx].SetPortrait(result);
+        }
     }
     
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
