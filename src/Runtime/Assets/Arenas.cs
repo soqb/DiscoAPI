@@ -96,6 +96,19 @@ public interface IRawArena<T>
 	IAssetArena<T> Raw { get; }
 }
 
+public class GenericArena<T> : IAssetArena<T>
+{
+	public readonly List<T> Items = new();
+	public int Count => Items.Count;
+	public void Alloc(T asset)
+	{
+		Items.Add(asset);
+	}
+
+	public T? this[int id] => Items[id];
+}
+
+
 public class PCRawArena<T> : IAssetArena<T> where T : PC.Asset, new()
 {
 	private DialogueManager Dialogue => DiscoRunner.manager.Dialogue;
