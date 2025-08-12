@@ -15,6 +15,8 @@ public enum VirtualTextureState
 
 public static class CustomVirtualTextureManager
 {
+	public const int VANILLA_TEXTURE_COUNT = 41;
+	private static int AdHocsAdded = 0;
 	private static Dictionary<string, VirtualTextureOverrides> overriden = new();
 	public static Dictionary<string, VirtualTextureCollection> collections = new();
 
@@ -60,15 +62,15 @@ public static class CustomVirtualTextureManager
 		collections.Add(name, collection);
 
 		return collection;
-
 	}
 
 	internal static void InitializeAdHoc(VirtualTexture asset, AdHocTextureConfig config)
 	{
-		asset.m_virtualSize = VirtualSize._2K_x_2K;
+		asset.m_virtualSize = (VirtualSize)(config.widthInPages * 128);
+		asset.m_mipCount = (int)config.mipCount;
 		asset.m_mipFilter = MipFilter.Nearest;
 		asset.m_layoutPreset = LayoutPreset.Unity_Standard;
-		asset.m_assetIndex = 42;
+		asset.m_assetIndex = VANILLA_TEXTURE_COUNT + ++AdHocsAdded;
 		asset.m_layoutSettings = layoutSettings;
 		asset.m_pageFile = new(asset);
 		asset.UpdateProperties();
@@ -99,12 +101,18 @@ public static class CustomVirtualTextureManager
 
 	public static void TryUnloadTexture(VirtualTexture asset)
 	{
-		// nothing to be done...
+		if (!VirtualTextureComponents.Customizer.TryOf(asset, out var czar)) return;
+
+		czar.Dispose();
 	}
 
-	public static void RebuildTextures()
+	public static void Reset()
 	{
-		if (AmplifyTextureManager.m_instance?.m_currentVirtualTextures == null) return;
-		foreach (var tx in AmplifyTextureManager.m_instance.m_currentVirtualTextures) tx.RequestRebuild();
+		foreach (var cam in AmplifyTextureManager.m_runtimeList)
+		{
+			if (!cam.IsInitialized) continue;
+			cam.InternalReset();
+		}
+		AmplifyTextureManager.Instance.ResetGlobalShaderParams();
 	}
 }

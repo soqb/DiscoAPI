@@ -2,157 +2,185 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Linq;
 using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.VirtualTextures;
 
 public struct VirtualTextureOverrides
 {
-	public List<PageSubstitution> substitutions = new();
+    public List<PageSubstitution> substitutions = new();
 
-	public VirtualTextureOverrides() { }
+    public VirtualTextureOverrides() { }
 }
 
-public struct AdHocTextureConfig
+public struct AdHocTextureConfig(IPageProvider provider)
 {
-	public IPageProvider.Factory getPages;
-	public Size size;
-
-	public AdHocTextureConfig(Size size, IPageProvider.Factory providerFactory)
-	{
-		this.size = size;
-		this.getPages = providerFactory;
-	}
+    public IPageProvider getPages = provider;
+    public uint widthInPages;
+    public uint mipCount;
 }
 
 public record struct PageLocation(int mip, int x, int y);
-public record struct PageSubstitution(Rectangle area, IPageProvider.Factory pagesFactory);
+public record struct PageSubstitution(Rectangle area, IPageProvider pages);
 
-public interface IPageBlitter
+public abstract class VirtualTextureCustomizer : IDisposable
 {
-	public bool TryGetPageSubstitute(PageLocation page);
-}
+    public VirtualTexture asset;
 
-public abstract class VirtualTextureCustomizer
-{
-	public VirtualTexture asset;
+    protected VirtualTextureCustomizer(VirtualTexture asset)
+    {
+        this.asset = asset;
+    }
 
-	protected VirtualTextureCustomizer(VirtualTexture asset)
-	{
-		this.asset = asset;
-	}
+    public static PageLocation InvertPageId(VirtualTexture asset, int index)
+    {
+        int pagesSeen = 0;
+        for (int mip = 0; mip < asset.m_mipCount; mip++)
+        {
+            int pagesPerRow = asset.m_physicalTableSize >> mip;
+            int nextPagesSeen = pagesSeen + pagesPerRow * pagesPerRow;
+            if (index >= nextPagesSeen)
+            {
+                pagesSeen = nextPagesSeen;
+                continue;
+            }
+            ;
+            int xy = index - pagesSeen;
+            return new(mip, xy % pagesPerRow, xy / pagesPerRow);
+        }
 
-	public static PageLocation InvertPageId(VirtualTexture asset, int index)
-	{
-		int pagesSeen = 0;
-		for (int mip = 0; mip < asset.m_mipCount; mip++)
-		{
-			int pagesPerRow = asset.m_physicalTableSize >> mip;
-			int nextPagesSeen = pagesSeen + pagesPerRow * pagesPerRow;
-			if (index >= nextPagesSeen)
-			{
-				pagesSeen = nextPagesSeen;
-				continue;
-			}
-			;
-			int xy = index - pagesSeen;
-			return new(mip, xy % pagesPerRow, xy / pagesPerRow);
-		}
+        throw new Exception("unknown page id !");
+    }
 
-		throw new Exception("unknown page id !");
-	}
+    public abstract void Dispose();
+    public abstract bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out IPageProvider? provider, out Rectangle overlap);
 
-	public abstract bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageBuffers? pages, out Rectangle overlap);
+    public bool TrySubstituteUncompressed(
+        PageLocation page,
+        [NotNullWhen(true)] out PageBuffers? buffers,
+        out Rectangle overlap
+    )
+    {
+        if (!TrySubstitute(page, out var provider, out overlap))
+        {
+            buffers = null;
+            return false;
+        }
+
+        if (!provider.CanProvideUncompressed)
+            throw new InvalidOperationException($"{provider} cannot provide uncompressed pages");
+
+        buffers = provider.ProvideUncompressed(page);
+        return false;
+    }
+
+    public virtual bool TrySubstituteCompressed(
+        PageLocation page,
+        [NotNullWhen(true)] out ICompressedPageReader? reader,
+        out Rectangle overlap
+    )
+    {
+        if (!TrySubstitute(page, out var provider, out overlap))
+        {
+            reader = null;
+            return false;
+        }
+
+        reader = provider.ProvideCompressed(page);
+        return false;
+    }
 }
 
 public class AdHocVirtualTextureCustomizer : VirtualTextureCustomizer
 {
-	private Rectangle area;
-	private IPageProvider pages;
+    private IPageProvider pages;
 
-	public AdHocVirtualTextureCustomizer(VirtualTexture asset, AdHocTextureConfig config) : base(asset)
-	{
-		area = new(0, 0, config.size.Width, config.size.Height);
-		pages = config.getPages(asset.m_mipCount, area);
-	}
+    public AdHocVirtualTextureCustomizer(VirtualTexture asset, AdHocTextureConfig config) : base(asset)
+    {
+        pages = config.getPages;
+    }
 
-	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageBuffers? buffers, out Rectangle overlap)
-	{
-		buffers = pages.Provide(page);
-		overlap = new(-4, -4, 136, 136);
-		return true;
-	}
+    public override void Dispose() => pages.Dispose();
+
+    public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out IPageProvider? provider, out Rectangle overlap)
+    {
+        provider = pages;
+        overlap = new(0, 0, 136, 136);
+        return true;
+    }
 }
 
 public class OverridesVirtualTextureCustomizer : VirtualTextureCustomizer
 {
-	private record struct PageSubstitution(Rectangle area, IPageProvider pages);
-	private PageSubstitution[] substs;
+    private PageSubstitution[] substs;
 
-	public OverridesVirtualTextureCustomizer(VirtualTexture asset, VirtualTextureOverrides settings) : base(asset)
-	{
-		substs = settings.substitutions.Select(subst => new PageSubstitution(
-			subst.area,
-			subst.pagesFactory.Invoke(asset.m_mipCount, subst.area)
-		)).ToArray();
-	}
+    public OverridesVirtualTextureCustomizer(VirtualTexture asset, VirtualTextureOverrides settings) : base(asset)
+    {
+        substs = settings.substitutions.ToArray();
+    }
 
-	public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out PageBuffers? buffers, out Rectangle overlap)
-	{
-		foreach (var sub in substs)
-		{
-			Rectangle textureArea = new(
-				(sub.area.X >> page.mip) - page.x * 128,
-				(sub.area.Y >> page.mip) - page.y * 128,
-				sub.area.Width >> page.mip,
-				sub.area.Height >> page.mip
-			);
-			Rectangle pageArea = new(
-				-4,
-				-4,
-				136,
-				136
-			);
+    public override void Dispose()
+    {
+        foreach (var sub in substs)
+        {
+            sub.pages.Dispose();
+        }
+    }
 
-			overlap = Rectangle.Intersect(textureArea, pageArea);
-			if (overlap.Width != 0 && overlap.Height != 0)
-			{
-				buffers = sub.pages.Provide(page);
-				return true;
-			}
+    public override bool TrySubstitute(PageLocation page, [NotNullWhen(true)] out IPageProvider? provider, out Rectangle overlap)
+    {
+        foreach (var sub in substs)
+        {
+            Rectangle subArea = new(
+                (sub.area.X >> page.mip) - page.x * 128 + 4,
+                (sub.area.Y >> page.mip) - page.y * 128 + 4,
+                sub.area.Width >> page.mip,
+                sub.area.Height >> page.mip
+            );
+            Rectangle pageArea = new(
+                0,
+                0,
+                136,
+                136
+            );
 
-		}
+            overlap = Rectangle.Intersect(subArea, pageArea);
+            if (overlap.Width != 0 && overlap.Height != 0)
+            {
+                provider = sub.pages;
+                return true;
+            }
+        }
 
-		buffers = null;
-		overlap = default;
-		return false;
-	}
+        provider = null;
+        overlap = default;
+        return false;
+    }
 }
 
 public static class VirtualTextureComponents
 {
-	public static ModEntityRegistry<VirtualTexture> Registry { get; }
-		= new(new PersistentEntityMap<VirtualTexture>(p => new(Registry!, p)));
-	public static ModEntity<VirtualTexture> Of(VirtualTexture s) => Registry.EntityOf(s);
+    public static ModEntityRegistry<VirtualTexture> Registry { get; }
+        = new(new PersistentEntityMap<VirtualTexture>(p => new(Registry!, p)));
+    public static ModEntity<VirtualTexture> Of(VirtualTexture s) => Registry.EntityOf(s);
 
-	// components ...
-	public static ComponentKey<VirtualTextureCustomizer, VirtualTexture> Customizer { get; }
-		= Registry.Register<VirtualTextureCustomizer>("discoapi", "customizer");
+    // components ...
+    public static ComponentKey<VirtualTextureCustomizer, VirtualTexture> Customizer { get; }
+        = Registry.Register<VirtualTextureCustomizer>("discoapi", "customizer");
 
-	// extension methods ...
-	public static ModEntity<VirtualTexture> CreateAdHoc(AdHocTextureConfig config)
-	{
-		ModEntity<VirtualTexture>? me = null;
+    // extension methods ...
+    public static ModEntity<VirtualTexture> CreateAdHoc(AdHocTextureConfig config)
+    {
+        ModEntity<VirtualTexture>? me = null;
 
-		ScriptableObjectHook<VirtualTexture>.CreateInstanceWith(asset =>
-		{
-			CustomVirtualTextureManager.InitializeAdHoc(asset, config);
+        ScriptableObjectHook<VirtualTexture>.CreateInstanceWith(asset =>
+        {
+            CustomVirtualTextureManager.InitializeAdHoc(asset, config);
 
-			me = Of(asset);
-			me.Add(Customizer, new AdHocVirtualTextureCustomizer(asset, config));
-		});
+            me = Of(asset);
+            me.Add(Customizer, new AdHocVirtualTextureCustomizer(asset, config));
+        });
 
-		return me!;
-	}
+        return me!;
+    }
 }
