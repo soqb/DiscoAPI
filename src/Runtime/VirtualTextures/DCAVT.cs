@@ -12,7 +12,7 @@ public class DCAVTFile : IDisposable
 	private uint widthInPages;
 	private uint mipCount;
 	private DCAVTFlags flags;
-	private PageTable pages = new();
+	internal Dictionary<uint, PageDesc> pages = new();
 	internal BinaryReader reader;
 
 	public AdHocTextureConfig AdHocConfig()
@@ -41,7 +41,12 @@ public class DCAVTFile : IDisposable
 		mipCount = bits >> 24;
 		flags = (DCAVTFlags)(bits);
 		widthInPages = reader.ReadUInt32();
-		pages = PageTable.Parse(reader, widthInPages);
+
+		uint area = widthInPages * widthInPages;
+
+		for (uint i = 0; i < ComputePageCount(); i++)
+			pages.Add(i, PageDesc.Parse(reader));
+
 		return true;
 	}
 
@@ -55,48 +60,44 @@ public class DCAVTFile : IDisposable
 		return (uint)total;
 	}
 
+	private uint ComputePageCount()
+	{
+		uint count = 0;
+		for (int m = 0; m < mipCount; m++)
+		{
+			uint w = widthInPages >> m;
+			count += w * w;
+		}
+
+		return count;
+	}
+
 	internal bool TryGetPage(PageLocation location, out PageDesc desc)
 	{
-		return pages.pages.TryGetValue(PageIndex(location), out desc);
+		return pages.TryGetValue(PageIndex(location), out desc);
 	}
 }
 
 [Flags]
 public enum DCAVTFlags : uint { }
 
-internal class PageTable
-{
-	internal Dictionary<uint, PageDesc> pages = new();
-
-	public static PageTable Parse(BinaryReader reader, uint widthInPages)
-	{
-		PageTable table = new();
-		uint pageCount = widthInPages * widthInPages;
-
-		for (uint i = 0; i < pageCount; i++)
-			table.pages.Add(i, PageDesc.Parse(reader));
-
-		return table;
-	}
-}
-
 internal struct PageDesc
 {
 	public long addr;
-	public short lengthNeutral;
-	public short lengthNormals;
-	public short lengthHeightmap;
-	public short lengthShadow;
+	public int lengthNeutral;
+	public int lengthNormals;
+	public int lengthHeightmap;
+	public int lengthShadow;
 
 	public static PageDesc Parse(BinaryReader reader)
 	{
 		return new()
 		{
 			addr = reader.ReadInt64(),
-			lengthNeutral = reader.ReadInt16(),
-			lengthNormals = reader.ReadInt16(),
-			lengthHeightmap = reader.ReadInt16(),
-			lengthShadow = reader.ReadInt16(),
+			lengthNeutral = reader.ReadInt32(),
+			lengthNormals = reader.ReadInt32(),
+			lengthHeightmap = reader.ReadInt32(),
+			lengthShadow = reader.ReadInt32(),
 		};
 	}
 }
@@ -127,10 +128,7 @@ public record DCAVTPageProvider(DCAVTFile file) : IPageProvider
 {
 	public bool CanProvideUncompressed => false;
 
-	public void Dispose()
-	{
-		throw new NotImplementedException();
-	}
+	public void Dispose() => file.Dispose();
 
 	public ICompressedPageReader ProvideCompressed(PageLocation page) => new DCAVTPageReader(file, page);
 }
