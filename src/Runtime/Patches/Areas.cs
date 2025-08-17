@@ -29,10 +29,10 @@ public static class AreaPatches
 
         Area? foundNextArea = AreaUtils.Areas.FirstOrDefault(a => a.id == areaId);
         if (foundNextArea == null) return;
-        
+
         __instance.ScenePropertiesList.Add(foundNextArea.GetSceneProperties());
     }
-    
+
     private static System.Collections.IEnumerator UnloadArea(Area area)
     {
         var oldSceneFound = FastLoadManager.m_FastLoadManager.allScenes.TryGetValue(area.scenePath, out Scene oldScene);
@@ -43,14 +43,14 @@ public static class AreaPatches
         }
 
         FastLoadManager.m_FastLoadManager.allScenes.Remove(area.scenePath);
-        
+
         yield return SceneManager.UnloadSceneAsync(oldScene);
         yield return null;
 
         Resources.UnloadUnusedAssets();
         DiscoRunner.Log.LogInfo($"unload of area '{area.id}' complete");
     }
-    
+
     [HarmonyPatch(typeof(SceneTransitionManager), nameof(SceneTransitionManager.LoadSceneCoR))]
     [HarmonyPostfix]
     private static void OnLoadSceneCoRPostfix(ref IEnumerator __result, string sceneName, string destinationId, bool showLoadingScreen,
@@ -58,23 +58,23 @@ public static class AreaPatches
     {
         var foundArea = AreaUtils.FromScenePath(sceneName); // sceneName is actually a path
         if (foundArea == null) return;
-        
+
         __result = PatchedSceneLoadRoutine(__result, foundArea).WrapToIl2Cpp();
     }
 
     private static System.Collections.IEnumerator PatchedSceneLoadRoutine(IEnumerator original, Area foundArea)
     {
         yield return AreaUtils.LoadModScene(foundArea);
-        
+
         FastLoadManager.m_FastLoadManager.allScenes.TryAdd(foundArea.scenePath, SceneManager.GetSceneAt(SceneManager.sceneCount - 1));
 
         yield return null;
-        
+
         if (!FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.ContainsKey(foundArea.id))
         {
             var navLoadOp = AreaUtils.LoadNavmeshData(foundArea);
             yield return navLoadOp;
-            
+
             FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.id, navLoadOp.Result);
         }
 
@@ -85,7 +85,7 @@ public static class AreaPatches
 
     [HarmonyPatch(typeof(NavMeshDataCollection), nameof(NavMeshDataCollection.GetNavMeshDataByScene))]
     [HarmonyPrefix]
-    private static bool OnGetNavMeshDataByScene(ref NavMeshData __result, string scenePath)
+    private static bool OnGetNavMeshDataByScene(ref NavMeshData? __result, string scenePath)
     {
         var sceneNameNoHardcodePath = scenePath[14..^6];
         var foundArea = AreaUtils.Areas.FirstOrDefault(a => a.id == sceneNameNoHardcodePath);
