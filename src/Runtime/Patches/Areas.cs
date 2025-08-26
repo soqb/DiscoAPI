@@ -65,24 +65,33 @@ public static class AreaPatches
     private static System.Collections.IEnumerator PatchedSceneLoadRoutine(IEnumerator original, Area foundArea)
     {
         yield return AreaUtils.LoadModScene(foundArea);
+        
         FastLoadManager.m_FastLoadManager.allScenes.TryAdd(foundArea.scenePath, SceneManager.GetSceneAt(SceneManager.sceneCount - 1));
 
         yield return null;
         
+        if (!FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.ContainsKey(foundArea.id))
+        {
+            var navLoadOp = AreaUtils.LoadNavmeshData(foundArea);
+            yield return navLoadOp;
+            
+            FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.id, navLoadOp.Result);
+        }
+
         while (original.MoveNext())
             yield return original.Current;
     }
+
 
     [HarmonyPatch(typeof(NavMeshDataCollection), nameof(NavMeshDataCollection.GetNavMeshDataByScene))]
     [HarmonyPrefix]
     private static bool OnGetNavMeshDataByScene(ref NavMeshData __result, string scenePath)
     {
         var sceneNameNoHardcodePath = scenePath[14..^6];
-        var foundArea = AreaUtils.FromSceneName(sceneNameNoHardcodePath);
+        var foundArea = AreaUtils.Areas.FirstOrDefault(a => a.id == sceneNameNoHardcodePath);
         if (foundArea == null) return true;
 
-        var navMesh = AreaUtils.LoadNavmeshData(foundArea);
-        __result = navMesh;
+        __result = FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict[sceneNameNoHardcodePath];
         return false;
     }
 

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using UnityEngine.AI;
 
 namespace DiscoAPI.Runtime;
 
@@ -26,7 +27,7 @@ public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 	private AsyncOperationHandle<AssetBundle?> bundle;
 	private string aliasPrefix;
 
-	private static AsyncOperationHandle<AssetBundle?> HandleFromCreateRequest(AssetBundleCreateRequest req)
+	public static AsyncOperationHandle<AssetBundle?> HandleFromCreateRequest(AssetBundleCreateRequest req)
 	{
 		return AssetUtils.SpoofHandle<AssetBundle>(complete =>
 		{
@@ -58,6 +59,30 @@ public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 
 	public AsyncOperationHandle<T?> Get(string path)
 		=> AssetUtils.SpoofHandle<T>(complete => Execute(path, complete), bundle);
+}
+
+public class SceneBundleRoute
+{
+	// necessary because Scenes in bundles are 1) not directly accessible
+	// and 2) do not inherit UnityEngine.Object or Il2CppObject
+	private AsyncOperationHandle<AssetBundle?>? bundle;
+	private string? bundlePath;
+
+	public SceneBundleRoute(string? bundlePath)
+	{
+		this.bundlePath = bundlePath;
+	}
+
+	public AsyncOperationHandle<AssetBundle?> Get()
+	{
+		if (bundle == null || !bundle.Result)
+		{
+			this.bundle =
+				AssetBundleRoute<AssetBundle>.HandleFromCreateRequest(AssetBundle.LoadFromFileAsync(bundlePath));
+		}
+
+		return bundle;
+	}
 }
 
 public abstract class LooseFileRoute<T> : IAssetRoute<T> where T : UnityEngine.Object
@@ -117,6 +142,8 @@ public class LooseSpriteRoute : LooseFileRoute<Sprite>
 public interface IAssetRouter
 {
 	IAssetRoute<Sprite> Portraits => new EmptyAssetRoute<Sprite>();
+	SceneBundleRoute SceneBundle => new SceneBundleRoute("UNDEFINED");
+	IAssetRoute<NavMeshData> NavMeshes => new EmptyAssetRoute<NavMeshData>();
 	IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation) => new EmptyAssetRoute<AudioClip>();
 }
 
@@ -131,10 +158,18 @@ public class MemoizedAssetRouter : IAssetRouter
 		this.inner = inner;
 
 		portraits = new(() => inner.Portraits);
+		scenes = new(() => inner.SceneBundle);
+		navmeshes = new(() => inner.NavMeshes);
 	}
 
 	private Lazy<IAssetRoute<Sprite>> portraits;
 	public IAssetRoute<Sprite> Portraits => portraits.Value;
+
+	private Lazy<SceneBundleRoute> scenes;
+	public SceneBundleRoute SceneBundle => scenes.Value;
+
+	private Lazy<IAssetRoute<NavMeshData>> navmeshes;
+	public IAssetRoute<NavMeshData> NavMeshes => navmeshes.Value;
 
 	private Dictionary<AssetLocation, IAssetRoute<AudioClip>> clipsForConversation = new();
 	public IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation)
