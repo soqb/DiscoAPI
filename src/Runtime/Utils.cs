@@ -239,7 +239,7 @@ namespace DiscoAPI.Runtime
 			return SpoofHandle<T>(execute, new());
 		}
 
-		public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute, AsyncOperationHandle dep)
+		public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute, AsyncOperationHandle dep) where T : Il2CppObjectBase
 		{
 			// please don't ask why this is like this.
 
