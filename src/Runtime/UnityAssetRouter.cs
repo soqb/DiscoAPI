@@ -101,7 +101,7 @@ public abstract class LooseFileRoute<T> : IAssetRoute<T> where T : UnityEngine.O
 {
 	public string? location;
 	private Dictionary<string, AsyncOperationHandle<T?>> cache = new();
-
+    
 	protected LooseFileRoute(string? location)
 	{
 		this.location = location;
