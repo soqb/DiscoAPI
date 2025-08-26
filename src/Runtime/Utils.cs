@@ -12,6 +12,7 @@ using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppSystem.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AI;
@@ -26,6 +27,7 @@ using NotSupportedException = System.NotSupportedException;
 using PC = PixelCrushers.DialogueSystem;
 using SM = Sunshine.Metric;
 using Type = System.Type;
+using Task = Il2CppSystem.Threading.Tasks.Task;
 
 namespace DiscoAPI.Runtime
 {
@@ -370,6 +372,59 @@ namespace DiscoAPI.Runtime
 			return newArr.ToArray();
 		}
 	}
+
+	public static class AreaUtils
+	{
+		public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
+		public static bool IsModdedArea(string scenePath) => Areas.Any(a => a.scenePath == scenePath);
+		public static Area? FromScenePath(string scenePath) => Areas.FirstOrDefault(a => a.scenePath == scenePath);
+		public static Area? FromSceneName(string sceneName) => Areas.FirstOrDefault(a => a.scenePath.Contains(sceneName));
+
+		public static AsyncOperationHandle<AsyncOperation?> LoadModScene(Area area)
+		{
+			var sceneBundle = DiscoRunner.GetSource(area.source!)?.Router.SceneBundle.Get();
+			return AssetUtils.SpoofHandle<AsyncOperation>(complete => sceneBundle?.Task
+				.ContinueWith((Action<Task>)(task => LoadSceneCallback(task, area.scenePath)?
+				.add_completed((Action<AsyncOperation>)((op) => complete(op, null))))), sceneBundle);
+		}
+
+		private static AsyncOperation? LoadSceneCallback(Task handle, string scenePath)
+		{
+			var bundle = handle.Cast<Task<AssetBundle?>>().Result;
+			if (bundle == null)
+			{
+				DiscoRunner.Log.LogError($"a request to load scene bundle containing {scenePath} failed!");
+				return null;
+			}
+
+			var foundScenePath = bundle.GetAllScenePaths().FirstOrDefault(s => s == scenePath);
+			if (foundScenePath == null)
+			{
+				DiscoRunner.Log.LogError($"could not load {scenePath} from bundle {bundle.name}!");
+				return null;
+			}
+
+			return SceneManager.LoadSceneAsync(foundScenePath, LoadSceneMode.Additive);
+		}
+
+		public static AsyncOperationHandle<NavMeshData?> LoadNavmeshData(Area area)
+		{
+			var loadOp = DiscoRunner.GetSource(area.source!)?.Router.NavMeshes.Get(area.navMeshPath);
+			if (loadOp == null)
+			{
+				DiscoRunner.Log.LogError($"failed to load navmesh data at {area.navMeshPath} for source {area.source}");
+				return new AsyncOperationHandle<NavMeshData?>();
+			}
+			return loadOp;
+		}
+
+
+		public static void ChangeArea(string areaId, string destinationId, bool isGameLoad, bool showLoadingScreen,
+			bool hideLoadingScreen)
+		{
+			SingletonScriptable<ApplicationManager>.Singleton.ChangeArea(areaId, destinationId, isGameLoad, showLoadingScreen, hideLoadingScreen);
+		}
+	}
 }
 
 namespace System.Runtime.CompilerServices
@@ -382,43 +437,3 @@ namespace System.Runtime.CompilerServices
 		}
 	}
 }
-
-public static class AreaUtils
-{
-	const string sceneBundlePath = "BepInEx/plugins/dca/assetbundles/scenes";
-	const string navmeshBundlePath = "BepInEx/plugins/dca/assetbundles/navmeshes";
-	public static AssetBundle? sceneBundle;
-	public static AssetBundle? navmeshBundle;
-	public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
-	public static bool IsModdedArea(string scenePath) => Areas.Any(a => a.scenePath == scenePath);
-	public static Area? FromScenePath(string scenePath) => Areas.FirstOrDefault(a => a.scenePath == scenePath);
-	public static Area? FromSceneName(string sceneName) => Areas.FirstOrDefault(a => a.scenePath.Contains(sceneName));
-	
-	public static AsyncOperation? LoadModScene(Area area)
-	{
-		AreaUtils.sceneBundle ??= AssetBundle.LoadFromFile(sceneBundlePath);
-		var scenePath = AreaUtils.sceneBundle.GetAllScenePaths().FirstOrDefault(s => s == area.scenePath);
-
-		if (scenePath == null)
-		{
-			DiscoRunner.Log.LogError($"could not load {area.scenePath} from bundle {sceneBundlePath}!");
-			return null;
-		}
-		
-		return SceneManager.LoadSceneAsync(area.scenePath, LoadSceneMode.Additive);
-	}
-	
-	public static NavMeshData LoadNavmeshData(Area area)
-	{
-		AreaUtils.navmeshBundle ??= AssetBundle.LoadFromFile(navmeshBundlePath);
-		var mesh = AreaUtils.navmeshBundle.LoadAsset<NavMeshData>(area.navMeshPath);
-		return mesh;
-	}
-	
-	public static void ChangeArea(string areaId, string destinationId, bool isGameLoad, bool showLoadingScreen,
-		bool hideLoadingScreen)
-	{
-		SingletonScriptable<ApplicationManager>.Singleton.ChangeArea(areaId, destinationId, isGameLoad, showLoadingScreen, hideLoadingScreen);
-	}
-}
-
