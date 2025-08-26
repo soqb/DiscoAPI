@@ -261,7 +261,11 @@ namespace DiscoAPI.Runtime
 				execute((res, err) =>
 				{
 					bool success = string.IsNullOrEmpty(err);
-					if (!success) res = default(T);
+					if (!success)
+					{
+						DiscoRunner.Log.LogError(err);
+						res = default(T);
+					}
 					op.Complete(res, success, err, false);
 				});
 				op.HasExecuted = true;

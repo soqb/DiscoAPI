@@ -53,7 +53,19 @@ public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 
 	private void Execute(string path, AssetUtils.Complete<T> complete)
 	{
-		var req = bundle.Result!.LoadAssetAsync<T>(aliasPrefix + path);
+		var finalPath = aliasPrefix + path;
+		var finalBundle = bundle.Result;
+		if (!finalBundle)
+		{
+			complete(null, $"failed to load bundle containing {finalPath}");
+			return;
+		}
+		if (!bundle.Result!.Contains(finalPath))
+		{
+			complete(null, $"failed to load {finalPath} from {bundle.Result.name}: does not exist in this bundle");
+			return;
+		}
+		var req = bundle.Result!.LoadAssetAsync<T>(finalPath);
 		req.add_completed((Action<AsyncOperation>)(_ => complete(req.GetResult().TryCast<T?>(), null)));
 	}
 
