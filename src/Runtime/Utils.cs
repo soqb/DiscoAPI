@@ -312,9 +312,6 @@ namespace DiscoAPI.Runtime
 
 	public static class ArchetypeUtils
 	{
-		public static GenericArena<CharacterArchetype> ModArchetypes =>
-			(GenericArena<CharacterArchetype>)DiscoRunner.manager.Assets.GetArena<CharacterArchetype>();
-
 		public static SunshineCharacterTemplate ToSunshineTemplate(CharacterArchetype archetype)
 		{
 			var template = ScriptableObject.CreateInstance<SunshineCharacterTemplate>();

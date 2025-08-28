@@ -42,8 +42,8 @@ public static class ArchetypePatches
     [HarmonyPrefix]
     private static void OnInitializeButtons(FourArchetypeSelector __instance)
     {
-        var modTypes = ArchetypeUtils.ModArchetypes;
-        var typeCount = modTypes.Count;
+        var modTypes = DiscoRunner.globalConfig.newGameArchetypes;
+        var typeCount = modTypes.Length;
 
         if (typeCount >= 4) // these arrays only account for 3 archetypes but we let modders provide 4
         {
@@ -76,8 +76,8 @@ public static class ArchetypePatches
     [HarmonyPostfix]
     private static void OnInitializeButtonsPostfix(FourArchetypeSelector __instance)
     {
-        var modTypes = ArchetypeUtils.ModArchetypes;
-        var typeCount = modTypes.Count;
+        var modTypes = DiscoRunner.globalConfig.newGameArchetypes;
+        var typeCount = modTypes.Length;
         
         var customChar = __instance.CustomCharacterButton;
         __instance.archetypeButtons.Remove(customChar);
@@ -119,7 +119,7 @@ public static class ArchetypePatches
     [HarmonyPostfix]
     private static void OnTransferLeveledSkills(SunshineCharacterTemplate p, SM.CharacterSheet targetSheet)
     {
-        var modType = ArchetypeUtils.ModArchetypes.FirstOrDefault(a => a.name == p.name);
+        var modType = DiscoRunner.globalConfig.newGameArchetypes.FirstOrDefault(a => a.name == p.name);
         if (modType?.skillBonuses == null) return;
 
         var sheetSkills = CharacterComponents.Skills.Of(targetSheet);

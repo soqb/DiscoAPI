@@ -51,4 +51,16 @@ public class GlobalDiscoConfig
 
 	public IAssetRef<Skill> MoraleSkill { get; set; } = new AssetLocation<Skill>("volition");
 	public IAssetRef<Skill> HealthSkill { get; set; } = new AssetLocation<Skill>("endurance");
+
+	private CharacterArchetype[] providedArchetypes = [];
+	public CharacterArchetype[] newGameArchetypes
+	{
+		get => providedArchetypes;
+		set
+		{
+			if (value.Length > 4)
+				throw new InvalidOperationException("expected an array of archetypes with no greater than 4 entries.");
+			providedArchetypes = value;
+		}
+	}
 }
