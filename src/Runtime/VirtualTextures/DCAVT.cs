@@ -28,7 +28,7 @@ public class DCAVTFile : IDisposable
 	/// <summary>
 	/// Create a new instance from a raw stream.
 	///
-	/// This file stream must be thread safe.
+	/// The passed stream must be thread safe.
 	/// </summary>
 	public DCAVTFile(Stream stream)
 	{

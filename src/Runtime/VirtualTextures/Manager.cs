@@ -123,11 +123,10 @@ public static class CustomVirtualTextureManager
 		if (!collections.TryGetValue(name, out var col))
 		{
 			col = InternNewCollection(name);
-			var file = File.Open(BepInEx.Paths.PluginPath + "/dca/assets/vt/limbo.dcavt", FileMode.Open, FileAccess.Read, FileShare.Read);
-			var decaf = new VirtualTextures.DCAVTFile(file);
-			DiscoRunner.Log.LogInfo("dcavt file read..");
-			var vt = VirtualTextures.VirtualTextureComponents.CreateAdHoc(decaf.AdHocConfig());
-			DiscoRunner.Log.LogInfo("ad hoc created..");
+			string path = DiscoRunner.GetSource(area.source!)!.Location.Get(area.vtPath!)!;
+			var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+			var dcavt = new VirtualTextures.DCAVTFile(file);
+			var vt = VirtualTextures.VirtualTextureComponents.CreateAdHoc(dcavt.AdHocConfig());
 			col.VirtualTextures.Add(vt.EntityBase);
 			AmplifyTextureManager.m_instance.InitializeCollections();
 			return vt;

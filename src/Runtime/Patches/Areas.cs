@@ -68,18 +68,25 @@ public static class AreaPatches
 
         FastLoadManager.m_FastLoadManager.allScenes.TryAdd(foundArea.scenePath, SceneManager.GetSceneAt(SceneManager.sceneCount - 1));
 
-        var vt = VirtualTextures.CustomVirtualTextureManager.VtFromArea(foundArea);
+        if (foundArea.vtPath != null)
+        {
+            var vt = VirtualTextures.CustomVirtualTextureManager.VtFromArea(foundArea);
 
-        yield return WaitFor.EndOfFrame();
+            yield return WaitFor.EndOfFrame();
 
-        original.MoveNext();
-        yield return original.Current;
+            original.MoveNext();
+            yield return original.Current;
 
-        // scene is now loaded:
-        GameObject vtContainer = new();
-        vtContainer.transform.position = Vector3.zero;
-        vtContainer.transform.localScale = Vector3.one * 0.55f;
-        VirtualTextures.VTSceneContents.InstantiateForTexture(vtContainer.transform, vt);
+            // scene is now loaded:
+            GameObject vtContainer = new();
+            vtContainer.transform.position = Vector3.zero;
+            vtContainer.transform.localScale = Vector3.one * 0.55f;
+            VirtualTextures.VTSceneContents.InstantiateForTexture(vtContainer.transform, vt);
+        }
+        else
+        {
+            yield return WaitFor.EndOfFrame();
+        }
 
         if (!FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.ContainsKey(foundArea.id))
         {
