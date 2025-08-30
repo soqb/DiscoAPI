@@ -53,7 +53,7 @@ public class DiscoAPIPlugin : BasePlugin
         PatchAll(typeof(Patches.ArchetypePatches));
         PatchAll(typeof(Patches.AreaPatches));
         // PatchAll(typeof(Patches.VirtualTexturePatches));
-        DialoguBundleLoa der.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
+        DialogueBundleLoader.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
 
         DiscoRunner.OnLoad();
     }
