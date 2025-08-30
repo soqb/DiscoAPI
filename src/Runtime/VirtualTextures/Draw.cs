@@ -172,22 +172,22 @@ public readonly record struct LinearGradient(Color topLeft, Color bottomRight) :
 public readonly ref struct ByteSpanPixelBuffer(Span<byte> mem, int width)
 {
 	public readonly int width = width;
-	public readonly Span<byte> mem = mem;
+	public readonly Span<byte> span = mem;
 
 	public Color this[int x, int y]
 	{
 		get => Color.FromArgb(
-			mem[3 + 4 * (y * width + x)],
-			mem[0 + 4 * (y * width + x)],
-			mem[1 + 4 * (y * width + x)],
-			mem[2 + 4 * (y * width + x)]
+			span[3 + 4 * (y * width + x)],
+			span[0 + 4 * (y * width + x)],
+			span[1 + 4 * (y * width + x)],
+			span[2 + 4 * (y * width + x)]
 		);
 		set
 		{
-			mem[0 + 4 * (y * width + x)] = value.R;
-			mem[1 + 4 * (y * width + x)] = value.G;
-			mem[2 + 4 * (y * width + x)] = value.B;
-			mem[3 + 4 * (y * width + x)] = value.A;
+			span[0 + 4 * (y * width + x)] = value.R;
+			span[1 + 4 * (y * width + x)] = value.G;
+			span[2 + 4 * (y * width + x)] = value.B;
+			span[3 + 4 * (y * width + x)] = value.A;
 		}
 	}
 }
@@ -195,7 +195,7 @@ public readonly ref struct ByteSpanPixelBuffer(Span<byte> mem, int width)
 public interface IBcnDecompressor
 {
 	public void BC1ToRGBX(Span<byte> input, Span<byte> output);
-	public void BC4ToPairedRGBA(Span<byte> input, Span<byte> output, byte ch0, byte ch1);
+	public void BC5ToPairedRGBA(Span<byte> input, Span<byte> output, byte ch0, byte ch1);
 }
 
 public readonly ref struct VirtualTextureBlitter(ByteSpanPixelBuffer diff, ByteSpanPixelBuffer norm, ByteSpanPixelBuffer spec)
@@ -211,7 +211,7 @@ public readonly ref struct VirtualTextureBlitter(ByteSpanPixelBuffer diff, ByteS
 				dest[x + offset.X, y + offset.Y] = source[x, y];
 	}
 
-	private Color DebugColor(int x, int y)
+	public static Color DebugColor(int x, int y)
 	{
 		int d = Math.Min(255, (x + y) * 16 / 17);
 		return Color.FromArgb(d, 255 - d, d);
@@ -219,7 +219,7 @@ public readonly ref struct VirtualTextureBlitter(ByteSpanPixelBuffer diff, ByteS
 
 	public const int DebugBorderWidth = 6;
 
-	public void DrawDebugBorders()
+	public void DrawDebugOverlay(PageLocation page)
 	{
 		for (int y = 0; y < DebugBorderWidth; y++)
 			for (int x = 0; x < 136; x++) diff[x, y] = DebugColor(x, y);
@@ -233,6 +233,12 @@ public readonly ref struct VirtualTextureBlitter(ByteSpanPixelBuffer diff, ByteS
 			for (int x = 136 - DebugBorderWidth; x < 136; x++) diff[x, y] = DebugColor(x, y);
 		}
 
+		Bitfont.DrawGlyph(diff, 16, 16, Bitfont.glyphMColonLigature);
+		Bitfont.DrawGlyph(diff, 16, 16 + 1 * 7 * Bitfont.WIDTH, Bitfont.glyphXColonLigature);
+		Bitfont.DrawGlyph(diff, 16, 16 + 2 * 7 * Bitfont.WIDTH, Bitfont.glyphYColonLigature);
+		Bitfont.DrawInt(diff, 16 + Bitfont.WIDTH * 7, 16, page.mip);
+		Bitfont.DrawInt(diff, 16 + Bitfont.WIDTH * 7, 16 + 1 * 7 * Bitfont.WIDTH, page.x);
+		Bitfont.DrawInt(diff, 16 + Bitfont.WIDTH * 7, 16 + 2 * 7 * Bitfont.WIDTH, page.y);
 	}
 
 	public void Draw(Rectangle overlap, PageBuffers buffers)
@@ -250,16 +256,16 @@ public readonly ref struct VirtualTextureBlitter(ByteSpanPixelBuffer diff, ByteS
 		Span<byte> shadow = src.shadow();
 		Span<byte> shadow2 = src.shadow2();
 
-		for (int i = 0; i < norm.mem.Length / 4; i++)
+		for (int i = 0; i < norm.span.Length / 4; i++)
 		{
-			norm.mem[4 * i + 0] = normals[2 * i + 0];
-			norm.mem[4 * i + 2] = normals[2 * i + 1];
+			norm.span[4 * i + 0] = normals[2 * i + 0];
+			norm.span[4 * i + 2] = normals[2 * i + 1];
 		}
 
-		decompressor.BC1ToRGBX(neutral, diff.mem);
-		decompressor.BC4ToPairedRGBA(heightmap, norm.mem, 1, 3);
-		decompressor.BC4ToPairedRGBA(shadow, spec.mem, 0, 1);
-		decompressor.BC4ToPairedRGBA(shadow2, spec.mem, 2, 3);
+		decompressor.BC1ToRGBX(neutral, diff.span);
+		decompressor.BC5ToPairedRGBA(heightmap, norm.span, 1, 3);
+		decompressor.BC5ToPairedRGBA(shadow, spec.span, 0, 1);
+		decompressor.BC5ToPairedRGBA(shadow2, spec.span, 2, 3);
 	}
 
 	public static void FillWith(IMutablePixelBuffer buffer, Color color)
@@ -291,4 +297,82 @@ public struct CompressedPageBuffers
 		shadow = EmptySpan,
 		shadow2 = EmptySpan,
 	};
+
+	public void MaybeDisable(bool noDiffusion, bool noNormal, bool noSpecular)
+	{
+		// NB: while buffers are still compressed, all zeros is still all black.
+		if (noDiffusion)
+		{
+			neutral().Fill(0);
+			neutral = EmptySpan;
+		}
+		if (noNormal)
+		{
+			normals().Fill(0);
+			heightmap().Fill(0);
+			normals = EmptySpan;
+			heightmap = EmptySpan;
+		}
+		if (noSpecular)
+		{
+			shadow().Fill(0);
+			shadow2().Fill(0);
+			shadow = EmptySpan;
+			shadow2 = EmptySpan;
+		}
+	}
+}
+
+// the things i do..
+public class Bitfont
+{
+	public const int WIDTH = 4;
+
+	// digits 0-9.
+	// filled state in column-major order but little-endian so from bottom right to top-left:
+	public static uint[] glyphDigits = new uint[] {
+		0b011101000110001100011000101110,
+		0b111110010000100001000011000100,
+		0b111110001000100010001000101110,
+		0b011101000101100100001000101110,
+		0b001000010011111001010010100001,
+		0b011111000001110000010000111111,
+		0b011101000101111000010000111110,
+		0b001000010001000010001000011111,
+		0b011101000101110100011000101110,
+		0b100001000011110100011000101110,
+	};
+	public static uint glyphMColonLigature = 0b101010011110101000000000000000;
+	public static uint glyphXColonLigature = 0b101010001010101000000000000000;
+	public static uint glyphYColonLigature = 0b100010001010101000000000000000;
+
+	public static void DrawGlyph(ByteSpanPixelBuffer buffer, int x, int y, uint glyph)
+	{
+		for (byte bit = 0; bit < 30; bit++, glyph >>= 1)
+		{
+			if (glyph % 2 == 0) continue;
+			for (int i = 0; i < WIDTH * WIDTH; i++)
+			{
+				int rx = x + (bit % 5) * WIDTH + i % WIDTH;
+				int ry = y + (bit / 5) * WIDTH + i / WIDTH;
+				buffer[rx, ry] = VirtualTextureBlitter.DebugColor(rx, ry);
+			}
+		}
+	}
+
+	public static void DrawInt(ByteSpanPixelBuffer buffer, int startX, int startY, int number)
+	{
+		// what's up, log?
+		double uplog = Math.Max(0, Math.Log10(number));
+		// num digits minus one
+		int m1Digits = (int)Math.Floor(uplog);
+
+		int x = startX + m1Digits * 6 * WIDTH;
+		for (int i = 0; i <= m1Digits; i++)
+		{
+			DrawGlyph(buffer, x, startY, glyphDigits[number % 10]);
+			number /= 10;
+			x -= 6 * WIDTH;
+		}
+	}
 }

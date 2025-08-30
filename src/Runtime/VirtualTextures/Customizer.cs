@@ -61,17 +61,14 @@ public abstract class VirtualTextureCustomizer : IDisposable
         out Rectangle overlap
     )
     {
-        if (!TrySubstitute(page, out var provider, out overlap))
+        if (!TrySubstitute(page, out var provider, out overlap) || !provider.CanProvideUncompressed)
         {
             buffers = null;
             return false;
         }
 
-        if (!provider.CanProvideUncompressed)
-            throw new InvalidOperationException($"{provider} cannot provide uncompressed pages");
-
         buffers = provider.ProvideUncompressed(page);
-        return false;
+        return true;
     }
 
     public virtual bool TrySubstituteCompressed(
@@ -87,7 +84,7 @@ public abstract class VirtualTextureCustomizer : IDisposable
         }
 
         reader = provider.ProvideCompressed(page);
-        return false;
+        return true;
     }
 }
 
@@ -183,4 +180,6 @@ public static class VirtualTextureComponents
 
         return me!;
     }
+
+    public static int WidthInPages(this ModEntity<VirtualTexture> vt) => (int)(vt.EntityBase.m_virtualSize) / 128;
 }

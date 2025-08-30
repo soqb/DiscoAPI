@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using AmplifyTexture;
+using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Components;
 using UnityEngine;
 using CompressionType = AmplifyTexture.CompressionType;
 
@@ -72,11 +75,19 @@ public static class CustomVirtualTextureManager
 		asset.m_layoutPreset = LayoutPreset.Unity_Standard;
 		asset.m_assetIndex = VANILLA_TEXTURE_COUNT + ++AdHocsAdded;
 		asset.m_layoutSettings = layoutSettings;
+
+		// NB: both of these properties are empty and return false from `IsOpen`
+		//     but AT only checks PageFile2 for notnull before starting a read,
+		//     so we can hook there for adhoc.
 		asset.m_pageFile = new(asset);
+		asset.m_pageFile2 = new(asset);
+
 		asset.UpdateProperties();
 		asset.Initialize();
 		asset.name = $"adhoc/{asset.m_hashName}";
 		asset.hideFlags |= HideFlags.DontUnloadUnusedAsset;
+
+		asset.m_packer.Pack(asset.m_collection);
 	}
 
 	public static void RegisterOverrides(string hashName, VirtualTextureOverrides overrides)
@@ -106,6 +117,25 @@ public static class CustomVirtualTextureManager
 		czar.Dispose();
 	}
 
+	public static ModEntity<VirtualTexture> VtFromArea(Area area)
+	{
+		string name = area.scenePath;
+		if (!collections.TryGetValue(name, out var col))
+		{
+			col = InternNewCollection(name);
+			var file = File.Open(BepInEx.Paths.PluginPath + "/dca/assets/vt/limbo.dcavt", FileMode.Open, FileAccess.Read, FileShare.Read);
+			var decaf = new VirtualTextures.DCAVTFile(file);
+			DiscoRunner.Log.LogInfo("dcavt file read..");
+			var vt = VirtualTextures.VirtualTextureComponents.CreateAdHoc(decaf.AdHocConfig());
+			DiscoRunner.Log.LogInfo("ad hoc created..");
+			col.VirtualTextures.Add(vt.EntityBase);
+			AmplifyTextureManager.m_instance.InitializeCollections();
+			return vt;
+		}
+
+		return VirtualTextureComponents.Of(col.VirtualTextures[0]);
+	}
+
 	public static void Reset()
 	{
 		foreach (var cam in AmplifyTextureManager.m_runtimeList)
@@ -114,5 +144,17 @@ public static class CustomVirtualTextureManager
 			cam.InternalReset();
 		}
 		AmplifyTextureManager.Instance.ResetGlobalShaderParams();
+	}
+
+	public static void UpdateCacheCompression(bool compress)
+	{
+		DiscoRunner.Log.LogWarning($"cc = {compress}");
+		foreach (var cam in AmplifyTextureManager.m_runtimeList)
+		{
+			cam.UpdateCacheCompression(compress);
+		}
+
+		if (!compress)
+			DiscoRunner.Log.LogWarning("disabled virtual texture cache compression. performance will be impacted.");
 	}
 }

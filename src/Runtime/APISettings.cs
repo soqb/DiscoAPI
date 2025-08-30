@@ -16,7 +16,8 @@ public class DiscoAPISettings
     private ConfigEntry<bool> allChecksPass;
     private ConfigEntry<bool> componentLifecycleTracking;
     private ConfigEntry<bool> forceDisableVTCacheCompression;
-    private ConfigEntry<bool> drawVTBorders;
+    private ConfigEntry<bool> drawVTOverlay;
+    private ConfigEntry<bool> spawnVTCacheBillboard;
     private ConfigEntry<bool> disableVTDiffusionMaps;
     private ConfigEntry<bool> disableVTNormalMaps;
     private ConfigEntry<bool> disableVTSpecularMaps;
@@ -61,10 +62,15 @@ public class DiscoAPISettings
         get => Instance.forceDisableVTCacheCompression.Value;
         set => Instance.forceDisableVTCacheCompression.Value = value;
     }
-    public static bool DrawVTBorders
+    public static bool DrawVTOverlay
     {
-        get => Instance.drawVTBorders.Value;
-        set => Instance.drawVTBorders.Value = value;
+        get => Instance.drawVTOverlay.Value;
+        set => Instance.drawVTOverlay.Value = value;
+    }
+    public static bool SpawnVTCacheBillboard
+    {
+        get => Instance.spawnVTCacheBillboard.Value;
+        set => Instance.spawnVTCacheBillboard.Value = value;
     }
     public static bool DisableVTDiffusionMaps
     {
@@ -154,13 +160,19 @@ public class DiscoAPISettings
             "VirtualTextureDebug",
             "ForceDisableVTCacheCompression",
             false,
-            "Disable virtual texture cache compression."
+            "Disable virtual texture cache compression"
         );
-        drawVTBorders = cfg.Bind(
+        drawVTOverlay = cfg.Bind(
             "VirtualTextureDebug",
-            "DrawVTBorders",
+            "DrawVTOverlay",
             false,
             "Draw colored borders on the edges of virtual texture pages to reveal their shape"
+        );
+        spawnVTCacheBillboard = cfg.Bind(
+            "VirtualTextureDebug",
+            "SpawnVTCacheBillboard",
+            false,
+            "Spawn a massive billboard sprite over the player which displays the VT diffusion cache"
         );
         disableVTDiffusionMaps = cfg.Bind(
             "VirtualTextureDebug",
@@ -181,12 +193,22 @@ public class DiscoAPISettings
             "Turn off the specular maps (the lighting properties) of all virtual textures"
         );
 
+        forceDisableVTCacheCompression.SettingChanged += NowAndLater(() =>
+        {
+            VirtualTextures.CustomVirtualTextureManager.UpdateCacheCompression(!ForceDisableVTCacheCompression);
+            VirtualTextures.CustomVirtualTextureManager.Reset();
+        });
 
-        var vtmReset = NowAndLater(() => VirtualTextures.CustomVirtualTextureManager.Reset());
-        drawVTBorders.SettingChanged += vtmReset;
+        EventHandler vtmReset = (_, _) => VirtualTextures.CustomVirtualTextureManager.Reset();
+        drawVTOverlay.SettingChanged += vtmReset;
         disableVTDiffusionMaps.SettingChanged += vtmReset;
         disableVTNormalMaps.SettingChanged += vtmReset;
         disableVTSpecularMaps.SettingChanged += vtmReset;
+
+        spawnVTCacheBillboard.SettingChanged += NowAndLater(() => LobbyLoadExecutor.OnLobbyLoad += () =>
+        {
+            VirtualTextures.VTCacheBillboard.Toggle(SpawnVTCacheBillboard);
+        });
 
         Log.COMPONENT[] needsSwitching = Enum.GetValues<Log.COMPONENT>().Where(f => !Log.IsComponentActive(f)).ToArray();
 
