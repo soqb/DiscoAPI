@@ -13,10 +13,10 @@ public static class PagesPatches
 {
 	[HarmonyPatch(typeof(ActorsPortraitsBundleManager), nameof(ActorsPortraitsBundleManager.LoadPortraitSpriteAsync))]
 	[HarmonyPrefix]
-	private static bool OnLoadPortraitSpriteAsync(ref AsyncOperationHandle<Sprite?> __result, string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite?>> del)
+	private static bool OnLoadPortraitSpriteAsync(ref AsyncOperationHandle<Sprite> __result, string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite>> del)
 	{
 		if (!textureName.StartsWith(AssetUtils.EXTRA_TEXTURE_PREFIX)) return true;
-		__result = AssetUtils.LoadPortrait(textureName, del);
+		__result = AssetUtils.LoadPortrait(textureName, del).AsAddressableOperation().Handle;
 		return false;
 	}
 
@@ -44,7 +44,8 @@ public static class PagesPatches
 		if (portrait == null) return true;
 
 		var del = SetSkillPortraitMethod.CreateDelegate(Il2CppType.Of<Il2CppSystem.Action<AsyncOperationHandle<Sprite?>>>(), __instance);
-		__instance.spriteHandle = AssetUtils.LoadPortrait(portrait, del.Cast<Il2CppSystem.Action<AsyncOperationHandle<Sprite?>>>());
+		var cb = del.Cast<Il2CppSystem.Action<AsyncOperationHandle<Sprite>>>();
+		__instance.spriteHandle = AssetUtils.LoadPortrait(portrait, cb).AsAddressableOperation().Handle;
 		__instance.isAsyncPrepared = true;
 		return false;
 	}

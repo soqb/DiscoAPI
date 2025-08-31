@@ -64,7 +64,14 @@ public static class AreaPatches
 
     private static System.Collections.IEnumerator PatchedSceneLoadRoutine(IEnumerator original, Area foundArea)
     {
-        yield return AreaUtils.LoadModScene(foundArea);
+        var task = AreaUtils.LoadModScene(foundArea);
+        yield return task.ToCoroutine();
+
+        if (!task.Result)
+        {
+            DiscoRunner.Log.LogError($"failed to load scene {foundArea.scenePath}");
+            yield break;
+        }
 
         FastLoadManager.m_FastLoadManager.allScenes.TryAdd(foundArea.scenePath, SceneManager.GetSceneAt(SceneManager.sceneCount - 1));
 
@@ -72,7 +79,7 @@ public static class AreaPatches
         {
             var vt = VirtualTextures.CustomVirtualTextureManager.VtFromArea(foundArea);
 
-            yield return WaitFor.EndOfFrame();
+            yield return null;
 
             original.MoveNext();
             yield return original.Current;
@@ -91,7 +98,7 @@ public static class AreaPatches
         if (!FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.ContainsKey(foundArea.id))
         {
             var navLoadOp = AreaUtils.LoadNavmeshData(foundArea);
-            yield return navLoadOp;
+            yield return navLoadOp.ToCoroutine();
 
             FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.id, navLoadOp.Result);
         }

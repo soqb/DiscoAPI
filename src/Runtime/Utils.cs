@@ -12,22 +12,13 @@ using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppSystem.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.AI;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using Voidforge;
-using static UnityEngine.ResourceManagement.ResourceManager;
-using Action = System.Action;
-using Exception = System.Exception;
-using InvalidOperationException = System.InvalidOperationException;
-using NotSupportedException = System.NotSupportedException;
 using PC = PixelCrushers.DialogueSystem;
 using SM = Sunshine.Metric;
-using Type = System.Type;
-using Task = Il2CppSystem.Threading.Tasks.Task;
 
 namespace DiscoAPI.Runtime
 {
@@ -209,7 +200,7 @@ namespace DiscoAPI.Runtime
 				newOrbMap[i - 1] = (SM.SkillType)i;
 			}
 
-			System.Array.ConstrainedCopy(ArticyBridge.articyOrbSkillToSunshineOrbSkill, 0,
+			Array.ConstrainedCopy(ArticyBridge.articyOrbSkillToSunshineOrbSkill, 0,
 				newOrbMap, 0, ArticyBridge.articyOrbSkillToSunshineOrbSkill.Count);
 			ArticyBridge.articyOrbSkillToSunshineOrbSkill = newOrbMap;
 		}
@@ -219,66 +210,50 @@ namespace DiscoAPI.Runtime
 	public static class AssetUtils
 	{
 		public const string EXTRA_TEXTURE_PREFIX = "\0EXTRA\0";
-		public static AsyncOperationHandle<Sprite?> LoadPortrait(string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite?>> del)
+
+		public async static DiscoTask<Sprite> LoadPortrait(string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite>>? del)
 		{
-			if (PixelsToDisco.TryDecodeTextureName(textureName, out string? source, out string? path))
+			string hint = textureName;
+			try
 			{
-				var handle = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
-				handle.add_Completed(del);
-				return handle;
-			}
-			else return ActorsPortraitsBundleManager.LoadPortraitSpriteAsync(textureName, del);
-
-		}
-
-		public delegate void Complete<T>(T? result, string? error);
-
-		public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute) where T : Il2CppObjectBase
-		{
-			return SpoofHandle<T>(execute, new());
-		}
-
-		public static AsyncOperationHandle<T?> SpoofHandle<T>(Action<Complete<T>> execute, AsyncOperationHandle dep) where T : Il2CppObjectBase
-		{
-			// please don't ask why this is like this.
-
-			CompletedOperation<T?> op = Addressables.ResourceManager.CreateOperation<CompletedOperation<T?>>(
-				Il2CppType.Of<CompletedOperation<T?>>(),
-				Il2CppType.Of<CompletedOperation<T?>>().GetHashCode(),
-				null,
-				Addressables.ResourceManager.m_ReleaseOpNonCached
-			);
-
-			op.m_RM = Addressables.ResourceManager;
-			op.IsRunning = true;
-			op.HasExecuted = false;
-			op.IncrementReferenceCount();
-			op.m_UpdateCallbacks = op.m_RM.m_UpdateCallbacks;
-
-			void Execute()
-			{
-				execute((res, err) =>
+				if (PixelsToDisco.TryDecodeTextureName(textureName, out string source, out string path))
 				{
-					bool success = string.IsNullOrEmpty(err);
-					if (!success)
+					DiscoTask<Sprite?> task = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
+					hint = $"{source}:{path}";
+					if (await task is Sprite s)
 					{
-						DiscoRunner.Log.LogError(err);
-						res = default(T);
+						if (del != null) task.AsAddressableOperation().add_Completed(del!);
+						return s;
 					}
-					op.Complete(res, success, err, false);
-				});
-				op.HasExecuted = true;
+				}
+				else if (await ActorsPortraitsBundleManager.LoadPortraitSpriteAsync(textureName, del) is Sprite s)
+				{
+					return s;
+				}
 			}
-
-			if (dep.IsValid() && !dep.IsDone)
+			catch (Exception ex)
 			{
-				System.Action<Il2CppSystem.Threading.Tasks.Task> action = _ => Execute();
-				// we go via the task because the normal completion event has an NBS parameter.
-				dep.m_InternalOp.Task.ContinueWith(action);
+				DiscoRunner.Log.LogError($"failed to load portrait \"{hint}\"");
+				DiscoRunner.Log.LogError(ex);
 			}
-			else Execute();
 
-			return new(op.Cast<IAsyncOperation>());
+			// if everything went wrong, load fallback protrait:
+			try
+			{
+				const string FALLBACK = "assets/images/missing_texture_lol.png";
+				DiscoTask<Sprite> task = InherentProvider.source.Router.Portraits.Get(FALLBACK)!;
+				await task;
+				if (del != null) task.AsAddressableOperation().add_Completed(del!);
+				return task.Result;
+			}
+			catch (Exception ex)
+			{
+				DiscoRunner.Log.LogError($"failed to even load fallback portrait");
+				DiscoRunner.Log.LogError(ex);
+
+				// at this point there's nothing else we can do..
+				return null!;
+			}
 		}
 	}
 
@@ -287,9 +262,9 @@ namespace DiscoAPI.Runtime
 	/// </summary>
 	public static class ScriptableObjectHook<T> where T : ScriptableObject
 	{
-		public static ThreadLocal<System.Action<T>?> cb = new();
+		public static ThreadLocal<Action<T>?> cb = new();
 
-		public static T CreateInstanceWith(System.Action<T> onEnable)
+		public static T CreateInstanceWith(Action<T> onEnable)
 		{
 			cb.Value = onEnable;
 			return ScriptableObject.CreateInstance<T>();
@@ -383,42 +358,40 @@ namespace DiscoAPI.Runtime
 		public static Area? FromScenePath(string scenePath) => Areas.FirstOrDefault(a => a.scenePath == scenePath);
 		public static Area? FromSceneName(string sceneName) => Areas.FirstOrDefault(a => a.scenePath.Contains(sceneName));
 
-		public static AsyncOperationHandle<AsyncOperation?> LoadModScene(Area area)
+		public static async DiscoTask<bool> LoadModScene(Area area)
 		{
-			var sceneBundle = DiscoRunner.GetSource(area.source!)?.Router.SceneBundle.Get();
-			return AssetUtils.SpoofHandle<AsyncOperation>(complete => sceneBundle?.Task
-				.ContinueWith((Action<Task>)(task => LoadSceneCallback(task, area.scenePath)?
-				.add_completed((Action<AsyncOperation>)((op) => complete(op, null))))), sceneBundle);
-		}
+			var src = DiscoRunner.GetSource(area.source!);
+			if (src == null) return false;
+			var bundle = await src.Router.SceneBundle.Get();
 
-		private static AsyncOperation? LoadSceneCallback(Task handle, string scenePath)
-		{
-			var bundle = handle.Cast<Task<AssetBundle?>>().Result;
 			if (bundle == null)
 			{
-				DiscoRunner.Log.LogError($"a request to load scene bundle containing {scenePath} failed!");
-				return null;
+				DiscoRunner.Log.LogError($"a request to load scene bundle containing {area.scenePath} failed!");
+				return false;
 			}
 
-			var foundScenePath = bundle.GetAllScenePaths().FirstOrDefault(s => s == scenePath);
+			var foundScenePath = bundle.GetAllScenePaths().FirstOrDefault(s => s == area.scenePath);
 			if (foundScenePath == null)
 			{
-				DiscoRunner.Log.LogError($"could not load {scenePath} from bundle {bundle.name}!");
-				return null;
+				DiscoRunner.Log.LogError($"could not load {area.scenePath} from bundle {bundle.name}!");
+				return false;
 			}
 
-			return SceneManager.LoadSceneAsync(foundScenePath, LoadSceneMode.Additive);
+			await SceneManager.LoadSceneAsync(foundScenePath, LoadSceneMode.Additive);
+			return true;
 		}
 
-		public static AsyncOperationHandle<NavMeshData?> LoadNavmeshData(Area area)
+		public static async DiscoTask<NavMeshData?> LoadNavmeshData(Area area)
 		{
-			var loadOp = DiscoRunner.GetSource(area.source!)?.Router.NavMeshes.Get(area.navMeshPath);
-			if (loadOp == null)
+			var src = DiscoRunner.GetSource(area.source!);
+			if (src == null) return null;
+			var navmesh = await src.Router.NavMeshes.Get(area.navMeshPath);
+			if (navmesh == null)
 			{
 				DiscoRunner.Log.LogError($"failed to load navmesh data at {area.navMeshPath} for source {area.source}");
-				return new AsyncOperationHandle<NavMeshData?>();
+				return null;
 			}
-			return loadOp;
+			return navmesh;
 		}
 
 
