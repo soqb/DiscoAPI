@@ -102,7 +102,6 @@ class ModTable<T> : AssetTable<T> where T : Asset
 	public override void Insert(T asset)
 	{
 		asset.source = parent.Guid;
-		DiscoRunner.Log.LogInfo($"inserting da {asset.assetType} asset {asset.source}:{asset.id}");
 
 		AddId(asset.id, count);
 

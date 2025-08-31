@@ -137,8 +137,10 @@ public partial struct DiscoTask
 		return new(tcs.Task);
 	}
 
-	public static DiscoTask Ready() => new(new Task(() => { }));
-	public static DiscoTask<T> Ready<T>(T t) => new(new Task<T>(() => t));
+#pragma warning disable
+	public async static DiscoTask Ready() { }
+	public async static DiscoTask<T> Ready<T>(T t) => t;
+#pragma warning enable
 }
 
 [AsyncMethodBuilder(typeof(DiscoTaskBuilder<>))]
@@ -323,7 +325,8 @@ public static class AsyncExtensions
 	{
 		static IEnumerator Wrap(TaskAwaiter task)
 		{
-			while (!task.IsCompleted) yield return null;
+			while (!task.IsCompleted)
+				yield return null;
 		}
 
 		return Wrap(task.GetAwaiter()).WrapToIl2Cpp();

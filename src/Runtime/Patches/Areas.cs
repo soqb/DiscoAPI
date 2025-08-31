@@ -103,8 +103,7 @@ public static class AreaPatches
             FastLoadManager.m_FastLoadManager.navMeshDataCollection.dict.Add(foundArea.id, navLoadOp.Result);
         }
 
-        while (original.MoveNext())
-            yield return original.Current;
+        yield return original;
     }
 
 

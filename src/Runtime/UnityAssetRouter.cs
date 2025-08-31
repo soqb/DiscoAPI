@@ -21,26 +21,22 @@ public class EmptyAssetRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 
 public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 {
-	private DiscoTask<AssetBundle?> bundle;
+	private AssetBundleCreateRequest? bundleLoad;
+	private string? bundlePath;
 	private string aliasPrefix;
 
-	public AssetBundleRoute(string? path, string? aliasPrefix)
-		: this(AssetBundle.LoadFromFileAsync(path), aliasPrefix) { }
-
-	public AssetBundleRoute(AssetBundleCreateRequest req, string? aliasPrefix)
-		: this(AsyncUtils.WrapOp(req, _ => req.assetBundle)!, aliasPrefix) { }
-
-	public AssetBundleRoute(DiscoTask<AssetBundle?> handle, string? aliasPrefix)
+	public AssetBundleRoute(string path, string aliasPrefix = "")
 	{
-		bundle = handle;
-
+		bundlePath = path;
 		this.aliasPrefix = aliasPrefix ?? "";
 	}
 
 	public async DiscoTask<T?> Get(string path)
 	{
+		bundleLoad ??= AssetBundle.LoadFromFileAsync(bundlePath);
+		await bundleLoad;
 		var finalPath = aliasPrefix + path;
-		var finalBundle = bundle.Result;
+		var finalBundle = bundleLoad.assetBundle;
 		if (finalBundle == null || !finalBundle)
 		{
 			throw new Exception($"failed to load bundle containing {finalPath}");
@@ -57,7 +53,7 @@ public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 
 public class SceneBundleRoute
 {
-	private AssetBundleCreateRequest? loadTask;
+	private AssetBundleCreateRequest? bundleLoad;
 	private string? bundlePath;
 
 	public SceneBundleRoute(string? bundlePath)
@@ -67,9 +63,9 @@ public class SceneBundleRoute
 
 	public async DiscoTask<AssetBundle?> Get()
 	{
-		loadTask ??= AssetBundle.LoadFromFileAsync(bundlePath);
-		await loadTask;
-		return loadTask.assetBundle;
+		bundleLoad ??= AssetBundle.LoadFromFileAsync(bundlePath);
+		await bundleLoad;
+		return bundleLoad.assetBundle;
 	}
 }
 
