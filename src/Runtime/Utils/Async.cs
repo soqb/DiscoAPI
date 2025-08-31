@@ -323,7 +323,7 @@ public static class AsyncExtensions
 	{
 		static IEnumerator Wrap(TaskAwaiter task)
 		{
-			if (!task.IsCompleted) yield return null;
+			while (!task.IsCompleted) yield return null;
 		}
 
 		return Wrap(task.GetAwaiter()).WrapToIl2Cpp();

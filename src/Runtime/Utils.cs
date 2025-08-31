@@ -214,21 +214,22 @@ namespace DiscoAPI.Runtime
 		public async static DiscoTask<Sprite> LoadPortrait(string textureName, Il2CppSystem.Action<AsyncOperationHandle<Sprite>>? del)
 		{
 			string hint = textureName;
+			DiscoTask<Sprite?> task;
 			try
 			{
 				if (PixelsToDisco.TryDecodeTextureName(textureName, out string source, out string path))
 				{
-					DiscoTask<Sprite?> task = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
+					task = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
 					hint = $"{source}:{path}";
-					if (await task is Sprite s)
+					if (await task is Sprite ss)
 					{
 						if (del != null) task.AsAddressableOperation().add_Completed(del!);
-						return s;
+						return ss;
 					}
 				}
-				else if (await ActorsPortraitsBundleManager.LoadPortraitSpriteAsync(textureName, del) is Sprite s)
+				else if (await ActorsPortraitsBundleManager.LoadPortraitSpriteAsync(textureName, del) is Sprite ss)
 				{
-					return s;
+					return ss;
 				}
 			}
 			catch (Exception ex)
@@ -237,23 +238,17 @@ namespace DiscoAPI.Runtime
 				DiscoRunner.Log.LogError(ex);
 			}
 
-			// if everything went wrong, load fallback protrait:
-			try
+			// if everything went wrong, load fallback portrait:
+			const string FALLBACK = "missing_texture_lol.png";
+			task = InherentProvider.source.Router.Portraits.Get(FALLBACK)!;
+			if (await task is Sprite s)
 			{
-				const string FALLBACK = "assets/images/missing_texture_lol.png";
-				DiscoTask<Sprite> task = InherentProvider.source.Router.Portraits.Get(FALLBACK)!;
-				await task;
 				if (del != null) task.AsAddressableOperation().add_Completed(del!);
-				return task.Result;
+				return s;
 			}
-			catch (Exception ex)
-			{
-				DiscoRunner.Log.LogError($"failed to even load fallback portrait");
-				DiscoRunner.Log.LogError(ex);
 
-				// at this point there's nothing else we can do..
-				return null!;
-			}
+			// at this point there's nothing else we can do..
+			throw new Exception("failed to load even fallback portrait");
 		}
 	}
 

@@ -19,7 +19,7 @@ public static class InherentProvider
 	private class InherentAssetRouter : IAssetRouter
 	{
 		private Location Location => source.Location;
-		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(Location);
+		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(Location.Get("assets", "images"));
 	}
 
 	public const string DUMMY_NONE_SKILL = "API DUMMY NONE SKILL";
@@ -39,7 +39,8 @@ public static class InherentProvider
 		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal), true);
 		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
 		assets.Register(new GenericArena<Area>(), false);
-		
+		assets.Register(new GenericArena<CharacterArchetype>(), false);
+
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 
 		DiscoHooks.OnSaveGame += save =>
@@ -76,6 +77,6 @@ public static class InherentProvider
 	public static void OnDialogueBundleLoad()
 	{
 		// we have to introduce a dummy actor with a simple portrait for the case where no skill is used in the portrait grid.
-		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "assets/images/portrait_none.png" });
+		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "portrait_none.png" });
 	}
 }

@@ -59,12 +59,7 @@ public static class ArchetypePatches
                 DiscoToPixels.EncodeTextureName(modType.source!, modType.portraitLocation),
                 null);
             int idx = i;
-            task.ContinueWith(spr =>
-            {
-                DiscoRunner.Log.LogInfo("we got a portrait yo");
-                System.Threading.Thread.Sleep(1000);
-                return spr.Result;
-            }).ContinueWith(task => AssignPortrait(task, idx));
+            task.ContinueWith(task => AssignPortrait(task, idx));
             __instance.archetypes[i] = template;
         }
 
