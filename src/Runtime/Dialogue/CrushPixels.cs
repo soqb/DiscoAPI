@@ -39,7 +39,7 @@ public class DiscoToPixels
 		if (line.text != null) pcEntry.DialogueText = line.text;
 		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{id}";
 		if (line.sequence != null) pcEntry.Sequence = line.sequence;
-		if (line.sequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
+		if (line.menuSequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
 		foreach (var link in line.links)
 			pcEntry.outgoingLinks.Add(Crush(source, new Link(new(parentConv, id), link), parentConv, convoId));
 

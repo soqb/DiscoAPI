@@ -152,7 +152,6 @@ public static class CharacterPatches
 		if (text == null || !text.StartsWith("\0RAW\0")) return true;
 		__result = text;
 		return false;
-
 	}
 
 	[HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.GetLocalizedTermToUpper))]

@@ -10,6 +10,7 @@ public record Area : Asset, IAssetRef<Area>
     public readonly float customMinZoomLimit;
     public readonly float customMaxZoomLimit;
     public readonly string navMeshPath;
+    public readonly string? vtPath;
 
     public Area(string areaId, string scenePath, string navMeshPath, bool isOutside, int visualRadius = 18) : base(areaId)
     {
@@ -19,8 +20,8 @@ public record Area : Asset, IAssetRef<Area>
         this.visualRadius = visualRadius;
     }
 
-    public Area(string areaId, string scenePath,  string navMeshPath, bool isOutside, int visualRadius = 18, 
-        bool isDreamScene = false, bool hasCustomZoomLimits = false, float customMinZoomLimit = 0f, 
+    public Area(string areaId, string scenePath, string navMeshPath, bool isOutside, int visualRadius = 18,
+        bool isDreamScene = false, bool hasCustomZoomLimits = false, float customMinZoomLimit = 0f,
         float customMaxZoomLimit = 0f) : base(areaId)
     {
         this.scenePath = scenePath;

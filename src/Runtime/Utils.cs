@@ -31,7 +31,6 @@ using Task = Il2CppSystem.Threading.Tasks.Task;
 
 namespace DiscoAPI.Runtime
 {
-
 	public static class LuaConsoleManager
 	{
 		public static void AttachLuaConsole()

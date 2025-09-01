@@ -111,19 +111,40 @@ public abstract class LooseFileRoute<T> : IAssetRoute<T> where T : UnityEngine.O
 
 	private void Execute(string path, AssetUtils.Complete<T> complete)
 	{
-		File.ReadAllBytesAsync(Path.Combine(location!, path)).ContinueWith((task) =>
+		try
 		{
-			MainThreadExecutor.Queue(() =>
+			File.ReadAllBytesAsync(Path.Combine(location!, path)).ContinueWith((task) =>
 			{
-				T? val = null;
-				string? error = null;
+				MainThreadExecutor.Queue(() =>
+				{
+					T? val = null;
+					string? error = null;
 
-				if (task.Status == TaskStatus.RanToCompletion) val = Parse(task.Result);
-				else error = task.Exception?.Message ?? $"task completed with status {task.Status}";
+					if (task.Status != TaskStatus.RanToCompletion)
+					{
+						error = task.Exception?.Message ?? $"Task completed with status {task.Status}";
+					}
+					else
+					{
+						try
+						{
+							val = Parse(task.Result);
+						}
+						catch (Exception ex)
+						{
+							error = ex.Message;
+						}
+					}
 
-				complete(val, error);
+					complete(val, error);
+				});
 			});
-		});
+		}
+		catch (Exception ex)
+		{
+
+			complete(null, ex.Message);
+		}
 	}
 
 	public AsyncOperationHandle<T?> Get(string path)
