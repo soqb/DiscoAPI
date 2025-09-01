@@ -5,16 +5,14 @@ using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Dialogue;
 using HarmonyLib;
 using I2.Loc;
-using Il2CppSystem.Threading.Tasks;
 using UnityEngine;
 using SM = Sunshine.Metric;
-using Task = Il2CppSystem.Threading.Tasks.Task;
 
 namespace DiscoAPI.Runtime.Patches;
 
 public static class ArchetypePatches
 {
-    
+
     [HarmonyPatch(typeof(ArchetypeSelectButton), nameof(ArchetypeSelectButton.SetArchetype))]
     [HarmonyPrefix]
     private static bool OnSetArchetype(ArchetypeSelectButton __instance, SunshineCharacterTemplate archetype)
@@ -32,7 +30,7 @@ public static class ArchetypePatches
         __instance.Mot.SetData(SM.AbilityType.MOT, __instance.Archetype);
         return false;
     }
-    
+
     private static void BogusLocalizationOverrideDelegate(string trueString)
     {
         Localize.MainTranslation = trueString;
@@ -57,35 +55,35 @@ public static class ArchetypePatches
             if (modType == null) continue;
 
             var template = ArchetypeUtils.ToSunshineTemplate(modType);
-            var op = AssetUtils.LoadPortrait(
-                DiscoToPixels.EncodeTextureName(modType.source, modType.portraitLocation),
+            var task = AssetUtils.LoadPortrait(
+                DiscoToPixels.EncodeTextureName(modType.source!, modType.portraitLocation),
                 null);
             int idx = i;
-            op.Task.ContinueWith((Action<Task>)(task => AssignPortrait(task, idx)));
+            task.ContinueWith(task => AssignPortrait(task, idx));
             __instance.archetypes[i] = template;
         }
-        
-        void AssignPortrait(Task handle, int idx)
+
+        void AssignPortrait(DiscoTask<Sprite> handle, int idx)
         {
-            var result = handle.Cast<Task<Sprite?>>().Result;
+            var result = handle.Result;
             FourArchetypeSelector.Singleton.archetypeButtons[idx].SetPortrait(result);
         }
     }
-    
+
     [HarmonyPatch(typeof(FourArchetypeSelector), nameof(FourArchetypeSelector.InitializeButtons))]
     [HarmonyPostfix]
     private static void OnInitializeButtonsPostfix(FourArchetypeSelector __instance)
     {
         var modTypes = DiscoRunner.globalConfig.newGameArchetypes;
         var typeCount = modTypes.Length;
-        
+
         var customChar = __instance.CustomCharacterButton;
         __instance.archetypeButtons.Remove(customChar);
-        
+
         if (typeCount >= 4) // ignore vanilla custom button in favor of our own but keep the positioning 
         {
-            customChar.gameObject.SetActive(false); 
-            
+            customChar.gameObject.SetActive(false);
+
             var fourthButton = __instance.archetypeButtons[3].transform.Cast<RectTransform>();
             fourthButton.parent = customChar.transform.parent;
             fourthButton.anchoredPosition = new Vector2(850, 53);
@@ -112,7 +110,7 @@ public static class ArchetypePatches
                 createdButton.transform.GetChild(0).GetChild(8).gameObject.SetActive(false);
             }
         }
-        
+
     }
 
     [HarmonyPatch(typeof(SM.CharacterSheetFactory), nameof(SM.CharacterSheetFactory.TransferLeveledSkills))]
@@ -134,5 +132,5 @@ public static class ArchetypePatches
             SM.CharacterSheetFactory.TransferLeveledSkill(bonus, rawSkill);
         }
     }
-    
+
 }

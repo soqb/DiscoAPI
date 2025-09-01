@@ -60,6 +60,9 @@ public class GlobalDiscoConfig
 		{
 			if (value.Length > 4)
 				throw new InvalidOperationException("expected an array of archetypes with no greater than 4 entries.");
+			foreach (var arch in value)
+				if (arch.source == null)
+					throw new InvalidOperationException("expected all character archetypes to have an associated source");
 			providedArchetypes = value;
 		}
 	}

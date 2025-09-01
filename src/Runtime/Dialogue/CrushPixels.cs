@@ -125,10 +125,11 @@ public class DiscoToPixels
 		return conv;
 	}
 
-
+	[return: NotNullIfNotNull("name")]
 	public static string? EncodeTextureName(string source, string? name)
 	{
 		if (name == null) return null;
+		if (source == null) throw new ArgumentNullException("source cannot be null for encoding texture name {name}");
 		else return $"{AssetUtils.EXTRA_TEXTURE_PREFIX}{source}:{name}";
 	}
 
@@ -294,7 +295,7 @@ public class PixelsToDisco
 		);
 	}
 
-	public static bool TryDecodeTextureName(string? textureName, [NotNullWhen(true)] out string? source, [NotNullWhen(true)] out string? path)
+	public static bool TryDecodeTextureName(string? textureName, out string source, out string path)
 	{
 		if (textureName == null || !textureName.StartsWith(AssetUtils.EXTRA_TEXTURE_PREFIX))
 		{
