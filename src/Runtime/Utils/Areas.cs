@@ -52,9 +52,9 @@ public static class AreaUtils
     }
 
 
-    public static void ChangeArea(string areaId, string destinationId, bool isGameLoad, bool showLoadingScreen,
+    public static void ChangeArea(IAssetRef<Area> area, string destinationId, bool isGameLoad, bool showLoadingScreen,
         bool hideLoadingScreen)
     {
-        SingletonScriptable<ApplicationManager>.Singleton.ChangeArea(areaId, destinationId, isGameLoad, showLoadingScreen, hideLoadingScreen);
+        SingletonScriptable<ApplicationManager>.Singleton.ChangeArea(area.Location.id.ToString(), destinationId, isGameLoad, showLoadingScreen, hideLoadingScreen);
     }
 }

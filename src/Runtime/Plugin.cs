@@ -51,6 +51,7 @@ public class DiscoAPIPlugin : BasePlugin
         PatchAll(typeof(Patches.ArchetypePatches));
         PatchAll(typeof(Patches.AreaPatches));
         PatchAll(typeof(Patches.VirtualTexturePatches));
+        PatchAll(typeof(Patches.NewGamePatches));
         DialogueBundleLoader.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
 
         DiscoRunner.OnLoad();

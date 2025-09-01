@@ -1,5 +1,6 @@
 using System;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Patches;
 using UnityEngine;
 
 namespace DiscoAPI.Runtime;
@@ -66,4 +67,7 @@ public class GlobalDiscoConfig
 			providedArchetypes = value;
 		}
 	}
+	
+	public (IAssetRef<Area> area, string destinationId) newGameLocation = (Areas.Whirling_int_f2, "start");
+	public string newGameConversation = "WHIRLING / DREAM1";
 }
