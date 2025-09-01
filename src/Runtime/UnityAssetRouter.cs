@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using DiscoAPI.Runtime.Utils;
 using UnityEngine.AI;
 
 namespace DiscoAPI.Runtime;

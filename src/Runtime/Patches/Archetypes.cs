@@ -3,6 +3,7 @@ using System.Linq;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Dialogue;
+using DiscoAPI.Runtime.Utils;
 using HarmonyLib;
 using I2.Loc;
 using UnityEngine;

@@ -2,6 +2,7 @@ using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Utils;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using PC = PixelCrushers.DialogueSystem;

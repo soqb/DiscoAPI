@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
+using DiscoAPI.Runtime.Utils;
 using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Dialogue;

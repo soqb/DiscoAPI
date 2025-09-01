@@ -4,6 +4,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using SM = Sunshine.Metric;
 using SV = Sunshine.Views;
 using System;
+using DiscoAPI.Runtime.Utils;
 using Il2CppInterop.Runtime;
 using LocalizationCustomSystem;
 

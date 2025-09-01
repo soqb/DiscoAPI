@@ -1,18 +1,18 @@
 using System;
-using System.Runtime.CompilerServices;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Il2CppEnumerator = Il2CppSystem.Collections.IEnumerator;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.InteropTypes;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement;
-using Il2CppInterop.Runtime;
-using Il2CppInterop.Runtime.InteropTypes;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using Il2CppEnumerator = Il2CppSystem.Collections.IEnumerator;
 
-namespace DiscoAPI.Runtime;
+namespace DiscoAPI.Runtime.Utils;
 
 public class Il2CppAsyncOperationHandleAwaiter<T> : INotifyCompletion
 {
