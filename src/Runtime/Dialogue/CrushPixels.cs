@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Common.Dialogue;
+using DiscoAPI.Runtime.Utils;
 using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Dialogue;
@@ -39,7 +40,7 @@ public class DiscoToPixels
 		if (line.text != null) pcEntry.DialogueText = line.text;
 		pcEntry.Title = line.title ?? line.text ?? $"{source.Guid}:{parentConv.id}#{id}";
 		if (line.sequence != null) pcEntry.Sequence = line.sequence;
-		if (line.sequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
+		if (line.menuSequence != null) pcEntry.ResponseMenuSequence = line.menuSequence;
 		foreach (var link in line.links)
 			pcEntry.outgoingLinks.Add(Crush(source, new Link(new(parentConv, id), link), parentConv, convoId));
 
@@ -125,10 +126,11 @@ public class DiscoToPixels
 		return conv;
 	}
 
-
+	[return: NotNullIfNotNull("name")]
 	public static string? EncodeTextureName(string source, string? name)
 	{
 		if (name == null) return null;
+		if (source == null) throw new ArgumentNullException("source cannot be null for encoding texture name {name}");
 		else return $"{AssetUtils.EXTRA_TEXTURE_PREFIX}{source}:{name}";
 	}
 
@@ -294,7 +296,7 @@ public class PixelsToDisco
 		);
 	}
 
-	public static bool TryDecodeTextureName(string? textureName, [NotNullWhen(true)] out string? source, [NotNullWhen(true)] out string? path)
+	public static bool TryDecodeTextureName(string? textureName, out string source, out string path)
 	{
 		if (textureName == null || !textureName.StartsWith(AssetUtils.EXTRA_TEXTURE_PREFIX))
 		{

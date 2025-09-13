@@ -5,6 +5,7 @@ using Voidforge;
 using SM = Sunshine.Metric;
 using Il2CppCollection = Il2CppSystem.Collections.Generic;
 using DiscoAPI.Runtime.SaveSystem;
+using DiscoAPI.Runtime.Utils;
 using Newtonsoft.Json.Linq;
 
 namespace DiscoAPI.Runtime.Components;

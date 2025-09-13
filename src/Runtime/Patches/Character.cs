@@ -7,6 +7,7 @@ using LocalizationCustomSystem;
 using System;
 using System.Text;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Utils;
 using Il2CppSystem.Collections.Generic;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -152,7 +153,6 @@ public static class CharacterPatches
 		if (text == null || !text.StartsWith("\0RAW\0")) return true;
 		__result = text;
 		return false;
-
 	}
 
 	[HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.GetLocalizedTermToUpper))]

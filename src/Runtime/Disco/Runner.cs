@@ -1,8 +1,13 @@
 using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Runtime.InteropServices;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.SaveSystem;
+using DiscoAPI.Runtime.Utils;
 using HarmonyLib;
 
 namespace DiscoAPI.Runtime;
@@ -94,7 +99,6 @@ public static class DiscoRunner
     public static void OnSceneLoad()
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        DiscoAPIPlugin.Instance.Log.LogInfo($"scene '{sceneName}' loaded..");
 
         var w = global::World.Singleton;
         if (w == null) return;
@@ -102,6 +106,7 @@ public static class DiscoRunner
 
         sceneLoad.Invoke();
         if (sceneName == "Lobby") LobbyLoadExecutor.OnLoadLobbyPlease();
+
     }
 
     public static void OnUpdate()

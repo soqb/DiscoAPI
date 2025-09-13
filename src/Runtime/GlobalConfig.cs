@@ -1,5 +1,6 @@
 using System;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Patches;
 using UnityEngine;
 
 namespace DiscoAPI.Runtime;
@@ -51,4 +52,22 @@ public class GlobalDiscoConfig
 
 	public IAssetRef<Skill> MoraleSkill { get; set; } = new AssetLocation<Skill>("volition");
 	public IAssetRef<Skill> HealthSkill { get; set; } = new AssetLocation<Skill>("endurance");
+
+	private CharacterArchetype[] providedArchetypes = [];
+	public CharacterArchetype[] newGameArchetypes
+	{
+		get => providedArchetypes;
+		set
+		{
+			if (value.Length > 4)
+				throw new InvalidOperationException("expected an array of archetypes with no greater than 4 entries.");
+			foreach (var arch in value)
+				if (arch.source == null)
+					throw new InvalidOperationException("expected all character archetypes to have an associated source");
+			providedArchetypes = value;
+		}
+	}
+	
+	public (IAssetRef<Area> area, string destinationId) newGameLocation = (Areas.Whirling_int_f2, "start");
+	public string newGameConversation = "WHIRLING / DREAM1";
 }

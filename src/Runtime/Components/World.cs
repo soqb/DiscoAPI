@@ -1,4 +1,6 @@
 using SM = Sunshine.Metric;
+using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Assets;
 
 namespace DiscoAPI.Runtime.Components;
 
@@ -13,4 +15,7 @@ public static class WorldComponents
 	{
 		return CharacterComponents.Of(s.EntityBase.you);
 	}
+
+	public static IAssetArena<Area> Areas => DiscoRunner.manager.Assets.GetArena<Area>();
+
 }

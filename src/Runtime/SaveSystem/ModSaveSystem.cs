@@ -46,8 +46,7 @@ public class ModSaveSystem
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         Converters = []
     };
-
-    private Location _saveDataLocation;
+    
     public readonly object saveLock = new();
     public Dictionary<string, ModSaveData> modSaveDatas = new();
     private SaveLoadState state = SaveLoadState.Neither;
