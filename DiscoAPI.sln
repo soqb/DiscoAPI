@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscoAPI", "src\Runtime\DiscoAPI.csproj", "{09A98D1C-3F53-4251-876D-E5B84D5DAA61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runtime", "src\Runtime\Runtime.csproj", "{09A98D1C-3F53-4251-876D-E5B84D5DAA61}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Preload", "src\Preload\Preload.csproj", "{509C3967-9125-4443-AE30-59E1E753E614}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "src\Common\Common.csproj", "{579AF720-BB22-4D37-BA8E-9E432CC28CE2}"
 EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution
@@ -26,12 +28,24 @@ Global
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Debug|x64.Build.0 = Debug|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Debug|x86.Build.0 = Debug|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Release|Any CPU.Build.0 = Release|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Release|x64.ActiveCfg = Release|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Release|x64.Build.0 = Release|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Release|x86.ActiveCfg = Release|Any CPU
 		{09A98D1C-3F53-4251-876D-E5B84D5DAA61}.Release|x86.Build.0 = Release|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Debug|x64.Build.0 = Debug|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Debug|x86.Build.0 = Debug|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Release|x64.ActiveCfg = Release|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Release|x64.Build.0 = Release|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Release|x86.ActiveCfg = Release|Any CPU
+		{579AF720-BB22-4D37-BA8E-9E432CC28CE2}.Release|x86.Build.0 = Release|Any CPU
 		{509C3967-9125-4443-AE30-59E1E753E614}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{509C3967-9125-4443-AE30-59E1E753E614}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{509C3967-9125-4443-AE30-59E1E753E614}.Debug|x64.ActiveCfg = Debug|Any CPU
