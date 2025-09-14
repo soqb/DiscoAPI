@@ -21,7 +21,7 @@
 
         <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
         <BepInExPatchers>$(DiscoElysium)/BepInEx/patchers</BepInExPatchers>
-        <OutputFolder>$(BepInExPatchers)/$(ModPath)</OutputFolder>
+        <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPatchers)/$(ModPath)</OutputFolder>
     </PropertyGroup>
     
     <ItemGroup>
