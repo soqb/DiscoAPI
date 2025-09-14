@@ -2,39 +2,25 @@
     <PropertyGroup>
         <ModPath>DiscoAPI</ModPath>
     </PropertyGroup>
+    
     <Import Project="../../config.targets"/>
     
     <PropertyGroup>
         <Version>0.0.1</Version>
-        <LangVersion>latest</LangVersion>
+        <Description>Modding API for Disco Elysium (separate Runtime-agnostic components only)</Description>
+        <RootNamespace>DiscoAPI.Common</RootNamespace>
+        <AssemblyName>DiscoAPI.Common</AssemblyName>
+        <TargetFramework>net6.0</TargetFramework>
+        
         <Nullable>enable</Nullable>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
         <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
-        <TargetFramework>net6.0-windows</TargetFramework>
-        <AssemblyName>DiscoAPI.Common</AssemblyName>
-        <Description>Modding API for Disco Elysium (separate Runtime-agnostic components only)</Description>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RootNamespace>DiscoAPI.Common</RootNamespace>
-
-        <BepInExPlugins>$(DiscoElysium)/BepInEx/plugins</BepInExPlugins>
-        <OutputFolder>$(BepInExPlugins)/$(ModPath)</OutputFolder>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
         <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
-        
     </ItemGroup>
-
-    <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
-        <ItemGroup>
-            <ArtefactFiles Include="$(TargetDir)$(TargetName).dll;$(TargetDir)$(TargetName).pdb" />
-        </ItemGroup>
-
-        <Message Text="Copying assemblies to $(OutputFolder):%0A    * @(ArtefactFiles, '%0A    * ')" Importance="high" />
-
-        <Copy SourceFiles="@(ArtefactFiles)"
-              DestinationFolder="$(OutputFolder)/%(RecursiveDir)" />
-
-    </Target>
 </Project>
