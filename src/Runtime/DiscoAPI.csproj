@@ -12,18 +12,21 @@
         <LangVersion>latest</LangVersion>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
         <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
-        <AssemblyName>DiscoAPI.Runtime</AssemblyName>
-        <Description>Modding API for Disco Elysium (separate runtime components only)</Description>
+        <AssemblyName>DiscoAPI</AssemblyName>
+        <Description>Modding API for Disco Elysium</Description>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RootNamespace>DiscoAPI.Runtime</RootNamespace>
+        <RootNamespace>DiscoAPI</RootNamespace>
         <DefineConstants>DISCOAPI_RUNTIME</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
-        <ProjectReference Include="../Common/Common.csproj"/>
         <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
+        <Compile Include="../Common/**/*.cs"/>
         <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
     </ItemGroup>
 
     <Target Name="CopyLooseAssets" AfterTargets="Build">
