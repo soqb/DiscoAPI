@@ -4,7 +4,7 @@
         <ModPath>DiscoAPI.Preload</ModPath>
     </PropertyGroup>
     
-    <Import Project="./config.targets" />
+    <Import Project="../../config.targets" />
 
     <PropertyGroup>
         <Version>0.0.1</Version>
@@ -19,13 +19,13 @@
     </PropertyGroup>
 
     <ItemGroup>        
-        <Compile Include="src/Preload/**/*.cs" />
+        <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
     </ItemGroup>
 
     <PropertyGroup>
         <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
         <BepInExPatchers>$(DiscoElysium)/BepInEx/patchers</BepInExPatchers>
-        <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPatchers)/$(ModPath)</OutputFolder>
+        <OutputFolder>$(BepInExPatchers)/$(ModPath)</OutputFolder>
         
         <TargetFramework>net6.0-windows</TargetFramework>
         <UnityEditor2020 Condition="'$(UnityEditor2020)' == ''">$(Unity2020)/Editor/Unity</UnityEditor2020>
@@ -38,7 +38,7 @@
 
     <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
         <ItemGroup>
-            <ArtefactFiles Include="$(TargetDir)DiscoAPI.Preload.dll;$(TargetDir)DiscoAPI.Preload.pdb" />
+            <ArtefactFiles Include="$(TargetDir)$(TargetName).dll;$(TargetDir)$(TargetName).pdb" />
         </ItemGroup>
     
         <Message Text="Copying assemblies to $(OutputFolder):%0A    * @(ArtefactFiles, '%0A    * ')" Importance="high" />    

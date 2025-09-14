@@ -12,18 +12,17 @@
         <LangVersion>latest</LangVersion>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
         <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
-        <TargetFramework>net6.0</TargetFramework>
-        <AssemblyName>DiscoAPI</AssemblyName>
+        <AssemblyName>DiscoAPI.Runtime</AssemblyName>
         <Description>Modding API for Disco Elysium (separate runtime components only)</Description>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RootNamespace>DiscoAPI</RootNamespace>
+        <RootNamespace>DiscoAPI.Runtime</RootNamespace>
         <DefineConstants>DISCOAPI_RUNTIME</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
-        <ProjectReference Include="../Common/Common.csproj" />
-        <Compile Include="./**/*.cs" />
+        <ProjectReference Include="../Common/Common.csproj"/>
+        <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
         <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     </ItemGroup>
 

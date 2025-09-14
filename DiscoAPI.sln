@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runtime", "src\Runtime\Runtime.csproj", "{09A98D1C-3F53-4251-876D-E5B84D5DAA61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PreloadPatch", "src\PreloadPatch\PreloadPatch.csproj", "{509C3967-9125-4443-AE30-59E1E753E614}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Preload", "src\Preload\Preload.csproj", "{509C3967-9125-4443-AE30-59E1E753E614}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "src\Common\Common.csproj", "{579AF720-BB22-4D37-BA8E-9E432CC28CE2}"
 EndProject

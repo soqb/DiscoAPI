@@ -51,7 +51,23 @@ public static class AreaUtils
         return navmesh;
     }
 
-
+    public static SceneProperties GetSceneProperties(Area area)
+    {
+        // note: SceneProperties.DisplayName returns null due to missing localization
+        return new SceneProperties()
+        {
+            SceneName = area.scenePath,
+            SceneId = area.id,
+            SaveGameId = area.id,
+            VisualRadius = area.visualRadius,
+            IsOutside = area.isOutside,
+            IsDreamScene = area.isDreamScene,
+            HasCustomZoomLimits = area.hasCustomZoomLimits,
+            CustomMinimumZoomLimit = area.customMinZoomLimit,
+            CustomMaximumZoomLimit = area.customMaxZoomLimit
+        };
+    }
+    
     public static void ChangeArea(IAssetRef<Area> area, string destinationId, bool isGameLoad, bool showLoadingScreen,
         bool hideLoadingScreen)
     {
