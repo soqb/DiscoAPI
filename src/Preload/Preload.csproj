@@ -4,48 +4,41 @@
         <ModPath>DiscoAPI.Preload</ModPath>
     </PropertyGroup>
     
-    <Import Project="./config.targets" />
+    <Import Project="../../config.targets" />
 
     <PropertyGroup>
         <Version>0.0.1</Version>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
-        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-        <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
         <AssemblyName>DiscoAPI.Preload</AssemblyName>
         <Description>Modding API for Disco Elysium (preload patch only)</Description>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RootNamespace>DiscoAPI.Preload</RootNamespace>
-    </PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 
-    <ItemGroup>        
-        <Compile Include="src/Preload/**/*.cs" />
-    </ItemGroup>
-
-    <PropertyGroup>
         <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
         <BepInExPatchers>$(DiscoElysium)/BepInEx/patchers</BepInExPatchers>
         <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPatchers)/$(ModPath)</OutputFolder>
-        
-        <TargetFramework>net6.0-windows</TargetFramework>
-        <UnityEditor2020 Condition="'$(UnityEditor2020)' == ''">$(Unity2020)/Editor/Unity</UnityEditor2020>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <Reference Include="$(BepInExCore)/BepInEx.Core.dll" Private="false"/>
         <Reference Include="$(BepInExCore)/BepInEx.Preloader.Core.dll" Private="false"/>
+        <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
     </ItemGroup>
-
+    
     <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
         <ItemGroup>
-            <ArtefactFiles Include="$(TargetDir)DiscoAPI.Preload.dll;$(TargetDir)DiscoAPI.Preload.pdb" />
+            <ArtefactFiles Include="$(TargetDir)$(TargetName).dll;$(TargetDir)$(TargetName).pdb" />
         </ItemGroup>
     
         <Message Text="Copying assemblies to $(OutputFolder):%0A    * @(ArtefactFiles, '%0A    * ')" Importance="high" />    
 
-        <Copy SourceFiles="@(ArtefactFiles)"
+        <Copy SourceFiles="@(ArtefactFiles)" 
               DestinationFolder="$(OutputFolder)/%(RecursiveDir)" />
-        
     </Target>
 
 </Project>

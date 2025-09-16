@@ -34,23 +34,6 @@ public record Area : Asset, IAssetRef<Area>
         this.customMaxZoomLimit = customMaxZoomLimit;
     }
 
-    public SceneProperties GetSceneProperties()
-    {
-        // note: SceneProperties.DisplayName returns null due to missing localization
-        return new SceneProperties()
-        {
-            SceneName = scenePath,
-            SceneId = id,
-            SaveGameId = id,
-            VisualRadius = visualRadius,
-            IsOutside = isOutside,
-            IsDreamScene = isDreamScene,
-            HasCustomZoomLimits = hasCustomZoomLimits,
-            CustomMinimumZoomLimit = customMinZoomLimit,
-            CustomMaximumZoomLimit = customMaxZoomLimit
-        };
-    }
-
     public new AssetLocation<Area> Location => new(source, id);
     Area? IAssetRef<Area>.Resolve(IDiscoManager mgr) => (Area?)((IAssetRef)this).Resolve(mgr);
 }

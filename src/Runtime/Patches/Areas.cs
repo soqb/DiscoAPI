@@ -23,7 +23,7 @@ public static class AreaPatches
             Area? foundPresentArea = AreaUtils.FromScenePath(currentScene);
             if (foundPresentArea != null)
             {
-                __instance.ScenePropertiesList.Remove(foundPresentArea.GetSceneProperties());
+                __instance.ScenePropertiesList.Remove(AreaUtils.GetSceneProperties(foundPresentArea));
                 FastLoadManager.m_FastLoadManager.StartCoroutine(UnloadArea(foundPresentArea).WrapToIl2Cpp());
             }
         }
@@ -31,7 +31,7 @@ public static class AreaPatches
         Area? foundNextArea = AreaUtils.Areas.FirstOrDefault(a => a.id == areaId);
         if (foundNextArea == null) return;
 
-        __instance.ScenePropertiesList.Add(foundNextArea.GetSceneProperties());
+        __instance.ScenePropertiesList.Add(AreaUtils.GetSceneProperties(foundNextArea));
     }
 
     private static System.Collections.IEnumerator UnloadArea(Area area)
