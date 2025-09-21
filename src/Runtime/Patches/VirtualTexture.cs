@@ -30,7 +30,6 @@ public class VirtualTexturePatches
 		PageDecoder decoder,
 		int index,
 		PageRequest pageReq,
-		ref bool __result,
 		// use a state variable to track data between `Pre` and `Post` patches:
 		ref (PageLocation page, Rectangle, PageBuffers?, ICompressedPageReader?) __state
 	)
@@ -49,13 +48,9 @@ public class VirtualTexturePatches
 		if (decoder.m_compressed || !czar.TrySubstituteUncompressed(page, out buffers, out overlap))
 		{
 			// force compression.
-			if (!czar.TrySubstituteCompressed(page, out reader, out overlap))
-			{
-				return true;
-			}
+			czar.TrySubstituteCompressed(page, out reader, out overlap);
 		}
 
-		__result = true;
 		__state = (page, overlap, buffers, reader);
 
 		// if overlap is complete, don't bother with original decoding because it will all be replaced:
@@ -71,11 +66,17 @@ public class VirtualTexturePatches
 		PageDecoder decoder,
 		int index,
 		PageRequest pageReq,
+		ref bool __result,
 		(PageLocation, Rectangle, PageBuffers?, ICompressedPageReader?) __state
 	)
 	{
 		// NB: if buffers notnull, reader null.
 		(PageLocation page, Rectangle overlap, PageBuffers? nullableBuffers, ICompressedPageReader? reader) = __state;
+
+		__result = true;
+
+		// if no overlap, do nothing.
+		if (overlap.Width == 0 && overlap.Height == 0) return;
 
 		void ReadToCompressed(CompressedPageBuffers compressedBuffers)
 		{
@@ -87,17 +88,19 @@ public class VirtualTexturePatches
 			reader!.ReadTo(compressedBuffers);
 		}
 
-		if (decoder.m_compressed && reader != null)
+		if (decoder.m_compressed)
 		{
-			// AT uses these buffers when compressed..
-			ReadToCompressed(new CompressedPageBuffers()
-			{
-				neutral = pageReq.diff0.AsSpan,
-				normals = pageReq.norm0.AsSpan,
-				heightmap = pageReq.norm1.AsSpan,
-				shadow = pageReq.spec0.AsSpan,
-				shadow2 = pageReq.spec1.AsSpan,
-			});
+			if (reader != null) {
+				// (1) AT uses these buffers when compressed..
+				ReadToCompressed(new CompressedPageBuffers()
+				{
+					neutral = pageReq.diff0.AsSpan,
+					normals = pageReq.norm0.AsSpan,
+					heightmap = pageReq.norm1.AsSpan,
+					shadow = pageReq.spec0.AsSpan,
+					shadow2 = pageReq.spec1.AsSpan,
+				});
+			}
 		}
 		else
 		{
@@ -109,10 +112,13 @@ public class VirtualTexturePatches
 			if (nullableBuffers is PageBuffers buffers)
 			{
 				blitter.Draw(overlap, buffers);
+				if (DiscoAPISettings.DisableVTDiffusionMaps) diff.span.Fill(0);
+				if (DiscoAPISettings.DisableVTNormalMaps) norm.span.Fill(0);
+				if (DiscoAPISettings.DisableVTSpecularMaps) spec.span.Fill(0);
 			}
 			else if (reader != null)
 			{
-				// and these when not compressed..
+				// (2) and these when not compressed..
 				CompressedPageBuffers compressedBuffers = new CompressedPageBuffers()
 				{
 					neutral = decoder.m_tempDiff0.AsSpan,
@@ -126,14 +132,6 @@ public class VirtualTexturePatches
 				// if context not compressed, but page is, then decompress:
 				NativeDecompressor decomp = new(decoder.m_decoderHandle);
 				blitter.DecompressFromBuffers(decomp, compressedBuffers);
-			}
-
-			if (reader == null)
-			{
-				// if reader null then we definitely didn't already disable.
-				if (DiscoAPISettings.DisableVTDiffusionMaps) diff.span.Fill(0);
-				if (DiscoAPISettings.DisableVTNormalMaps) norm.span.Fill(0);
-				if (DiscoAPISettings.DisableVTSpecularMaps) spec.span.Fill(0);
 			}
 
 			// fancy debug effects only supported when compression disabled:
