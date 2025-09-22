@@ -68,5 +68,6 @@ public static class NewGamePatches
     public static void OnFinalizeLoadingScene()
     {
         SingletonComponent<GameController>.Singleton.ClearAllInputLocks();
+        ContinueResponseToggle.SequencerLock = false;
     }
 }
