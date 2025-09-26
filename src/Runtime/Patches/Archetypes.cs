@@ -127,10 +127,10 @@ public static class ArchetypePatches
             DiscoRunner.Log.LogError("TransferLeveledSkills : your character sheet is invalid!");
             return;
         }
-        foreach (var (skill, bonus) in modType.skillBonuses)
+        foreach (var bonus in modType.skillBonuses)
         {
-            var rawSkill = sheetSkills.GetRawSkill(skill);
-            SM.CharacterSheetFactory.TransferLeveledSkill(bonus, rawSkill);
+            var rawSkill = sheetSkills.GetRawSkill(bonus.skill);
+            SM.CharacterSheetFactory.TransferLeveledSkill(bonus.value, rawSkill);
         }
     }
 

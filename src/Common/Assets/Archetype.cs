@@ -2,9 +2,11 @@ using System.Collections.Generic;
 
 namespace DiscoAPI.Common.Assets;
 
+public record SkillBonus(IAssetRef<Skill> skill, int value);
+
 public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
 {
-    public readonly IList<(IAssetRef<Skill>, int)>? skillBonuses;
+    public readonly IList<SkillBonus>? skillBonuses;
     public readonly IAssetRef<Skill>? signatureSkill;
     public ArchetypeMode mode;
     public readonly int intellect;
@@ -15,9 +17,10 @@ public record CharacterArchetype : Asset, IAssetRef<CharacterArchetype>
     public readonly string name;
     public readonly string portraitLocation;
     
-    public CharacterArchetype(string id, IAssetRef<Skill>? signatureSkill, int intellect, int psyche, int fysique, int motorics, 
-        string name, string description, string portraitLocation, ArchetypeMode mode = ArchetypeMode.Template, IList<(IAssetRef<Skill>, int)>? skillBonuses = null) 
-        : base(id)
+    public CharacterArchetype(string id, IAssetRef<Skill>? signatureSkill,
+        int intellect, int psyche, int fysique, int motorics, 
+        string name, string description, string portraitLocation,
+        ArchetypeMode mode = ArchetypeMode.Template, IList<SkillBonus>? skillBonuses = null) : base(id)
     {
         this.skillBonuses = skillBonuses;
         this.signatureSkill = signatureSkill;

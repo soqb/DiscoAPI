@@ -29,9 +29,8 @@ public readonly record struct AssetType(Type type);
 
 public interface LocalIdResolver<T>
 {
-    T ResolveId(AssetId id) => id.ResolveIn(this);
-    T ResolveId(int id);
-    T ResolveId(string id);
+    T Resolve(int id);
+    T Resolve(string id);
 }
 
 public record AssetId
@@ -43,7 +42,11 @@ public record AssetId
         this.inner = inner;
     }
 
-    public T ResolveIn<T>(LocalIdResolver<T> resolver) => inner is string id ? resolver.ResolveId(id) : resolver.ResolveId((int)inner);
+    public T ResolveWith<T>(LocalIdResolver<T> resolver)
+    {
+        if (inner is string id) return resolver.Resolve(id);
+        else return resolver.Resolve((int)inner);
+    }
 
     public static implicit operator AssetId(int id) => new((object)id);
     public static implicit operator AssetId(string id) => new((object)id);
@@ -59,9 +62,6 @@ public interface IAssetRef
 
 public interface IAssetRef<T> : IAssetRef where T : Asset
 {
-    Asset? IAssetRef.Resolve(IDiscoManager mgr) => Resolve(mgr);
-    AssetLocation IAssetRef.Location => new(Location);
-
     new T? Resolve(IDiscoManager mgr);
     new AssetLocation<T> Location { get; }
 }
@@ -96,11 +96,11 @@ public record AssetLocation : IAssetRef
 
     public override string ToString() => $"{source}:{id}";
 
-    public static (string, string) Parse(string id)
-    {
-        string[] parts = id.Split(':');
-        return parts.Length == 1 ? ("disco", parts[0]) : (parts[0], parts[1]);
-    }
+    // public static (string, string) Parse(string id)
+    // {
+    //     string[] parts = id.Split(':');
+    //     return parts.Length == 1 ? ("disco", parts[0]) : (parts[0], parts[1]);
+    // }
 }
 
 public record AssetLocation<T> : AssetLocation, IAssetRef<T> where T : Asset
