@@ -12,7 +12,7 @@
         <BepInExPlugins>$(DiscoElysium)/BepInEx/plugins</BepInExPlugins>
         <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPlugins)/$(ModPath)</OutputFolder>
         
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <CopyAssemblies Condition="'$(CopyAssemblies)' == ''">true</CopyAssemblies>
         <TargetFramework>net6.0-windows</TargetFramework>
         <UnityEditor2020 Condition="'$(UnityEditor2020)' == ''">$(Unity2020)/Editor/Unity</UnityEditor2020>
     </PropertyGroup>
@@ -178,12 +178,12 @@
         <Reference Include="$(BepInExCore)/WasmDisassembler.dll" Private="false"/>
     </ItemGroup>
 
-    <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
+    <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll') And '$(CopyAssemblies)' == 'true'">
         <ItemGroup>
             <ArtefactFiles Include="$(TargetDir)*.dll;$(TargetDir)*.pdb" />
         </ItemGroup>
     
-        <Message Text="Copying assemblies to $(OutputFolder):%0A    * @(ArtefactFiles, '%0A    * ')" Importance="high" />    
+        <Message Text="* Copying assemblies to $(OutputFolder):%0A    * @(ArtefactFiles, '%0A    * ')" Importance="high" />    
 
         <Copy SourceFiles="@(ArtefactFiles)"
               DestinationFolder="$(OutputFolder)/%(RecursiveDir)" />
