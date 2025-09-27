@@ -11,7 +11,8 @@
         <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
         <BepInExPlugins>$(DiscoElysium)/BepInEx/plugins</BepInExPlugins>
         <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPlugins)/$(ModPath)</OutputFolder>
-        
+
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <CopyAssemblies Condition="'$(CopyAssemblies)' == ''">true</CopyAssemblies>
         <TargetFramework>net6.0-windows</TargetFramework>
         <UnityEditor2020 Condition="'$(UnityEditor2020)' == ''">$(Unity2020)/Editor/Unity</UnityEditor2020>
