@@ -64,8 +64,8 @@ internal abstract class AssetTable<T> : IArenaTable, LocalIdResolver<int> where 
 
 	public T? this[int resolved] => arena[resolved + idOffset];
 
-	int LocalIdResolver<int>.ResolveId(int id) => id;
-	int LocalIdResolver<int>.ResolveId(string id)
+	int LocalIdResolver<int>.Resolve(int id) => id;
+	int LocalIdResolver<int>.Resolve(string id)
 	{
 		if (ids.TryGetValue(id, out var info))
 		{
@@ -182,7 +182,7 @@ public class AssetManager : IAssetManager
 	{
 		var table = Parent[ass.source]?.GetAssetsForType(ass.type.type);
 		if (table == null) return -1;
-		return table.ResolveId(ass.id) + table.idOffset;
+		return ass.id.ResolveWith(table) + table.idOffset;
 	}
 
 	public Asset? Resolve(AssetLocation ass) => (Asset?)GetStorageForType(ass.type.type)?.arena[ResolveId(ass)];

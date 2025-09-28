@@ -10,7 +10,7 @@
         <Description>Modding API for Disco Elysium (separate Runtime-agnostic components only)</Description>
         <RootNamespace>DiscoAPI.Common</RootNamespace>
         <AssemblyName>DiscoAPI.Common</AssemblyName>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net4.6.1</TargetFramework>
         
         <Nullable>enable</Nullable>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
