@@ -51,13 +51,15 @@ public record RaiseLearningCapModifier : Modifier
 
 public record CharacterEffect : Asset, IAssetRef<CharacterEffect>
 {
+    public bool isSavePersistent;
     public Action<Modifier>? applyEffect;
     public Action<Modifier>? removeEffect;
 
-    public CharacterEffect(string id, Action<Modifier>? applyEffect, Action<Modifier>? removeEffect = null) : base(id)
+    public CharacterEffect(string id, Action<Modifier>? applyEffect, Action<Modifier>? removeEffect = null, bool isSavePersistent = true) : base(id)
     {
         this.applyEffect = applyEffect;
         this.removeEffect = removeEffect;
+        this.isSavePersistent = isSavePersistent;
     }
 
     [JsonIgnore]

@@ -5,6 +5,7 @@ using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Utils;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using Voidforge;
 using PC = PixelCrushers.DialogueSystem;
 using SM = Sunshine.Metric;
 
@@ -79,7 +80,45 @@ public static class InherentProvider
 
 	public static void OnDialogueBundleLoad()
 	{
+		AssembleSunshineData();
 		// we have to introduce a dummy actor with a simple portrait for the case where no skill is used in the portrait grid.
 		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "portrait_none.png" });
+	}
+
+	public static void AssembleSunshineData()
+	{
+		var dataHolder = new GameObject("DiscoAPI Data");
+
+		var thoughtHolder = new GameObject("Thoughts");
+		thoughtHolder.transform.parent = dataHolder.transform;
+		var modThoughts = DiscoRunner.manager.Assets.GetArena<Thought>();
+		var modProjects = new ThoughtListItem[modThoughts.Count];
+		var baseProjectList = SingletonComponent<ThoughtCabinetProjectList>.Singleton;
+		for (var i = 0; i < modThoughts.Count; i++)
+		{
+			var thought = modThoughts[i];
+			if (thought == null) continue;
+			var thtObject = new GameObject(thought.displayName);
+			thtObject.transform.parent = thoughtHolder.transform;
+
+			var project = thought.AttachComponent(thtObject);
+			modProjects[i] = new ThoughtListItem()
+			{
+				name = thought.id,
+				project = project
+			};
+		}
+		
+		var baseProjectCount = baseProjectList.projects.Count;
+		var newList = baseProjectList.projects.Resize(baseProjectCount + modProjects.Length);
+		for (int i = 0; i < modProjects.Length; i++)
+		{
+			newList[i + baseProjectCount] = modProjects[i];
+		}
+		
+		baseProjectList.projects = newList;
+		baseProjectList.RefreshCache();
+		
+		Object.DontDestroyOnLoad(dataHolder);
 	}
 }
