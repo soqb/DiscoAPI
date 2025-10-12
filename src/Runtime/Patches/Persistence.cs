@@ -1,4 +1,6 @@
 using HarmonyLib;
+using Sunshine;
+using Voidforge;
 
 namespace DiscoAPI.Runtime.Patches;
 

@@ -38,7 +38,7 @@ public static class CharacterEffectPatches
         
         if (maybeTcp != null)
         {
-            var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == maybeTcp.displayName);
+            var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id== maybeTcp.name);
             if (modProject == null) return true;
 
             if (you.thoughts.ThoughtCooking(maybeTcp))

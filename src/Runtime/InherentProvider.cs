@@ -4,6 +4,7 @@ using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Utils;
 using Newtonsoft.Json.Linq;
+using Sunshine;
 using UnityEngine;
 using Voidforge;
 using PC = PixelCrushers.DialogueSystem;
@@ -98,7 +99,7 @@ public static class InherentProvider
 		{
 			var thought = modThoughts[i];
 			if (thought == null) continue;
-			var thtObject = new GameObject(thought.displayName);
+			var thtObject = new GameObject(thought.id);
 			thtObject.transform.parent = thoughtHolder.transform;
 
 			var project = thought.AttachComponent(thtObject);
@@ -118,7 +119,8 @@ public static class InherentProvider
 		
 		baseProjectList.projects = newList;
 		baseProjectList.RefreshCache();
-		
+		SingletonComponent<ThoughtManager>.Singleton.ReinitializeThoughtsList();
+
 		Object.DontDestroyOnLoad(dataHolder);
 	}
 }

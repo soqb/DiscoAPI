@@ -53,9 +53,6 @@ public static class Extensions
         var tcp = container.AddComponent<SM.ThoughtCabinetProject>();
         tcp.completionEffects = thought.completionEffects.Select(ef => ef.AttachComponent(container)).ToArray();
         tcp.researchEffects = thought.researchEffects.Select(ef => ef.AttachComponent(container)).ToArray();
-        tcp.displayName = thought.displayName;
-        tcp.description = thought.descripton;
-        tcp.completionDescription = thought.completionDescription;
         tcp.researchTime = thought.researchMins;
         return tcp;
     }

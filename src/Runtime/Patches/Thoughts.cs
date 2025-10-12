@@ -4,6 +4,7 @@ using DiscoAPI.Runtime.Dialogue;
 using DiscoAPI.Runtime.Utils;
 using DiscoPages.Elements.THC;
 using HarmonyLib;
+using Sunshine;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -16,7 +17,7 @@ public static class ThoughtPatches
     {
         if (__instance.cookingEffects.ContainsKey(project)) return false;
         
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
         if (modProject == null) return true;
         
         SM.CharacterEffect[] researchEffects = project.researchEffects;
@@ -50,7 +51,7 @@ public static class ThoughtPatches
             return false;
         }
         
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
         if (modProject == null) return true;
         
         SM.CharacterEffect[] array = __instance.fixedEffects[project];
@@ -83,7 +84,7 @@ public static class ThoughtPatches
             return false;
         }
         
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
         if (modProject == null) return true;
         
         SM.CharacterEffect[] array = __instance.cookingEffects[project];
@@ -110,7 +111,7 @@ public static class ThoughtPatches
     [HarmonyPrefix]
     private static bool OnFixThought(SM.ThoughtCabinetProject project, SM.CharacterThoughts __instance)
     {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
         if (modProject == null) return true;
         
         SM.CharacterEffect[] completionEffects = project.completionEffects;
@@ -134,11 +135,12 @@ public static class ThoughtPatches
         return false;
     }
 
+    // might be able to combine all four of these into one patch?
     [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
     [HarmonyPrefix]
     private static bool OnFindSetThoughtImage(Sunshine.ThoughtSlot __instance)
     {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == __instance.Project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
         if (modProject == null) return true;
 
         var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.imageLocation), null);
@@ -156,7 +158,7 @@ public static class ThoughtPatches
     [HarmonyPrefix]
     private static bool OnFindSetThoughtImage(PageSystemThoughtSlot __instance)
     {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == __instance.Project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
         if (modProject == null) return true;
 
         var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.imageLocation), null);
@@ -174,7 +176,7 @@ public static class ThoughtPatches
     [HarmonyPrefix]
     private static bool OnFindSetThoughtImage(PageSystemThoughtOceanSlot __instance)
     {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.displayName == __instance.Project.displayName);
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
         if (modProject == null) return true;
 
         var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.imageLocation), null);
@@ -186,5 +188,60 @@ public static class ThoughtPatches
             __instance._thoughtProjectImage.enabled = true;
         });
         return false;
+    }
+
+    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayName), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool DisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
+    {
+        // is there a better way to resolve this? other than a cache
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
+        if (modProject == null) return true;
+        
+        __result = modProject.displayName;
+        DiscoRunner.Log.LogInfo(__result);
+        return false;
+    }
+    
+    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.formattedDisplayNameUpper), MethodType.Getter)]
+    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayNameToUpper), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool FormattedDisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
+    {
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
+        if (modProject == null) return true;
+        
+        __result = modProject.displayName.ToUpper();
+        return false;
+    }
+    
+    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.description), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool Description_get(SM.ThoughtCabinetProject __instance, ref string __result)
+    {
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
+        if (modProject == null) return true;
+
+        __result = modProject.descripton;
+        return false;
+    }
+    
+    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.completionDescription), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool CompletionDescription_get(SM.ThoughtCabinetProject __instance, ref string __result)
+    {
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
+        if (modProject == null) return true;
+
+        __result = modProject.completionDescription;
+        return false;
+    }
+
+    [HarmonyPatch(typeof(ThoughtOnList), nameof(ThoughtOnList.Refresh))]
+    [HarmonyPrefix]
+    private static void OnRefreshListItem(ThoughtOnList __instance)
+    {
+        DiscoRunner.Log.LogInfo("refresh item is null? " + (__instance.Project == null));
+        DiscoRunner.Log.LogInfo("project item: " + __instance.Project?.displayNameToUpper);
     }
 }
