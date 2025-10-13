@@ -4,7 +4,8 @@ namespace DiscoAPI.Common.Assets;
 
 public record Thought : Asset, IAssetRef<Thought>
 {
-     public string imageLocation;
+     public string bigImageLocation;
+     public string iconImageLocation;
      public string displayName;
      public string descripton;
      public string completionDescription;
@@ -12,11 +13,13 @@ public record Thought : Asset, IAssetRef<Thought>
      public readonly Modifier[] researchEffects;
      public readonly Modifier[] completionEffects;
      
-     public Thought(string id, string displayName, int researchMins, Modifier[] researchEffects, Modifier[] completionEffects, string imageLocation, string descripton, string completionDescription) : base(id)
+     public Thought(string id, string displayName, int researchMins, string descripton, string completionDescription,
+          string bigImageLocation, string iconImageLocation, Modifier[] researchEffects, Modifier[] completionEffects) : base(id)
      {
           this.researchEffects = researchEffects;
           this.completionEffects = completionEffects;
-          this.imageLocation = imageLocation;
+          this.bigImageLocation = bigImageLocation;
+          this.iconImageLocation = iconImageLocation;
           this.researchMins = researchMins;
           this.displayName = displayName;
           this.descripton = descripton;

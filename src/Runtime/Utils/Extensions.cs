@@ -56,4 +56,20 @@ public static class Extensions
         tcp.researchTime = thought.researchMins;
         return tcp;
     }
+    
+    public static SunshineCharacterTemplate ToSunshineTemplate(this CharacterArchetype archetype)
+    {
+        var template = ScriptableObject.CreateInstance<SunshineCharacterTemplate>();
+        template.Description = archetype.description;
+        template.name = archetype.name;
+        template.Intellect = archetype.intellect;
+        template.Psyche = archetype.psyche;
+        template.Fysique = archetype.fysique;
+        template.Motorics = archetype.motorics;
+        template.signatureSkill = archetype.signatureSkill != null
+            ? SkillUtils.Skills.GetRaw(archetype.signatureSkill.ResolveId())
+            : SM.SkillType.NONE;
+
+        return template;
+    }
 }

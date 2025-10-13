@@ -115,6 +115,8 @@ public partial struct DiscoTask
 
 	public TaskAwaiter GetAwaiter() => inner?.GetAwaiter() ?? new TaskAwaiter();
 
+	public void Wait() => inner?.Wait();
+
 	public void ContinueWith(Action<DiscoTask> value) => inner?.ContinueWith((task) => value(new(task)));
 
 	public static DiscoTask MainThread(Action inner)
@@ -157,6 +159,16 @@ public struct DiscoTask<T>
 
 	public TaskAwaiter<T> GetAwaiter() => inner?.GetAwaiter() ?? new TaskAwaiter<T>();
 	public T Result => inner == null ? default(T)! : inner.Result;
+	
+	public T Wait()
+	{
+		if (inner != null)
+		{
+			inner.Wait();
+			return inner.Result;
+		}
+		return default(T);
+	}
 
 	public DiscoTask ContinueWith(Action<DiscoTask<T>> value)
 	{

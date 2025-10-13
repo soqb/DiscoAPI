@@ -1,10 +1,11 @@
 ﻿using System.Linq;
 using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.Dialogue;
 using DiscoAPI.Runtime.Utils;
-using DiscoPages.Elements.THC;
 using HarmonyLib;
 using Sunshine;
+using TMPro;
+using UnityEngine;
+using Voidforge;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -134,61 +135,138 @@ public static class ThoughtPatches
 
         return false;
     }
-
-    // might be able to combine all four of these into one patch?
-    [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
-    [HarmonyPrefix]
-    private static bool OnFindSetThoughtImage(Sunshine.ThoughtSlot __instance)
-    {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-        if (modProject == null) return true;
-
-        var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.imageLocation), null);
-        task.ContinueWith(handle =>
-        {
-            __instance._thoughtProjectImage.sprite = handle.Result;
-            __instance.RefreshImage();
-            __instance._thoughtProjectImage.enabled = false;
-            __instance._thoughtProjectImage.enabled = true;
-        });
-        return false;
-    }
     
-    [HarmonyPatch(typeof(PageSystemThoughtSlot), nameof(PageSystemThoughtSlot.FindAndSetThoughtImage))]
+    [HarmonyPatch(nameof(SpriteManager), nameof(SpriteManager.GetSprite))]
     [HarmonyPrefix]
-    private static bool OnFindSetThoughtImage(PageSystemThoughtSlot __instance)
+    public static bool OnGetSprite(string itemName, ref Sprite __result)
     {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-        if (modProject == null) return true;
-
-        var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.imageLocation), null);
-        task.ContinueWith(handle =>
-        {
-            __instance._thoughtProjectImage.sprite = handle.Result;
-            __instance.RefreshImage();
-            __instance._thoughtProjectImage.enabled = false;
-            __instance._thoughtProjectImage.enabled = true;
-        });
-        return false;
-    }
+     if (!itemName.StartsWith("thought_icons/")) return true;
     
-    [HarmonyPatch(typeof(PageSystemThoughtOceanSlot), nameof(PageSystemThoughtOceanSlot.FindAndSetThoughtImage))]
-    [HarmonyPrefix]
-    private static bool OnFindSetThoughtImage(PageSystemThoughtOceanSlot __instance)
-    {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-        if (modProject == null) return true;
-
-        var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.imageLocation), null);
-        task.ContinueWith(handle =>
-        {
-            __instance._thoughtProjectImage.sprite = handle.Result;
-            __instance.RefreshImage();
-            __instance._thoughtProjectImage.enabled = false;
-            __instance._thoughtProjectImage.enabled = true;
-        });
-        return false;
+     bool isMiniIcon = itemName.StartsWith("thought_icons/icon/");
+     string projectName = isMiniIcon ? itemName[19..^5] : itemName[14..];
+     DiscoRunner.Log.LogInfo($"looking for THC image {projectName} @ size {(isMiniIcon ? "small" : "big")} ");
+     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == projectName);
+     if (modProject == null) return true;
+     
+     var task = DiscoRunner.GetSource(modProject.source!).Router.Portraits.Get(isMiniIcon ? modProject.iconImageLocation : modProject.bigImageLocation);
+     var result = task.Wait();
+     __result = result;
+     return false;
     }
+
+    // // might be able to combine all four of these into one patch?
+    // [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
+    // [HarmonyPrefix]
+    // private static bool OnFindSetThoughtImage(Sunshine.ThoughtSlot __instance)
+    // {
+    //     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
+    //     if (modProject == null) return true;
+    //
+    //     var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
+    //     task.ContinueWith(handle =>
+    //     {
+    //         __instance._thoughtProjectImage.sprite = handle.Result;
+    //         __instance.RefreshImage();
+    //         __instance._thoughtProjectImage.enabled = false;
+    //         __instance._thoughtProjectImage.enabled = true;
+    //     });
+    //     return false;
+    // }
+    //
+    // [HarmonyPatch(typeof(PageSystemThoughtSlot), nameof(PageSystemThoughtSlot.FindAndSetThoughtImage))]
+    // [HarmonyPrefix]
+    // private static bool OnFindSetThoughtImage(PageSystemThoughtSlot __instance)
+    // {
+    //     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
+    //     if (modProject == null) return true;
+    //
+    //     var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
+    //     task.ContinueWith(handle =>
+    //     {
+    //         __instance._thoughtProjectImage.sprite = handle.Result;
+    //         __instance.RefreshImage();
+    //         __instance._thoughtProjectImage.enabled = false;
+    //         __instance._thoughtProjectImage.enabled = true;
+    //     });
+    //     return false;
+    // }
+    //
+    // [HarmonyPatch(typeof(PageSystemThoughtOceanSlot), nameof(PageSystemThoughtOceanSlot.FindAndSetThoughtImage))]
+    // [HarmonyPrefix]
+    // private static bool OnFindSetThoughtImage(PageSystemThoughtOceanSlot __instance)
+    // {
+    //     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
+    //     if (modProject == null) return true;
+    //
+    //     var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
+    //     task.ContinueWith(handle =>
+    //     {
+    //         __instance._thoughtProjectImage.sprite = handle.Result;
+    //         __instance.RefreshImage();
+    //         __instance._thoughtProjectImage.enabled = false;
+    //         __instance._thoughtProjectImage.enabled = true;
+    //     });
+    //     return false;
+    // }
+    //
+    // [HarmonyPatch(typeof(THCDetailsPage), nameof(THCDetailsPage.RefreshUI))]
+    // [HarmonyPostfix]
+    // private static void OnRefresh(THCDetailsPage __instance)
+    // {
+	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.thoughtProject.name);
+	   //  if (modProject == null) return;
+    //
+	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	   //  task.ContinueWith(handle =>
+	   //  {
+		  //   __instance.graphic.sprite = handle.Result;
+	   //  });
+    // }
+    //
+    // [HarmonyPatch(typeof(THCDetailsPage), nameof(THCDetailsPage.SetAndShowGraphicIfProjectNotNull))]
+    // [HarmonyPrefix]
+    // private static bool OnSetAndShowGraphicIfProjectNotNull(SM.ThoughtCabinetProject thoughtProject, Image graphic)
+    // {
+	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == thoughtProject.name);
+	   //  if (modProject == null) return true;
+    //
+	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	   //  task.ContinueWith(handle =>
+	   //  {
+		  //   graphic.sprite = handle.Result;
+		  //   graphic.gameObject.SetActive(true);
+	   //  });
+	   //  return false;
+    // }
+    //
+    // [HarmonyPatch(typeof(THCSplashscreenPage), nameof(THCSplashscreenPage.SetThoughtProject))]
+    // [HarmonyPostfix]
+    // private static void OnSetThoughtProject(SM.ThoughtCabinetProject project, THCSplashscreenPage __instance)
+    // {
+	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
+	   //  if (modProject == null) return;
+    //
+	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	   //  task.ContinueWith(handle =>
+	   //  {
+		  //   __instance.thoughtImage.sprite = handle.Result;
+	   //  });
+    // }
+    //
+    // [HarmonyPatch(typeof(ThoughtSplashScreenView), nameof(ThoughtSplashScreenView.SetThoughtProject))]
+    // [HarmonyPrefix]
+    // private static bool OnSetThoughtProject(SM.ThoughtCabinetProject project, ThoughtSplashScreenView __instance)
+    // {
+	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
+	   //  if (modProject == null) return true;
+    //
+	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	   //  task.ContinueWith(handle =>
+	   //  {
+		  //   __instance.image.sprite = handle.Result;
+	   //  });
+	   //  return false;
+    // }
 
     [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayName), MethodType.Getter)]
     [HarmonyPrefix]
@@ -238,10 +316,145 @@ public static class ThoughtPatches
     }
 
     [HarmonyPatch(typeof(ThoughtOnList), nameof(ThoughtOnList.Refresh))]
-    [HarmonyPrefix]
-    private static void OnRefreshListItem(ThoughtOnList __instance)
+    [HarmonyPrefix] // fixme(?): base method has some NRE & doesn't seem to match our Mono source
+    private static bool OnRefreshListItem(ThoughtOnList __instance)
     {
-        DiscoRunner.Log.LogInfo("refresh item is null? " + (__instance.Project == null));
-        DiscoRunner.Log.LogInfo("project item: " + __instance.Project?.displayNameToUpper);
+	    __instance._text.text = __instance.Project.displayName.ToUpper();
+			if (__instance.Project.state == SM.ThoughtState.UNKNOWN || __instance.Project.state == SM.ThoughtState.FORGOTTEN)
+			{
+				__instance._text.color = ((__instance.Project.state == SM.ThoughtState.UNKNOWN) ? SingletonComponent<ThoughtManager>.Singleton.ColorTextUnknown : SingletonComponent<ThoughtManager>.Singleton.ColorTextForgotten);
+				__instance._textLocalize.SecondaryTerm = SingletonComponent<ThoughtManager>.Singleton.FontNormalTerm;
+				if (__instance.Project.state == SM.ThoughtState.FORGOTTEN && __instance._text.text.Length > 0)
+				{
+					__instance._text.text = TextUtils.StrikethroughText(__instance._text.text);
+				}
+				__instance._backgroundImage.gameObject.SetActive(value: false);
+				__instance._leftBlock.gameObject.SetActive(value: false);
+				__instance._icon.gameObject.SetActive(value: false);
+				__instance._researchProgressText.gameObject.SetActive(value: false);
+				__instance._fillingImage.gameObject.SetActive(value: false);
+				return false;
+			}
+			if (__instance.Project.state == SM.ThoughtState.KNOWN)
+			{
+				__instance._backgroundImage.gameObject.SetActive(value: false);
+				float num = 1f - __instance.Project.ResearchProgress;
+				if ((double)num > 0.01)
+				{
+					__instance._leftBlock.gameObject.SetActive(value: true);
+					__instance._leftBlock.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftBlockDeselected;
+					TextMeshProUGUI researchProgressText = __instance._researchProgressText;
+					string text2 = (__instance._researchProgressText.text = $"{(int)(num * 100f):0.}%");
+					researchProgressText.text = text2;
+					__instance._researchProgressText.gameObject.SetActive(value: true);
+					__instance._researchProgressText.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftIconDeselected;
+				}
+				else
+				{
+					__instance._leftBlock.gameObject.SetActive(value: false);
+					__instance._leftBlock.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftBlockDeselected;
+					__instance._researchProgressText.gameObject.SetActive(value: false);
+				}
+				__instance._icon.gameObject.SetActive(value: false);
+				__instance._fillingImage.gameObject.SetActive(value: false);
+				if (__instance._isSelected)
+				{
+					__instance._backgroundImage.gameObject.SetActive(value: true);
+					__instance.ChangeImageColor(__instance._backgroundImage, SingletonComponent<ThoughtManager>.Singleton.ColorBackgroundSelected);
+					__instance.ChangeTextColor(__instance._text, SingletonComponent<ThoughtManager>.Singleton.ColorTextSelected);
+				}
+				else
+				{
+					__instance.ChangeTextColor(__instance._text, SingletonComponent<ThoughtManager>.Singleton.ColorTextKnown);
+				}
+			}
+			else if (__instance.Project.state == SM.ThoughtState.COOKING || __instance.Project.state == SM.ThoughtState.DISCOVERED)
+			{
+				__instance._backgroundImage.gameObject.SetActive(value: true);
+				__instance._leftBlock.gameObject.SetActive(value: true);
+				__instance._icon.gameObject.SetActive(value: false);
+				__instance._researchProgressText.gameObject.SetActive(value: true);
+				__instance._fillingImage.gameObject.SetActive(value: true);
+				if (__instance._isSelected)
+				{
+					__instance.ChangeTextColor(__instance._text, SingletonComponent<ThoughtManager>.Singleton.ColorTextSelected);
+					__instance.ChangeImageColor(__instance._backgroundImage, SingletonComponent<ThoughtManager>.Singleton.ColorBackgroundSelected);
+					__instance._fillingImage.gameObject.SetActive(value: false);
+				}
+				else
+				{
+					__instance.ChangeTextColor(__instance._text, SingletonComponent<ThoughtManager>.Singleton.ColorTextCooking);
+					__instance.ChangeImageColor(__instance._backgroundImage, SingletonComponent<ThoughtManager>.Singleton.ColorBackgroundCooking);
+					__instance._researchProgressText.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftIconDeselected;
+					__instance._leftBlock.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftBlockDeselected;
+				}
+				__instance._fillingImage.color = SingletonComponent<ThoughtManager>.Singleton.ColorResearchFillingImage;
+				float num2 = 1f - __instance.Project.ResearchProgress;
+				__instance._fillingImage.fillAmount = num2;
+				TextMeshProUGUI researchProgressText2 = __instance._researchProgressText;
+				object text3;
+				if (__instance.Project.state != SM.ThoughtState.COOKING)
+				{
+					text3 = "";
+				}
+				else
+				{
+					string text2 = (__instance._researchProgressText.text = $"{(int)(num2 * 100f):0.}%");
+					text3 = text2;
+				}
+				researchProgressText2.text = (string)text3;
+				if (__instance.Project.state == SM.ThoughtState.DISCOVERED)
+				{
+					__instance._icon.gameObject.SetActive(value: true);
+					__instance._icon.sprite = SingletonComponent<ThoughtManager>.Singleton.LockedIcon;
+					if (__instance._isSelected)
+					{
+						__instance.ChangeImageColor(__instance._backgroundImage, SingletonComponent<ThoughtManager>.Singleton.ColorBackgroundSelected);
+						__instance._icon.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftIconDeselected;
+						__instance._backgroundImage.gameObject.SetActive(value: true);
+					}
+					else
+					{
+						__instance._icon.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftIconDeselected;
+					}
+				}
+			}
+			else if (__instance.Project.state == SM.ThoughtState.FIXED)
+			{
+				__instance._backgroundImage.gameObject.SetActive(value: true);
+				__instance._leftBlock.gameObject.SetActive(value: true);
+				__instance._researchProgressText.gameObject.SetActive(value: false);
+				__instance._fillingImage.gameObject.SetActive(value: false);
+				__instance._icon.gameObject.SetActive(value: true);
+				__instance._icon.sprite = SingletonComponent<ThoughtManager>.Singleton.LockedIcon;
+				__instance._icon.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftIconDeselected;
+				if (__instance._isSelected)
+				{
+					__instance.ChangeTextColor(__instance._text, SingletonComponent<ThoughtManager>.Singleton.ColorTextSelected);
+					__instance.ChangeImageColor(__instance._backgroundImage, SingletonComponent<ThoughtManager>.Singleton.ColorBackgroundSelected);
+				}
+				else
+				{
+					__instance.ChangeTextColor(__instance._text, SingletonComponent<ThoughtManager>.Singleton.ColorTextKnown);
+					__instance.ChangeImageColor(__instance._backgroundImage, SingletonComponent<ThoughtManager>.Singleton.ColorBackgroundFixed);
+					__instance._leftBlock.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftBlockDeselected;
+				}
+			}
+			if (__instance._isUpdated)
+			{
+				if (__instance.Project.state != SM.ThoughtState.DISCOVERED)
+				{
+					__instance._icon.gameObject.SetActive(value: true);
+					__instance._icon.sprite = SingletonComponent<ThoughtManager>.Singleton.UpdatedIcon;
+					__instance._icon.color = SingletonComponent<ThoughtManager>.Singleton.ColorLeftIconDeselected;
+				}
+				__instance._textLocalize.SecondaryTerm = SingletonComponent<ThoughtManager>.Singleton.FontBoldTerm;
+			}
+			else
+			{
+				__instance._textLocalize.SecondaryTerm = SingletonComponent<ThoughtManager>.Singleton.FontNormalTerm;
+			}
+
+			return false;
     }
 }
