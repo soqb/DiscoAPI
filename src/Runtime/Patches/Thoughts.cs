@@ -154,6 +154,14 @@ public static class ThoughtPatches
      return false;
     }
 
+    [HarmonyPatch(typeof(ThoughtCabinetTooltip), nameof(ThoughtCabinetTooltip.SetTab), typeof(bool))]
+    [HarmonyPostfix]
+    public static void OnTHCDetailsRefresh(bool showProblem, ThoughtCabinetTooltip __instance)
+    {
+	    __instance.description.text =
+		    showProblem ? __instance.thought.description : __instance.thought.completionDescription;
+    }
+
     // // might be able to combine all four of these into one patch?
     // [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
     // [HarmonyPrefix]
