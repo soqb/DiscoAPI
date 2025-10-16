@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Dialogue;
 using DiscoAPI.Runtime.Utils;
@@ -6,6 +7,7 @@ using HarmonyLib;
 using Sunshine;
 using Sunshine.Views;
 using TMPro;
+using UnityEngine.UI;
 using Voidforge;
 using SM = Sunshine.Metric;
 
@@ -149,31 +151,21 @@ public static class ThoughtPatches
     [HarmonyPrefix]
     private static bool OnFindSetThoughtImage(Sunshine.ThoughtSlot __instance)
     {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-        if (modProject == null) return true;
-    
-        var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
-        task.ContinueWith(handle =>
+        return SetThoughtImageHelper(__instance.Project.name, true, __instance._thoughtProjectImage, () =>
         {
-            __instance._thoughtProjectImage.sprite = handle.Result;
-            __instance.RefreshImage();
-            __instance._thoughtProjectImage.enabled = false;
-            __instance._thoughtProjectImage.enabled = true;
+	        __instance.RefreshImage();
+	        __instance._thoughtProjectImage.enabled = false;
+	        __instance._thoughtProjectImage.enabled = true;
         });
-        return false;
     }
     
     [HarmonyPatch(typeof(ThoughtCabinetTooltip), nameof(ThoughtCabinetTooltip.UseSource))]
     [HarmonyPostfix]
     private static void OnUseSource(string itemName, ThoughtCabinetTooltip __instance)
     {
-	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == itemName);
-	    if (modProject == null) return;
-	    
-	    var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
-	    task.ContinueWith(handle =>
+	    SetThoughtImageHelper(itemName, false, __instance.mainImage, () =>
 	    {
-		    __instance.mainImage.sprite = handle.Result;
+		    __instance.mainImage.material.SetFloat("_Eval", __instance.progressToShaderEvalCurve.Evaluate(1f - __instance.thought.ResearchProgress));
 	    });
     }
     
@@ -181,32 +173,57 @@ public static class ThoughtPatches
     [HarmonyPostfix]
     private static void OnSetThoughtProject(SM.ThoughtCabinetProject project, ThoughtSplashScreenView __instance)
     {
-	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
-	    if (modProject == null) return;
+	    SetThoughtImageHelper(project.name, false, __instance.image);
+    }
+
+    private static bool SetThoughtImageHelper(string projectName, bool useIcon, Image image, Action? postAssignAction = null)
+    {
+	    // better way to do these lookups?
+	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == projectName);
+	    if (modProject == null) return false;
     
-	    var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	    var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, useIcon ? modProject.iconImageLocation : modProject.bigImageLocation), null);
 	    task.ContinueWith(handle =>
 	    {
-		    __instance.image.sprite = handle.Result;
+		    image.sprite = handle.Result;
+		    postAssignAction?.Invoke();
 	    });
+	    return true;
     }
 
     [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayName), MethodType.Getter)]
     [HarmonyPrefix]
     private static bool DisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
     {
-        // is there a better way to resolve this? other than a cache
+        // is there a cleaner way to resolve this? 
         var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
         if (modProject == null) return true;
         
         __result = modProject.displayName;
         return false;
     }
-    
+
     [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.formattedDisplayNameUpper), MethodType.Getter)]
+    [HarmonyPrefix]
+    public static bool FormattedDisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
+    {
+	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
+	    if (modProject == null) return true;
+	    
+	    string text = __instance.displayName;
+	    int num = text.IndexOf('（');
+	    if (num != -1)
+	    {
+		    text = text.Insert(num, TextUtils.NewLineString);
+	    }
+
+	    __result = text;
+	    return false;
+    }
+    
     [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayNameToUpper), MethodType.Getter)]
     [HarmonyPrefix]
-    private static bool FormattedDisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
+    private static bool DisplayNameUpper_get(SM.ThoughtCabinetProject __instance, ref string __result)
     {
         var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
         if (modProject == null) return true;
@@ -235,6 +252,19 @@ public static class ThoughtPatches
 
         __result = modProject.completionDescription;
         return false;
+    }
+    
+    [HarmonyPatch(typeof(ThoughtCabinetViewPersister), nameof(ThoughtCabinetViewPersister.Serialize))]
+    [HarmonyPrefix] // fixme(?): base method has some NRE & doesn't seem to match our Mono source
+    private static bool GetSlotStatuses(ref ThoughtCabinetViewPersister.ThoughtCabinetViewState __result)
+    {
+	    var reesult = new ThoughtCabinetViewPersister.ThoughtCabinetViewState
+	    {
+		    slotStates = ThoughtCabinetViewPersister.GetSlotStatuses(),
+		    selectedProjectName = ((SingletonComponent<ThoughtManager>.Singleton._selectedProject != null) ? SingletonComponent<ThoughtManager>.Singleton._selectedProject.GetDisplayName() : "")
+	    };
+	    __result = reesult;
+	    return false;
     }
 
     [HarmonyPatch(typeof(ThoughtOnList), nameof(ThoughtOnList.Refresh))]

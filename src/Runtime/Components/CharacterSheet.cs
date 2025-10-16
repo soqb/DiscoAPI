@@ -201,7 +201,7 @@ public sealed class SkillContainer : ISaveSerializable<SkillContainer, ModEntity
 			}
 			if (effect2 != null)
 			{
-				modifier = new SM.Modifier(modState.type, effect2.parameter, (Il2CppSystem.Func<string>)effect2.EffectName(), modifierCause, modState.skillType);
+				modifier = new SM.Modifier(modState.type, effect2.parameter, (Il2CppSystem.Func<string>)(() => effect2.EffectName()), modifierCause, modState.skillType);
 			}
 		}
 
