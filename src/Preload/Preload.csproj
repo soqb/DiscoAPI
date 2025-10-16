@@ -7,7 +7,7 @@
     <Import Project="../../config.targets" />
 
     <PropertyGroup>
-        <Version>0.0.1</Version>
+        <Version>0.1.0</Version>
         <AssemblyName>DiscoAPI.Preload</AssemblyName>
         <Description>Modding API for Disco Elysium (preload patch only)</Description>
         <RootNamespace>DiscoAPI.Preload</RootNamespace>

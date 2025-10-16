@@ -7,7 +7,7 @@
     <Import Project="../../disco.targets" />
 
     <PropertyGroup>
-        <Version>0.0.1</Version>
+        <Version>0.1.0</Version>
         <RootNamespace>DiscoAPI.Runtime</RootNamespace>
         <AssemblyName>DiscoAPI.Runtime</AssemblyName>
         <TargetFramework>net6.0</TargetFramework>

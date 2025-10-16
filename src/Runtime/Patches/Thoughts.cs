@@ -1,10 +1,11 @@
 ﻿using System.Linq;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Dialogue;
 using DiscoAPI.Runtime.Utils;
 using HarmonyLib;
 using Sunshine;
+using Sunshine.Views;
 using TMPro;
-using UnityEngine;
 using Voidforge;
 using SM = Sunshine.Metric;
 
@@ -135,24 +136,6 @@ public static class ThoughtPatches
 
         return false;
     }
-    
-    [HarmonyPatch(nameof(SpriteManager), nameof(SpriteManager.GetSprite))]
-    [HarmonyPrefix]
-    public static bool OnGetSprite(string itemName, ref Sprite __result)
-    {
-     if (!itemName.StartsWith("thought_icons/")) return true;
-    
-     bool isMiniIcon = itemName.StartsWith("thought_icons/icon/");
-     string projectName = isMiniIcon ? itemName[19..^5] : itemName[14..];
-     DiscoRunner.Log.LogInfo($"looking for THC image {projectName} @ size {(isMiniIcon ? "small" : "big")} ");
-     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == projectName);
-     if (modProject == null) return true;
-     
-     var task = DiscoRunner.GetSource(modProject.source!).Router.Portraits.Get(isMiniIcon ? modProject.iconImageLocation : modProject.bigImageLocation);
-     var result = task.Wait();
-     __result = result;
-     return false;
-    }
 
     [HarmonyPatch(typeof(ThoughtCabinetTooltip), nameof(ThoughtCabinetTooltip.SetTab), typeof(bool))]
     [HarmonyPostfix]
@@ -161,120 +144,52 @@ public static class ThoughtPatches
 	    __instance.description.text =
 		    showProblem ? __instance.thought.description : __instance.thought.completionDescription;
     }
-
-    // // might be able to combine all four of these into one patch?
-    // [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
-    // [HarmonyPrefix]
-    // private static bool OnFindSetThoughtImage(Sunshine.ThoughtSlot __instance)
-    // {
-    //     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-    //     if (modProject == null) return true;
-    //
-    //     var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
-    //     task.ContinueWith(handle =>
-    //     {
-    //         __instance._thoughtProjectImage.sprite = handle.Result;
-    //         __instance.RefreshImage();
-    //         __instance._thoughtProjectImage.enabled = false;
-    //         __instance._thoughtProjectImage.enabled = true;
-    //     });
-    //     return false;
-    // }
-    //
-    // [HarmonyPatch(typeof(PageSystemThoughtSlot), nameof(PageSystemThoughtSlot.FindAndSetThoughtImage))]
-    // [HarmonyPrefix]
-    // private static bool OnFindSetThoughtImage(PageSystemThoughtSlot __instance)
-    // {
-    //     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-    //     if (modProject == null) return true;
-    //
-    //     var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
-    //     task.ContinueWith(handle =>
-    //     {
-    //         __instance._thoughtProjectImage.sprite = handle.Result;
-    //         __instance.RefreshImage();
-    //         __instance._thoughtProjectImage.enabled = false;
-    //         __instance._thoughtProjectImage.enabled = true;
-    //     });
-    //     return false;
-    // }
-    //
-    // [HarmonyPatch(typeof(PageSystemThoughtOceanSlot), nameof(PageSystemThoughtOceanSlot.FindAndSetThoughtImage))]
-    // [HarmonyPrefix]
-    // private static bool OnFindSetThoughtImage(PageSystemThoughtOceanSlot __instance)
-    // {
-    //     var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
-    //     if (modProject == null) return true;
-    //
-    //     var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
-    //     task.ContinueWith(handle =>
-    //     {
-    //         __instance._thoughtProjectImage.sprite = handle.Result;
-    //         __instance.RefreshImage();
-    //         __instance._thoughtProjectImage.enabled = false;
-    //         __instance._thoughtProjectImage.enabled = true;
-    //     });
-    //     return false;
-    // }
-    //
-    // [HarmonyPatch(typeof(THCDetailsPage), nameof(THCDetailsPage.RefreshUI))]
-    // [HarmonyPostfix]
-    // private static void OnRefresh(THCDetailsPage __instance)
-    // {
-	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.thoughtProject.name);
-	   //  if (modProject == null) return;
-    //
-	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
-	   //  task.ContinueWith(handle =>
-	   //  {
-		  //   __instance.graphic.sprite = handle.Result;
-	   //  });
-    // }
-    //
-    // [HarmonyPatch(typeof(THCDetailsPage), nameof(THCDetailsPage.SetAndShowGraphicIfProjectNotNull))]
-    // [HarmonyPrefix]
-    // private static bool OnSetAndShowGraphicIfProjectNotNull(SM.ThoughtCabinetProject thoughtProject, Image graphic)
-    // {
-	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == thoughtProject.name);
-	   //  if (modProject == null) return true;
-    //
-	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
-	   //  task.ContinueWith(handle =>
-	   //  {
-		  //   graphic.sprite = handle.Result;
-		  //   graphic.gameObject.SetActive(true);
-	   //  });
-	   //  return false;
-    // }
-    //
-    // [HarmonyPatch(typeof(THCSplashscreenPage), nameof(THCSplashscreenPage.SetThoughtProject))]
-    // [HarmonyPostfix]
-    // private static void OnSetThoughtProject(SM.ThoughtCabinetProject project, THCSplashscreenPage __instance)
-    // {
-	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
-	   //  if (modProject == null) return;
-    //
-	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
-	   //  task.ContinueWith(handle =>
-	   //  {
-		  //   __instance.thoughtImage.sprite = handle.Result;
-	   //  });
-    // }
-    //
-    // [HarmonyPatch(typeof(ThoughtSplashScreenView), nameof(ThoughtSplashScreenView.SetThoughtProject))]
-    // [HarmonyPrefix]
-    // private static bool OnSetThoughtProject(SM.ThoughtCabinetProject project, ThoughtSplashScreenView __instance)
-    // {
-	   //  var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
-	   //  if (modProject == null) return true;
-    //
-	   //  var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
-	   //  task.ContinueWith(handle =>
-	   //  {
-		  //   __instance.image.sprite = handle.Result;
-	   //  });
-	   //  return false;
-    // }
+    
+    [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
+    [HarmonyPrefix]
+    private static bool OnFindSetThoughtImage(Sunshine.ThoughtSlot __instance)
+    {
+        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.Project.name);
+        if (modProject == null) return true;
+    
+        var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.iconImageLocation), null);
+        task.ContinueWith(handle =>
+        {
+            __instance._thoughtProjectImage.sprite = handle.Result;
+            __instance.RefreshImage();
+            __instance._thoughtProjectImage.enabled = false;
+            __instance._thoughtProjectImage.enabled = true;
+        });
+        return false;
+    }
+    
+    [HarmonyPatch(typeof(ThoughtCabinetTooltip), nameof(ThoughtCabinetTooltip.UseSource))]
+    [HarmonyPostfix]
+    private static void OnUseSource(string itemName, ThoughtCabinetTooltip __instance)
+    {
+	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == itemName);
+	    if (modProject == null) return;
+	    
+	    var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	    task.ContinueWith(handle =>
+	    {
+		    __instance.mainImage.sprite = handle.Result;
+	    });
+    }
+    
+    [HarmonyPatch(typeof(ThoughtSplashScreenView), nameof(ThoughtSplashScreenView.SetThoughtProject))]
+    [HarmonyPostfix]
+    private static void OnSetThoughtProject(SM.ThoughtCabinetProject project, ThoughtSplashScreenView __instance)
+    {
+	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == project.name);
+	    if (modProject == null) return;
+    
+	    var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, modProject.bigImageLocation), null);
+	    task.ContinueWith(handle =>
+	    {
+		    __instance.image.sprite = handle.Result;
+	    });
+    }
 
     [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayName), MethodType.Getter)]
     [HarmonyPrefix]
@@ -285,7 +200,6 @@ public static class ThoughtPatches
         if (modProject == null) return true;
         
         __result = modProject.displayName;
-        DiscoRunner.Log.LogInfo(__result);
         return false;
     }
     
