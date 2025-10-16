@@ -120,6 +120,7 @@ public class LooseSpriteRoute : LooseFileRoute<Sprite>
 public interface IAssetRouter
 {
 	IAssetRoute<Sprite> Portraits => new EmptyAssetRoute<Sprite>();
+	IAssetRoute<Sprite> Sprites => new EmptyAssetRoute<Sprite>();
 	SceneBundleRoute SceneBundle => new SceneBundleRoute("UNDEFINED");
 	IAssetRoute<NavMeshData> NavMeshes => new EmptyAssetRoute<NavMeshData>();
 	IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation) => new EmptyAssetRoute<AudioClip>();

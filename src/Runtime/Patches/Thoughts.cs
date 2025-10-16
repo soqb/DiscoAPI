@@ -178,24 +178,24 @@ public static class ThoughtPatches
 
     private static bool SetThoughtImageHelper(string projectName, bool useIcon, Image image, Action? postAssignAction = null)
     {
-	    // better way to do these lookups?
+	    // does there exist a cleaner way to do these lookups?
 	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == projectName);
-	    if (modProject == null) return false;
-    
-	    var task = AssetUtils.LoadPortrait(DiscoToPixels.EncodeTextureName(modProject.source!, useIcon ? modProject.iconImageLocation : modProject.bigImageLocation), null);
+	    if (modProject == null) return true;
+	    
+		// don't see how a null source is possible since an unregistered source wouldn't appear in the arena
+	    var task = DiscoRunner.manager.GetSource(modProject.source!)!.Router.Sprites.Get(useIcon ? modProject.iconImageLocation : modProject.bigImageLocation);
 	    task.ContinueWith(handle =>
 	    {
 		    image.sprite = handle.Result;
 		    postAssignAction?.Invoke();
 	    });
-	    return true;
+	    return false;
     }
 
     [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayName), MethodType.Getter)]
     [HarmonyPrefix]
     private static bool DisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
     {
-        // is there a cleaner way to resolve this? 
         var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
         if (modProject == null) return true;
         
@@ -217,7 +217,7 @@ public static class ThoughtPatches
 		    text = text.Insert(num, TextUtils.NewLineString);
 	    }
 
-	    __result = text;
+	    __result = text.ToUpper();
 	    return false;
     }
     
