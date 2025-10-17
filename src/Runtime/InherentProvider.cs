@@ -22,7 +22,7 @@ public static class InherentProvider
 	private class InherentAssetRouter : IAssetRouter
 	{
 		private Location Location => source.Location;
-		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(Location.Get("assets", "images"));
+		IAssetRoute<Sprite> IAssetRouter.Sprites => new LooseSpriteRoute(Location.Get("assets", "images"));
 	}
 
 	public const string DUMMY_NONE_SKILL = "API DUMMY NONE SKILL";
