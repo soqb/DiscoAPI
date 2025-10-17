@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using DiscoAPI.Common;
+using UnityEngine;
 
 namespace DiscoAPI.Runtime.Utils;
 
 public static class OverlayRegistry
 {
     private static readonly Dictionary<string, List<OverlayInfo>> _prefabOverlays = new();
+    private static readonly List<GameObject> _currentOverlays = new();
 
     public record OverlayInfo(string prefabPath, string sourceGuid, int priority);
 
@@ -32,8 +34,27 @@ public static class OverlayRegistry
         return _prefabOverlays.ContainsKey(baseSceneName) && _prefabOverlays[baseSceneName].Count > 0;
     }
 
+    public static void TrackInstance(GameObject instance)
+    {
+        _currentOverlays.Add(instance);
+    }
+
+    public static void CleanupCurrentOverlays()
+    {
+        DiscoRunner.Log.LogInfo($"Cleaning up {_currentOverlays.Count} overlays");
+
+        foreach (var instance in _currentOverlays)
+        {
+            if (instance != null)
+                GameObject.Destroy(instance);
+        }
+
+        _currentOverlays.Clear();
+    }
+
     public static void Clear()
     {
         _prefabOverlays.Clear();
+        CleanupCurrentOverlays();
     }
 }

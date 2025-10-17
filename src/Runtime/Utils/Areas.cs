@@ -55,6 +55,7 @@ public static class AreaUtils
             }
 
             var instance = GameObject.Instantiate(prefab);
+            OverlayRegistry.TrackInstance(instance);
             DiscoRunner.Log.LogInfo($"Instantiated prefab overlay: {prefabPath}");
             return instance;
         }

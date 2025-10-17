@@ -17,6 +17,8 @@ public static class AreaPatches
     [HarmonyPrefix]
     private static void OnChangeArea(ApplicationManager __instance, string areaId, string destinationId, ref bool isGameLoad)
     {
+        OverlayRegistry.CleanupCurrentOverlays();
+
         if (__instance.CurrentSceneProperties != null)
         {
             var currentScene = __instance.CurrentSceneProperties.SceneName;
