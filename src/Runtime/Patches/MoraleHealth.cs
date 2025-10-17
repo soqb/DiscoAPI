@@ -6,7 +6,7 @@ using DiscoAPI.Runtime.Components;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class MoraleHealthPatches
+internal static class MoraleHealthPatches
 {
 	private static ModEntity<SM.CharacterSheet> You = DiscoRunner.world!.You();
 	private static SkillContainer YouSkills = CharacterComponents.Skills.Of(You)!;

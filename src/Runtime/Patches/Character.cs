@@ -12,7 +12,7 @@ using Il2CppSystem.Collections.Generic;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class CharacterPatches
+internal static class CharacterPatches
 {
 	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.Recalc))]
 	[HarmonyPostfix]

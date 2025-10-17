@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class ManagedPatches
+internal static class ManagedPatches
 {
 	private static ManualLogSource mockUnityLogger = BepInEx.Logging.Logger.CreateLogSource("Unity");
 

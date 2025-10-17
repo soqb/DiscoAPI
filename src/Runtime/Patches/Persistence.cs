@@ -2,7 +2,7 @@ using HarmonyLib;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class PersistencePatches
+internal static class PersistencePatches
 {
     [HarmonyPatch(typeof(SunshinePersistenceFileManager), nameof(SunshinePersistenceFileManager.PutDateSuffixOnPath))]
     [HarmonyPostfix] // alternative method patched due to inlined SaveCoR, triggers before basegame serialization

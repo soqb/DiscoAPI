@@ -11,7 +11,7 @@ using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class ArchetypePatches
+internal static class ArchetypePatches
 {
 
     [HarmonyPatch(typeof(ArchetypeSelectButton), nameof(ArchetypeSelectButton.SetArchetype))]
