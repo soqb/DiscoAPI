@@ -7,7 +7,7 @@ namespace DiscoAPI.Runtime;
 [BepInPlugin(
     GUID,
     "Disco Elysium Modding API",
-    "0.0.1"
+    "0.1.0-indev"
 )]
 [BepInProcess("disco.exe")]
 public class DiscoAPIPlugin : BasePlugin
@@ -52,6 +52,8 @@ public class DiscoAPIPlugin : BasePlugin
         PatchAll(typeof(Patches.AreaPatches));
         PatchAll(typeof(Patches.VirtualTexturePatches));
         PatchAll(typeof(Patches.NewGamePatches));
+        PatchAll(typeof(Patches.CharacterEffectPatches));
+        PatchAll(typeof(Patches.ThoughtPatches));
         DialogueBundleLoader.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
 
         DiscoRunner.OnLoad();
