@@ -72,15 +72,19 @@ internal static class ReputationUtils
         int repArenaLength = repArena.Count;
         var confrontDialogues =
             ReputationAlterant.orbDialogues.Resize(ReputationAlterant.orbDialogues.Length + repArenaLength);
+        var thoughtCache =
+            ReputationAlterant.copotypeThought.Resize(ReputationAlterant.orbDialogues.Length + repArenaLength);
 
         for (int i = VANILLA_REP_DIALOGUE_COUNT; i < repArenaLength; i++)
         {
             var modRep = repArena[i];
             confrontDialogues[i] = modRep?.confrontationOrbName ?? "";
+            thoughtCache[i] = modRep?.id ?? "";
             ReputationAlterant.reputationSystemIndividualLevels.TryAdd((Reputation)modRep.ResolveId(),
                 modRep.confrontationTriggerThreshold ?? 999);
         }
 
         ReputationAlterant.orbDialogues = confrontDialogues;
+        ReputationAlterant.copotypeThought = thoughtCache;
     }
 }

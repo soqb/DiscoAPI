@@ -11,7 +11,7 @@ internal static class ReputationPatches
     private static bool OnReputationEffect(Reputation rep)
     {
         var modRep = DiscoRunner.manager.Assets.GetArena<Common.Assets.Reputation>()[(int)rep];
-        if (modRep == null || modRep.ResolveId() < ReputationUtils.VANILLA_REP_DIALOGUE_COUNT) return true;
+        if (modRep == null || (int)rep < ReputationUtils.VANILLA_REP_DIALOGUE_COUNT) return true;
         
         modRep.repIncreaseEffect?.Invoke();
         return false;
