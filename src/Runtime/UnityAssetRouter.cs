@@ -44,6 +44,12 @@ public class AssetBundleRoute<T> : IAssetRoute<T> where T : Il2CppObjectBase
 		}
 		if (!finalBundle.Contains(finalPath))
 		{
+			var allAssets = finalBundle.GetAllAssetNames();
+			DiscoRunner.Log.LogWarning($"Asset {finalPath} not found in bundle {finalBundle.name}. Available assets:");
+			foreach (var asset in allAssets)
+			{
+				DiscoRunner.Log.LogWarning($"  - {asset}");
+			}
 			throw new Exception($"failed to load {finalPath} from {finalBundle.name}: does not exist in this bundle");
 		}
 		var req = finalBundle.LoadAssetAsync<T>(finalPath);
@@ -122,6 +128,7 @@ public interface IAssetRouter
 	IAssetRoute<Sprite> Portraits => new EmptyAssetRoute<Sprite>();
 	SceneBundleRoute SceneBundle => new SceneBundleRoute("UNDEFINED");
 	IAssetRoute<NavMeshData> NavMeshes => new EmptyAssetRoute<NavMeshData>();
+	IAssetRoute<GameObject> Prefabs => new EmptyAssetRoute<GameObject>();
 	IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation) => new EmptyAssetRoute<AudioClip>();
 }
 
@@ -138,6 +145,7 @@ public class MemoizedAssetRouter : IAssetRouter
 		portraits = new(() => inner.Portraits);
 		scenes = new(() => inner.SceneBundle);
 		navmeshes = new(() => inner.NavMeshes);
+		prefabs = new(() => inner.Prefabs);
 	}
 
 	private Lazy<IAssetRoute<Sprite>> portraits;
@@ -148,6 +156,9 @@ public class MemoizedAssetRouter : IAssetRouter
 
 	private Lazy<IAssetRoute<NavMeshData>> navmeshes;
 	public IAssetRoute<NavMeshData> NavMeshes => navmeshes.Value;
+
+	private Lazy<IAssetRoute<GameObject>> prefabs;
+	public IAssetRoute<GameObject> Prefabs => prefabs.Value;
 
 	private Dictionary<AssetLocation, IAssetRoute<AudioClip>> clipsForConversation = new();
 	public IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation)

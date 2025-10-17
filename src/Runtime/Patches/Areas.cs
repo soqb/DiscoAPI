@@ -58,9 +58,15 @@ public static class AreaPatches
         bool hideLoadingScreen, bool isMapChanging)
     {
         var foundArea = AreaUtils.FromScenePath(sceneName); // sceneName is actually a path
-        if (foundArea == null) return;
 
-        __result = PatchedSceneLoadRoutine(__result, foundArea).WrapToIl2Cpp();
+        if (foundArea != null)
+        {
+            __result = PatchedSceneLoadRoutine(__result, foundArea).WrapToIl2Cpp();
+        }
+        else
+        {
+            __result = VanillaSceneOverlayRoutine(__result, sceneName).WrapToIl2Cpp();
+        }
     }
 
     private static System.Collections.IEnumerator PatchedSceneLoadRoutine(IEnumerator original, Area foundArea)
@@ -76,6 +82,21 @@ public static class AreaPatches
 
         FastLoadManager.m_FastLoadManager.allScenes.TryAdd(foundArea.scenePath, SceneManager.GetSceneAt(SceneManager.sceneCount - 1));
 
+        if (OverlayRegistry.HasPrefabOverlays(foundArea.id))
+        {
+            var prefabOverlays = OverlayRegistry.GetPrefabOverlaysForScene(foundArea.id);
+            foreach (var prefabOverlay in prefabOverlays)
+            {
+                var instantiateTask = AreaUtils.InstantiatePrefabOverlay(prefabOverlay.prefabPath, prefabOverlay.sourceGuid);
+                yield return instantiateTask.ToCoroutine();
+
+                if (instantiateTask.Result == null)
+                {
+                    DiscoRunner.Log.LogError($"failed to instantiate prefab overlay {prefabOverlay.prefabPath}");
+                }
+            }
+        }
+
         if (foundArea.vtPath != null)
         {
             var vt = VirtualTextures.CustomVirtualTextureManager.VtFromArea(foundArea);
@@ -85,7 +106,6 @@ public static class AreaPatches
             original.MoveNext();
             yield return original.Current;
 
-            // scene is now loaded:
             GameObject vtContainer = new();
             vtContainer.transform.position = Vector3.zero;
             vtContainer.transform.localScale = Vector3.one * 0.55f;
@@ -107,6 +127,28 @@ public static class AreaPatches
         yield return original;
     }
 
+    private static System.Collections.IEnumerator VanillaSceneOverlayRoutine(IEnumerator original, string scenePath)
+    {
+        yield return original;
+
+        string sceneName = scenePath.Replace(".unity", "").Split('/')[^1];
+
+        if (OverlayRegistry.HasPrefabOverlays(sceneName))
+        {
+            var prefabOverlays = OverlayRegistry.GetPrefabOverlaysForScene(sceneName);
+            foreach (var prefabOverlay in prefabOverlays)
+            {
+                DiscoRunner.Log.LogInfo($"Instantiating prefab overlay {prefabOverlay.prefabPath} for {sceneName}");
+                var instantiateTask = AreaUtils.InstantiatePrefabOverlay(prefabOverlay.prefabPath, prefabOverlay.sourceGuid);
+                yield return instantiateTask.ToCoroutine();
+
+                if (instantiateTask.Result == null)
+                {
+                    DiscoRunner.Log.LogError($"failed to instantiate prefab overlay {prefabOverlay.prefabPath}");
+                }
+            }
+        }
+    }
 
     [HarmonyPatch(typeof(NavMeshDataCollection), nameof(NavMeshDataCollection.GetNavMeshDataByScene))]
     [HarmonyPrefix]
