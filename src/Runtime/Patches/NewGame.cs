@@ -10,7 +10,7 @@ using Sunshine.Views;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class NewGamePatches
+internal static class NewGamePatches
 {
     [HarmonyPatch(typeof(WhirlingNewGameManager), nameof(WhirlingNewGameManager.RedButtonPressed))]
     [HarmonyPrefix]

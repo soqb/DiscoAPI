@@ -4,7 +4,9 @@ using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Utils;
 using Newtonsoft.Json.Linq;
+using Sunshine;
 using UnityEngine;
+using Voidforge;
 using PC = PixelCrushers.DialogueSystem;
 using SM = Sunshine.Metric;
 
@@ -20,7 +22,7 @@ public static class InherentProvider
 	private class InherentAssetRouter : IAssetRouter
 	{
 		private Location Location => source.Location;
-		IAssetRoute<Sprite> IAssetRouter.Portraits => new LooseSpriteRoute(Location.Get("assets", "images"));
+		IAssetRoute<Sprite> IAssetRouter.Sprites => new LooseSpriteRoute(Location.Get("assets", "images"));
 	}
 
 	public const string DUMMY_NONE_SKILL = "API DUMMY NONE SKILL";
@@ -38,9 +40,12 @@ public static class InherentProvider
 		assets.Register(convos, true);
 		assets.Register(new PCArena<PC.Variable, Variable>(mgr => mgr.pcDatabase.variables), true);
 		assets.Register(new EnumArena<SM.SkillType, Skill>(SkillUtils.RecoverSkill, SkillUtils.SkillIsReal), true);
+		assets.Register(new EnumArena<SM.EffectType, CharacterEffect>(ModifierUtils.RecoverEffect, ModifierUtils.EffectIsReal), true);
 		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
 		assets.Register(new GenericArena<Area>(), false);
 		assets.Register(new GenericArena<CharacterArchetype>(), false);
+		assets.Register(new EnumArena<Reputation, Common.Assets.Reputation>(ReputationUtils.RecoverRep, ReputationUtils.RepIsReal), true);
+		assets.Register(new GenericArena<Thought>(), false);
 
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 
@@ -77,7 +82,48 @@ public static class InherentProvider
 
 	public static void OnDialogueBundleLoad()
 	{
+		AssembleSunshineData();
+		ReputationUtils.RegisterModReputations();
+		
 		// we have to introduce a dummy actor with a simple portrait for the case where no skill is used in the portrait grid.
 		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "portrait_none.png" });
+	}
+
+	public static void AssembleSunshineData()
+	{
+		var dataHolder = new GameObject("DiscoAPI Data");
+
+		var thoughtHolder = new GameObject("Thoughts");
+		thoughtHolder.transform.parent = dataHolder.transform;
+		var modThoughts = DiscoRunner.manager.Assets.GetArena<Thought>();
+		var modProjects = new ThoughtListItem[modThoughts.Count];
+		var baseProjectList = SingletonComponent<ThoughtCabinetProjectList>.Singleton;
+		for (var i = 0; i < modThoughts.Count; i++)
+		{
+			var thought = modThoughts[i];
+			if (thought == null) continue;
+			var thtObject = new GameObject(thought.id);
+			thtObject.transform.parent = thoughtHolder.transform;
+
+			var project = thought.AttachComponent(thtObject);
+			modProjects[i] = new ThoughtListItem()
+			{
+				name = thought.id,
+				project = project
+			};
+		}
+		
+		var baseProjectCount = baseProjectList.projects.Count;
+		var newList = baseProjectList.projects.Resize(baseProjectCount + modProjects.Length);
+		for (int i = 0; i < modProjects.Length; i++)
+		{
+			newList[i + baseProjectCount] = modProjects[i];
+		}
+		
+		baseProjectList.projects = newList;
+		baseProjectList.RefreshCache();
+		SingletonComponent<ThoughtManager>.Singleton.ReinitializeThoughtsList();
+
+		Object.DontDestroyOnLoad(dataHolder);
 	}
 }

@@ -10,7 +10,7 @@ using LocalizationCustomSystem;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class PagesPatches
+internal static class PagesPatches
 {
 	[HarmonyPatch(typeof(ActorsPortraitsBundleManager), nameof(ActorsPortraitsBundleManager.LoadPortraitSpriteAsync))]
 	[HarmonyPrefix]

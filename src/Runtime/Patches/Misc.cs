@@ -4,7 +4,7 @@ using HarmonyLib;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class MiscPatches
+internal static class MiscPatches
 {
 	// its good etiquette to not let people cheese too easily.
 	// we're definitely double-counting some functions but inlining screws us in some places:

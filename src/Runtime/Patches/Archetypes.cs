@@ -11,7 +11,7 @@ using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class ArchetypePatches
+internal static class ArchetypePatches
 {
 
     [HarmonyPatch(typeof(ArchetypeSelectButton), nameof(ArchetypeSelectButton.SetArchetype))]
@@ -55,7 +55,7 @@ public static class ArchetypePatches
             var modType = modTypes[i];
             if (modType == null) continue;
 
-            var template = ArchetypeUtils.ToSunshineTemplate(modType);
+            var template = modType.ToSunshineTemplate();
             var task = AssetUtils.LoadPortrait(
                 DiscoToPixels.EncodeTextureName(modType.source!, modType.portraitLocation),
                 null);
