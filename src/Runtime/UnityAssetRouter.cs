@@ -119,7 +119,7 @@ public class LooseSpriteRoute : LooseFileRoute<Sprite>
 
 public interface IAssetRouter
 {
-	IAssetRoute<Sprite> Portraits => new EmptyAssetRoute<Sprite>();
+	IAssetRoute<Sprite> Sprites => new EmptyAssetRoute<Sprite>();
 	SceneBundleRoute SceneBundle => new SceneBundleRoute("UNDEFINED");
 	IAssetRoute<NavMeshData> NavMeshes => new EmptyAssetRoute<NavMeshData>();
 	IAssetRoute<AudioClip> ClipsForConversation(IAssetRef<Conversation> conversation) => new EmptyAssetRoute<AudioClip>();
@@ -135,13 +135,13 @@ public class MemoizedAssetRouter : IAssetRouter
 	{
 		this.inner = inner;
 
-		portraits = new(() => inner.Portraits);
+		sprites = new(() => inner.Sprites);
 		scenes = new(() => inner.SceneBundle);
 		navmeshes = new(() => inner.NavMeshes);
 	}
 
-	private Lazy<IAssetRoute<Sprite>> portraits;
-	public IAssetRoute<Sprite> Portraits => portraits.Value;
+	private Lazy<IAssetRoute<Sprite>> sprites;
+	public IAssetRoute<Sprite> Sprites => sprites.Value;
 
 	private Lazy<SceneBundleRoute> scenes;
 	public SceneBundleRoute SceneBundle => scenes.Value;

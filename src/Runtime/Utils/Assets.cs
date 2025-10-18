@@ -9,7 +9,7 @@ public static class AssetUtils
 {
     public const string EXTRA_TEXTURE_PREFIX = "\0EXTRA\0";
 
-    public async static DiscoTask<Sprite> LoadPortrait(string textureName,
+    public static async DiscoTask<Sprite> LoadPortrait(string textureName,
         Il2CppSystem.Action<AsyncOperationHandle<Sprite>>? del)
     {
         string hint = textureName;
@@ -18,7 +18,7 @@ public static class AssetUtils
         {
             if (PixelsToDisco.TryDecodeTextureName(textureName, out string source, out string path))
             {
-                task = DiscoRunner.GetSource(source)!.Router.Portraits.Get(path);
+                task = DiscoRunner.GetSource(source)!.Router.Sprites.Get(path);
                 hint = $"{source}:{path}";
                 if (await task is Sprite ss)
                 {
@@ -38,8 +38,7 @@ public static class AssetUtils
         }
 
         // if everything went wrong, load fallback portrait:
-        const string FALLBACK = "missing_texture_lol.png";
-        task = InherentProvider.source.Router.Portraits.Get(FALLBACK)!;
+        task = LoadVeryNormalFallbackSprite();
         if (await task is Sprite s)
         {
             if (del != null) task.AsAddressableOperation().add_Completed(del!);
@@ -48,6 +47,12 @@ public static class AssetUtils
 
         // at this point there's nothing else we can do..
         throw new Exception("failed to load even fallback portrait");
+    }
+
+    public static async DiscoTask<Sprite?> LoadVeryNormalFallbackSprite()
+    {
+        const string FALLBACK = "missing_texture_lol.png";
+        return await InherentProvider.source.Router.Sprites.Get(FALLBACK);
     }
 }
 

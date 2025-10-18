@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using DiscoAPI.Common.Assets;
-using DiscoAPI.Runtime.Utils;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
-using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime
 {
@@ -119,26 +116,7 @@ namespace DiscoAPI.Runtime
 				prefix: new HarmonyMethod(SymbolExtensions.GetMethodInfo((T t) => PreOnEnable(t))));
 		}
 	}
-
-	public static class ArchetypeUtils
-	{
-		public static SunshineCharacterTemplate ToSunshineTemplate(CharacterArchetype archetype)
-		{
-			var template = ScriptableObject.CreateInstance<SunshineCharacterTemplate>();
-			template.Description = archetype.description;
-			template.name = archetype.name;
-			template.Intellect = archetype.intellect;
-			template.Psyche = archetype.psyche;
-			template.Fysique = archetype.fysique;
-			template.Motorics = archetype.motorics;
-			template.signatureSkill = archetype.signatureSkill != null
-				? SkillUtils.Skills.GetRaw(archetype.signatureSkill.ResolveId())
-				: SM.SkillType.NONE;
-
-			return template;
-		}
-	}
-
+	
 	public static class Il2CppExtensions
 	{
 		public static Il2CppReferenceArray<T> Resize<T>(this Il2CppReferenceArray<T> original, int newSize)
