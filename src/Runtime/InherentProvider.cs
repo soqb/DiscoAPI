@@ -44,6 +44,7 @@ public static class InherentProvider
 		assets.Register(new PCProxyArena<Task, PC.Conversation>(convos.Raw, (conv) => conv.FieldExists("display_condition_main")), false);
 		assets.Register(new GenericArena<Area>(), false);
 		assets.Register(new GenericArena<CharacterArchetype>(), false);
+		assets.Register(new EnumArena<Reputation, Common.Assets.Reputation>(ReputationUtils.RecoverRep, ReputationUtils.RepIsReal), true);
 		assets.Register(new GenericArena<Thought>(), false);
 
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
@@ -82,6 +83,8 @@ public static class InherentProvider
 	public static void OnDialogueBundleLoad()
 	{
 		AssembleSunshineData();
+		ReputationUtils.RegisterModReputations();
+		
 		// we have to introduce a dummy actor with a simple portrait for the case where no skill is used in the portrait grid.
 		source.Add(new Actor("dummy-none-skill", DUMMY_NONE_SKILL) { portraitName = "portrait_none.png" });
 	}

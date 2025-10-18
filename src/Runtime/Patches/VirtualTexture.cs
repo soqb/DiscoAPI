@@ -6,7 +6,7 @@ using System;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public class VirtualTexturePatches
+internal class VirtualTexturePatches
 {
 	private record NativeDecompressor(IntPtr nativeHandle) : IBcnDecompressor
 	{

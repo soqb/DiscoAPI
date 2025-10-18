@@ -3,7 +3,7 @@ using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class DialoguePatches
+internal static class DialoguePatches
 {
     // DE uses the "Articy Id" for asset referencing (probably because PixelCrushers' asset identification systems are *awful*).
     // Since these are strings, we can trivially spoof out own "Articy Id" in whatever format we like.

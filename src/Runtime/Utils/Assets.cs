@@ -55,3 +55,44 @@ public static class AssetUtils
         return await InherentProvider.source.Router.Sprites.Get(FALLBACK);
     }
 }
+
+internal static class ReputationUtils
+{
+    public const int VANILLA_REP_DIALOGUE_COUNT = 15;
+
+    public static bool RepIsReal(Reputation rep) => true;
+
+    public static Common.Assets.Reputation RecoverRep(Reputation smRep)
+    {
+        bool repHasLevel = ReputationAlterant.reputationSystemIndividualLevels.TryGetValue(smRep, out int repLevel);
+        return new Common.Assets.Reputation(
+            smRep.ToString(), null, 
+            repHasLevel ? repLevel : null, 
+            ReputationAlterant.orbDialogues[(int)smRep]);
+    }
+    
+    public static void RegisterModReputations()
+    {
+        var repArena = DiscoRunner.manager.Assets.GetArena<Common.Assets.Reputation>();
+        int repArenaLength = repArena.Count;
+        var confrontDialogues =
+            ReputationAlterant.orbDialogues.Resize(ReputationAlterant.orbDialogues.Length + repArenaLength);
+        var thoughtCache =
+            ReputationAlterant.copotypeThought.Resize(ReputationAlterant.orbDialogues.Length + repArenaLength);
+
+        for (int i = VANILLA_REP_DIALOGUE_COUNT; i < repArenaLength; i++)
+        {
+            var modRep = repArena[i];
+            confrontDialogues[i] = modRep?.confrontationOrbName ?? "";
+            thoughtCache[i] = modRep?.id ?? "";
+            if (modRep?.confrontationTriggerThreshold != null)
+            {
+                ReputationAlterant.reputationSystemIndividualLevels.TryAdd((Reputation)modRep.ResolveId(),
+                    modRep.confrontationTriggerThreshold.Value);
+            }
+        }
+
+        ReputationAlterant.orbDialogues = confrontDialogues;
+        ReputationAlterant.copotypeThought = thoughtCache;
+    }
+}
