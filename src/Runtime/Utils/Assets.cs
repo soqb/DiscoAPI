@@ -85,8 +85,11 @@ internal static class ReputationUtils
             var modRep = repArena[i];
             confrontDialogues[i] = modRep?.confrontationOrbName ?? "";
             thoughtCache[i] = modRep?.id ?? "";
-            ReputationAlterant.reputationSystemIndividualLevels.TryAdd((Reputation)modRep.ResolveId(),
-                modRep.confrontationTriggerThreshold ?? 999);
+            if (modRep?.confrontationTriggerThreshold != null)
+            {
+                ReputationAlterant.reputationSystemIndividualLevels.TryAdd((Reputation)modRep.ResolveId(),
+                    modRep.confrontationTriggerThreshold.Value);
+            }
         }
 
         ReputationAlterant.orbDialogues = confrontDialogues;
