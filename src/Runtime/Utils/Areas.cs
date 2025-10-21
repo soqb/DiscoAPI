@@ -1,7 +1,9 @@
+using System;
 using System.Linq;
 using DiscoAPI.Common.Assets;
 using DiscoAPI.Runtime.Assets;
 using FortressOccident;
+using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using Voidforge;
@@ -36,6 +38,32 @@ public static class AreaUtils
 
         await SceneManager.LoadSceneAsync(foundScenePath, LoadSceneMode.Additive);
         return true;
+    }
+
+    public static async DiscoTask<GameObject?> InstantiatePrefabOverlay(string prefabPath, string sourceGuid)
+    {
+        var src = DiscoRunner.GetSource(sourceGuid);
+        if (src == null) return null;
+
+        try
+        {
+            var prefab = await src.Router.Prefabs.Get(prefabPath);
+            if (prefab == null)
+            {
+                DiscoRunner.Log.LogError($"failed to load prefab overlay at {prefabPath} from source {sourceGuid}");
+                return null;
+            }
+
+            var instance = GameObject.Instantiate(prefab);
+            OverlayRegistry.TrackInstance(instance);
+            DiscoRunner.Log.LogInfo($"Instantiated prefab overlay: {prefabPath}");
+            return instance;
+        }
+        catch (Exception ex)
+        {
+            DiscoRunner.Log.LogError($"Exception loading prefab overlay {prefabPath}: {ex.Message}");
+            return null;
+        }
     }
 
     public static async DiscoTask<NavMeshData?> LoadNavmeshData(Area area)
