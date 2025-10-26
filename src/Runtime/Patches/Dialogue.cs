@@ -1,4 +1,8 @@
+using System;
+using System.IO;
+using System.Linq;
 using HarmonyLib;
+using Il2CppInterop.Runtime;
 using PC = PixelCrushers.DialogueSystem;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -52,5 +56,30 @@ internal static class DialoguePatches
     [HarmonyPostfix]
     private static void AllYourDialogueAreBelongToUs(FinalEntry entry)
     {
+    }
+    
+    [HarmonyPatch(typeof(PC.Sequencer), nameof(PC.Sequencer.GetTypeFromName))]
+    [HarmonyPostfix] // enables injection of modded sequence commands
+    public static void GetSequencerType(string typeName, ref Il2CppSystem.Type? __result)
+    {
+        if (__result != null) return;
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic && a.Location.Contains("BepInEx" + Path.DirectorySeparatorChar + "plugins"));
+        foreach (var asm in assemblies)
+        {
+            try
+            {
+                var types = asm.GetTypes();
+                for (int j = 0; j < types.Length; j++)
+                {
+                    var type = types[j];
+                    if (string.Equals(type.Name, typeName)) __result = Il2CppType.From(type);
+                }
+            }
+            catch (Exception e)
+            {
+                DiscoRunner.Log.LogError("Error occured while looking for a sequencer command type: " + typeName);
+                DiscoRunner.Log.LogError(e);
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using HarmonyLib;
@@ -174,6 +175,25 @@ namespace DiscoAPI.Runtime
 			}
 
 			return newArr.ToArray();
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public class RegisterManagedClassAttribute : Attribute
+{
+	public RegisterManagedClassAttribute() { }
+}
+
+public static class Il2CppInjectorAttributes
+{
+	public static void InjectClasses()
+	{
+		var assembly = Assembly.GetCallingAssembly();
+		foreach(Type type in assembly.GetTypes()) {
+			if (type.GetCustomAttributes(typeof(RegisterManagedClassAttribute), true).Length > 0) {
+				Il2CppInterop.Runtime.Injection.ClassInjector.RegisterTypeInIl2Cpp(type);
+			}
 		}
 	}
 }

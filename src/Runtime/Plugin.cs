@@ -56,7 +56,8 @@ public class DiscoAPIPlugin : BasePlugin
         PatchAll(typeof(Patches.ThoughtPatches));
         PatchAll(typeof(Patches.ReputationPatches));
         DialogueBundleLoader.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
-
+        Il2CppInjectorAttributes.InjectClasses();
+        
         DiscoRunner.OnLoad();
     }
 }
