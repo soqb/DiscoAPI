@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -179,22 +178,20 @@ namespace DiscoAPI.Runtime
 	}
 }
 
+/// <summary>
+/// Helper attribute to tell Il2CppInterop to inject this class. You'll also need to
+/// call <see cref="InjectClasses()"/> in your plugin's Load callback.
+/// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class RegisterManagedClassAttribute : Attribute
-{
-	public RegisterManagedClassAttribute() { }
-}
-
-public static class Il2CppInjectorAttributes
+public class InjectManagedClassAttribute : Attribute
 {
 	public static void InjectClasses()
 	{
-		var assembly = Assembly.GetCallingAssembly();
-		foreach(Type type in assembly.GetTypes()) {
-			if (type.GetCustomAttributes(typeof(RegisterManagedClassAttribute), true).Length > 0) {
+		foreach (Type type in Assembly.GetCallingAssembly().GetTypes()) {
+			if (type.GetCustomAttributes(typeof(InjectManagedClassAttribute), true).Length > 0) {
 				Il2CppInterop.Runtime.Injection.ClassInjector.RegisterTypeInIl2Cpp(type);
 			}
-		}
+		}	
 	}
 }
 
