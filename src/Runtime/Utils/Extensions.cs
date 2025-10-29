@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using DiscoAPI.Common.Assets;
 using UnityEngine;
@@ -70,5 +71,54 @@ public static class Extensions
             : SM.SkillType.NONE;
 
         return template;
+    }
+
+    public static SM.InventoryItem AttachComponent(this Item item, GameObject container)
+    {
+        var smItem = container.AddComponent<SM.InventoryItem>();
+        smItem.name = item.id;
+        smItem.itemValue = item.valueInCents;
+        smItem.isVessel = item.isVessel;
+        smItem.conversation = item.conversation ?? "";
+        smItem.multipleAllowed = item.multipleAllowed;
+        smItem.sound = item.pickupSound ?? "";
+        smItem.stackName = item.stackingItem?.Resolve()?.id ?? "";
+
+        if (item is EquippableItem equippable)
+        {
+            smItem.type = (ItemType)equippable.equipSlot;
+            smItem.equipOrbName = equippable.equipOrbName ?? "";
+            if (equippable.coversSlots != null)
+            {
+                var smCoverList = new List<ItemType>();
+                foreach (var slot in equippable.coversSlots)
+                {
+                    smCoverList.Add((ItemType)slot);
+                }
+
+                smItem.VisualHideItems = smCoverList.ToArray();
+            }
+            smItem.autoEquip = equippable.autoEquip;
+            smItem.equipEffects = equippable.equipEffects?.Select(ef => ef.AttachComponent(container)).ToArray() ?? [];
+        }
+
+        if (item is SubstanceItem substance)
+        {
+            smItem.consumable = true;
+            smItem.substance = true;
+            smItem.group = (ItemGroup)substance.group;
+            smItem.substanceBuffs = CreateBuff(substance.equipEffects, container);
+        }
+
+        return smItem;
+    }
+
+    public static SM.CharacterBuff[] CreateBuff(Modifier[]? modifiers, GameObject container)
+    {
+        if (modifiers == null) return [];
+        var buff = container.AddComponent<SM.CharacterBuff>();
+        buff.cause = SM.ModifierType.ELECTROCHEMISTRY;
+        buff.effects = modifiers.Select(ef => ef.AttachComponent(container)).ToArray();
+        return [buff];
     }
 }

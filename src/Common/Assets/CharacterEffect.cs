@@ -9,6 +9,9 @@ public record Modifier
     public readonly int? intParam;
     public readonly IAssetRef<Skill>? skillType;
     public readonly AbilityType? abilityType;
+    /// <summary>
+    /// Line that comes after the effect amount
+    /// </summary>
     public readonly string quipLine;
     public readonly IAssetRef<CharacterEffect> baseEffect;
 
@@ -51,6 +54,9 @@ public record RaiseLearningCapModifier : Modifier
 
 public record CharacterEffect : Asset, IAssetRef<CharacterEffect>
 {
+    /// <summary>
+    /// Should this effect be re-applied after saves are loaded?
+    /// </summary>
     public bool isSavePersistent;
     public Action<Modifier>? applyEffect;
     public Action<Modifier>? removeEffect;

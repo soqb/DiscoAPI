@@ -4,11 +4,11 @@ namespace DiscoAPI.Common.Assets;
 
 public record Thought : Asset, IAssetRef<Thought>
 {
-     public string bigImageLocation;
-     public string iconImageLocation;
-     public string displayName;
-     public string descripton;
-     public string completionDescription;
+     public readonly string bigImageLocation;
+     public readonly string iconImageLocation;
+     public readonly string displayName;
+     public readonly string descripton;
+     public readonly string completionDescription;
      public readonly int researchMins;
      public readonly Modifier[] researchEffects;
      public readonly Modifier[] completionEffects;

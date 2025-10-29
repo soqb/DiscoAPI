@@ -76,6 +76,28 @@ public static class CharacterEffectPatches
             }
         }
 
+        if (maybeItem != null)
+        {
+            var modItem = DiscoRunner.manager.Assets.GetArena<Item>().FirstOrDefault(t => t.id == maybeItem.name);
+            if (modItem is not EquippableItem equippable) return true;
+
+            if (equippable.equipEffects == null) return false;
+            for (int i = 0; i < equippable.equipEffects.Length; i++)
+            {
+                var modifier = equippable.equipEffects[i];
+                var discoEffect = maybeItem.equipEffects[i];
+                if (discoEffect == null) continue;
+                
+                var persists = ModifierUtils.EffectIsVanilla(discoEffect.effect)
+                    ? CharacterSheetPersister.ThoughtEffectShouldPersist(discoEffect)
+                    : modifier.baseEffect.Resolve()?.isSavePersistent ?? true;
+                if (persists)
+                {
+                    modifier.baseEffect.Resolve()?.applyEffect?.Invoke(modifier);
+                }
+            }
+        }
+
         return false;
     }
     

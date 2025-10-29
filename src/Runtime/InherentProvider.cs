@@ -46,6 +46,7 @@ public static class InherentProvider
 		assets.Register(new GenericArena<CharacterArchetype>(), false);
 		assets.Register(new EnumArena<Reputation, Common.Assets.Reputation>(ReputationUtils.RecoverRep, ReputationUtils.RepIsReal), true);
 		assets.Register(new GenericArena<Thought>(), false);
+		assets.Register(new GenericArena<Item>(), false);
 
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 
@@ -92,9 +93,15 @@ public static class InherentProvider
 	public static void AssembleSunshineData()
 	{
 		var dataHolder = new GameObject("DiscoAPI Data");
+		AssembleThoughts(dataHolder.transform);
+		AssembleItems(dataHolder.transform);
+		Object.DontDestroyOnLoad(dataHolder);
+	}
 
+	private static void AssembleThoughts(Transform parent)
+	{
 		var thoughtHolder = new GameObject("Thoughts");
-		thoughtHolder.transform.parent = dataHolder.transform;
+		thoughtHolder.transform.parent = parent;
 		var modThoughts = DiscoRunner.manager.Assets.GetArena<Thought>();
 		var modProjects = new ThoughtListItem[modThoughts.Count];
 		var baseProjectList = SingletonComponent<ThoughtCabinetProjectList>.Singleton;
@@ -123,7 +130,39 @@ public static class InherentProvider
 		baseProjectList.projects = newList;
 		baseProjectList.RefreshCache();
 		SingletonComponent<ThoughtManager>.Singleton.ReinitializeThoughtsList();
+	}
 
-		Object.DontDestroyOnLoad(dataHolder);
+	private static void AssembleItems(Transform parent)
+	{
+		var itemHolder = new GameObject("Items");
+		itemHolder.transform.parent = parent;
+		var modItems = DiscoRunner.manager.Assets.GetArena<Item>();
+		var itemsListEntries = new InventoryItemListComponent[modItems.Count];
+		var baseItemList = SingletonComponent<InventoryItemList>.Singleton;
+
+		for (int i = 0; i < modItems.Count; i++)
+		{
+			var item = modItems[i];
+			if (item == null) continue;
+			var itemObject = new GameObject(item.id);
+			itemObject.transform.parent = itemHolder.transform;
+			
+			var smItem = item.AttachComponent(itemObject);
+			itemsListEntries[i] = new InventoryItemListComponent()
+			{
+				name = item.id,
+				item = smItem
+			};
+		}
+		
+		var baseItemCount = baseItemList.items.Length;
+		var newList = baseItemList.items.Resize(baseItemCount + itemsListEntries.Length);
+		for (int i = 0; i < itemsListEntries.Length; i++)
+		{
+			newList[i + baseItemCount] = itemsListEntries[i];
+		}
+
+		baseItemList.items = newList;
+		baseItemList.RefreshCache();
 	}
 }
