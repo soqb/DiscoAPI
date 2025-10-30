@@ -7,8 +7,8 @@ public record Item : Asset, IAssetRef<Item>
 {
     public readonly string displayName;
     public readonly string description;
-    public readonly string bigImageLocation; // need impl
-    public readonly string iconImageLocation; // need impl
+    public readonly string bigImageLocation;
+    public readonly string iconImageLocation;
     public readonly int valueInCents;
     public readonly string? conversation;
     public readonly IAssetRef<Item>? stackingItem;
@@ -33,9 +33,9 @@ public record Item : Asset, IAssetRef<Item>
 public record EquippableItem : Item
 {
     public readonly ItemEquipSlot equipSlot;
-    public readonly string itemPrefabLocation; // need impl
+    public readonly string itemPrefabLocation;
     public readonly Modifier[]? equipEffects;
-    public readonly string? heldIconLocation; // need impl
+    public readonly string? heldIconLocation;
     public readonly string? equipOrbName;
     public readonly ItemEquipSlot[]? coversSlots;
     public readonly bool autoEquip;
@@ -52,17 +52,17 @@ public record EquippableItem : Item
 
 public record SubstanceItem : EquippableItem
 {
-    public readonly int effectDuration; // need impl
+    public readonly int effectDuration;
     public readonly ItemGroup group;
-    public readonly int uses = 3; // need impl
-    public readonly Tuple<int, Modifier>[] substanceEffects;
+    public readonly Modifier[] substanceEffects;
     
     public SubstanceItem(string id, string displayName, string description, string bigImageLocation, 
-        string iconImageLocation, ItemEquipSlot slot, string itemPrefabLocation, int duration, ItemGroup group) 
+        string iconImageLocation, ItemEquipSlot slot, string itemPrefabLocation, int duration, ItemGroup group, Modifier[] substanceEffects) 
         : base(id, displayName, description, bigImageLocation, iconImageLocation, slot, itemPrefabLocation)
     {
         this.effectDuration = duration;
         this.group = group;
+        this.substanceEffects = substanceEffects;
     }
 }
 

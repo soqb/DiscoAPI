@@ -107,7 +107,7 @@ public static class Extensions
             smItem.consumable = true;
             smItem.substance = true;
             smItem.group = (ItemGroup)substance.group;
-            smItem.substanceBuffs = CreateBuff(substance.equipEffects, container);
+            smItem.substanceBuffs = CreateBuff(substance.substanceEffects, container);
         }
 
         return smItem;
