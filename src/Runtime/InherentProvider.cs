@@ -47,7 +47,7 @@ public static class InherentProvider
 		assets.Register(new EnumArena<Reputation, Common.Assets.Reputation>(ReputationUtils.RecoverRep, ReputationUtils.RepIsReal), true);
 		assets.Register(new GenericArena<Thought>(), false);
 		assets.Register(new GenericArena<Item>(), false);
-
+		
 		DiscoHooks.OnDialogueLoad += OnDialogueBundleLoad;
 
 		DiscoHooks.OnSaveGame += save =>

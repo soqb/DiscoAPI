@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DiscoAPI.Common.Assets;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using SM = Sunshine.Metric;
 
@@ -100,6 +101,11 @@ public static class Extensions
             }
             smItem.autoEquip = equippable.autoEquip;
             smItem.equipEffects = equippable.equipEffects?.Select(ef => ef.AttachComponent(container)).ToArray() ?? [];
+        }
+        else
+        {
+            smItem.equipEffects = new Il2CppReferenceArray<SM.CharacterEffect>(0);
+            smItem.type = ItemType.NONE;
         }
 
         if (item is SubstanceItem substance)

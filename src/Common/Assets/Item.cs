@@ -9,12 +9,12 @@ public record Item : Asset, IAssetRef<Item>
     public readonly string description;
     public readonly string bigImageLocation;
     public readonly string iconImageLocation;
-    public readonly int valueInCents;
-    public readonly string? conversation;
-    public readonly IAssetRef<Item>? stackingItem;
-    public readonly bool isVessel;
-    public readonly string? pickupSound;
-    public readonly bool multipleAllowed;
+    public int valueInCents;
+    public string? conversation;
+    public IAssetRef<Item>? stackingItem;
+    public bool isVessel;
+    public string? pickupSound;
+    public bool multipleAllowed;
     
     public Item(string id, string displayName, string description, string bigImageLocation, string iconImageLocation) : base(id)
     {
@@ -30,15 +30,15 @@ public record Item : Asset, IAssetRef<Item>
 
 }
 
-public record EquippableItem : Item
+public record EquippableItem : Item, IAssetRef<EquippableItem>
 {
     public readonly ItemEquipSlot equipSlot;
     public readonly string itemPrefabLocation;
-    public readonly Modifier[]? equipEffects;
-    public readonly string? heldIconLocation;
-    public readonly string? equipOrbName;
-    public readonly ItemEquipSlot[]? coversSlots;
-    public readonly bool autoEquip;
+    public Modifier[]? equipEffects;
+    public string? heldIconLocation;
+    public string? equipOrbName;
+    public ItemEquipSlot[]? coversSlots;
+    public bool autoEquip;
     
     public EquippableItem(string id, string displayName, string description, string bigImageLocation, 
         string iconImageLocation, ItemEquipSlot slot, string itemPrefabLocation) 
@@ -48,22 +48,29 @@ public record EquippableItem : Item
         this.itemPrefabLocation = itemPrefabLocation;
     }
     
+    [JsonIgnore]
+    public new AssetLocation<EquippableItem> Location => new(source, id);
+    EquippableItem? IAssetRef<EquippableItem>.Resolve(IDiscoManager mgr) => (EquippableItem?)((IAssetRef)this).Resolve(mgr);
 }
 
-public record SubstanceItem : EquippableItem
+public record SubstanceItem : EquippableItem, IAssetRef<SubstanceItem>
 {
-    public readonly int effectDuration;
     public readonly ItemGroup group;
     public readonly Modifier[] substanceEffects;
+    public int effectDuration;
     
     public SubstanceItem(string id, string displayName, string description, string bigImageLocation, 
-        string iconImageLocation, ItemEquipSlot slot, string itemPrefabLocation, int duration, ItemGroup group, Modifier[] substanceEffects) 
-        : base(id, displayName, description, bigImageLocation, iconImageLocation, slot, itemPrefabLocation)
+        string iconImageLocation, string itemPrefabLocation, ItemGroup group, Modifier[] substanceEffects) 
+        : base(id, displayName, description, bigImageLocation, iconImageLocation, ItemEquipSlot.HeldInHand, itemPrefabLocation)
     {
-        this.effectDuration = duration;
+        this.effectDuration = 60;
         this.group = group;
         this.substanceEffects = substanceEffects;
     }
+    
+    [JsonIgnore]
+    public new AssetLocation<SubstanceItem> Location => new(source, id);
+    SubstanceItem? IAssetRef<SubstanceItem>.Resolve(IDiscoManager mgr) => (SubstanceItem?)((IAssetRef)this).Resolve(mgr);
 }
 
 public enum ItemEquipSlot

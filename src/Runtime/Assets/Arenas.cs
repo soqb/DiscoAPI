@@ -108,6 +108,11 @@ public class GenericArena<T> : IAssetArena<T>
 	public T? this[int id] => Items[id];
 }
 
+public class ItemArena<T> : GenericArena<Item> where T : Item
+{
+	
+}
+
 public class PCRawArena<T> : IAssetArena<T> where T : PC.Asset, new()
 {
 	private DialogueManager Dialogue => DiscoRunner.manager.Dialogue;
