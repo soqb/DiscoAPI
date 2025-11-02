@@ -5,11 +5,17 @@ namespace DiscoAPI.Common.Assets;
 
 public abstract record Asset : IAssetRef
 {
-
     [JsonIgnore]
     public string? source;
+    
+    public AssetType assetType
+    {
+        get => _assetType;
+        protected set => _assetType = value;
+    }
+    
     [JsonIgnore]
-    public readonly AssetType assetType;
+    private AssetType _assetType;
 
     [JsonProperty(Order = int.MinValue)]
     public readonly string id;

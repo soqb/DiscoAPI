@@ -126,10 +126,14 @@ internal static class ItemPatches
 
     [HarmonyPatch(typeof(Addressables), nameof(Addressables.InstantiateAsync), [typeof(Il2CppSystem.Object), typeof(Transform), typeof(bool), typeof(bool)])]
     [HarmonyPrefix] // this is the only call to InstantiateAsync in DE, somehow
-    private static bool OnInstantiateItemAsync(object key, ref AsyncOperationHandle<GameObject> __result)
+    private static bool OnInstantiateItemAsync(Il2CppSystem.Object key, ref AsyncOperationHandle<GameObject> __result)
     {
-        if (key is not string itemName) return true;
-        
+        if (key.GetIl2CppType() != Il2CppType.Of<string>()) return true;
+
+        string? keyString = IL2CPP.Il2CppStringToManaged(key.Pointer);
+        if (keyString == null || !keyString.Contains("Addressables Items")) return true;
+
+        string itemName = keyString[49..^7];
         var modItem = DiscoRunner.manager.Assets.GetArena<Item>().FirstOrDefault(t => t.id == itemName);
         if (modItem is not EquippableItem equippable) return true;
         
