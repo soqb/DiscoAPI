@@ -15,6 +15,7 @@ public class DiscoAPISettings
     private ConfigEntry<bool> enableDeveloperMode;
     private ConfigEntry<bool> allChecksPass;
     private ConfigEntry<bool> componentLifecycleTracking;
+    private ConfigEntry<bool> enableTabulaRasa;
     private ConfigEntry<bool> forceDisableVTCacheCompression;
     private ConfigEntry<bool> drawVTOverlay;
     private ConfigEntry<bool> spawnVTCacheBillboard;
@@ -56,6 +57,11 @@ public class DiscoAPISettings
     {
         get => Instance.componentLifecycleTracking.Value;
         set => Instance.componentLifecycleTracking.Value = value;
+    }
+    public static bool EnableTabulaRasa
+    {
+        get => Instance.enableTabulaRasa.Value;
+        set => Instance.enableTabulaRasa.Value = value;
     }
     public static bool ForceDisableVTCacheCompression
     {
@@ -156,6 +162,14 @@ public class DiscoAPISettings
             false,
             "Log the lifecycle stages of entities in the component system. May produce a lot of log messages."
         );
+
+        enableTabulaRasa = cfg.Bind(
+            "Tools",
+            "EnableTabulaRasa",
+            false,
+            "Enable Tabula Rasa patches to prevent vanilla entities from spawning in custom mod scenes. WARNING: Experimental, may cause issues."
+        );
+
         forceDisableVTCacheCompression = cfg.Bind(
             "VirtualTextureDebug",
             "ForceDisableVTCacheCompression",

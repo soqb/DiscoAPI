@@ -57,4 +57,21 @@ public static class OverlayRegistry
         _prefabOverlays.Clear();
         CleanupCurrentOverlays();
     }
+
+    public static bool IsPartOfOverlay(GameObject obj)
+    {
+        if (obj == null)
+            return false;
+
+        if (_currentOverlays.Contains(obj))
+            return true;
+
+        foreach (var overlay in _currentOverlays)
+        {
+            if (overlay != null && obj.transform.IsChildOf(overlay.transform))
+                return true;
+        }
+
+        return false;
+    }
 }
