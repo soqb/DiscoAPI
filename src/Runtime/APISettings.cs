@@ -167,7 +167,7 @@ public class DiscoAPISettings
             "Tools",
             "EnableTabulaRasa",
             false,
-            "Enable Tabula Rasa patches to prevent vanilla entities from spawning in custom mod scenes. WARNING: Experimental, may cause issues."
+            "Enable Tabula Rasa patch to disable vanilla content such as characters, containers, orbs ..."
         );
 
         forceDisableVTCacheCompression = cfg.Bind(
