@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using DiscoAPI.Runtime.Dialogue;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -74,17 +75,18 @@ internal static class ReputationUtils
     public static void RegisterModReputations()
     {
         var repArena = DiscoRunner.manager.Assets.GetArena<Common.Assets.Reputation>();
-        int repArenaLength = repArena.Count;
+        int repArenaLength = repArena.Count - VANILLA_REP_DIALOGUE_COUNT;
         var confrontDialogues =
             ReputationAlterant.orbDialogues.Resize(ReputationAlterant.orbDialogues.Length + repArenaLength);
         var thoughtCache =
             ReputationAlterant.copotypeThought.Resize(ReputationAlterant.orbDialogues.Length + repArenaLength);
 
-        for (int i = VANILLA_REP_DIALOGUE_COUNT; i < repArenaLength; i++)
+        for (int i = 0; i < repArenaLength; i++)
         {
-            var modRep = repArena[i];
-            confrontDialogues[i] = modRep?.confrontationOrbName ?? "";
-            thoughtCache[i] = modRep?.id ?? "";
+            int arenaIdx = i + VANILLA_REP_DIALOGUE_COUNT;
+            var modRep = repArena[arenaIdx];
+            confrontDialogues[arenaIdx] = modRep?.confrontationOrbName ?? "";
+            thoughtCache[arenaIdx] = modRep?.id ?? "";
             if (modRep?.confrontationTriggerThreshold != null)
             {
                 ReputationAlterant.reputationSystemIndividualLevels.TryAdd((Reputation)modRep.ResolveId(),
