@@ -56,6 +56,7 @@ public class DiscoAPIPlugin : BasePlugin
         PatchAll(typeof(Patches.ThoughtPatches));
         PatchAll(typeof(Patches.ReputationPatches));
         PatchAll(typeof(Patches.ItemPatches));
+        PatchAll(typeof(Patches.TabulaRasa));
         DialogueBundleLoader.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
         InjectManagedClassAttribute.InjectClasses();
         
