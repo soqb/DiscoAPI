@@ -54,6 +54,9 @@ internal static class TabulaRasa
         if (obj.GetComponent<GeneralScheduleManager>() != null)
             return true;
 
+        if (obj.GetComponent<SpriteRenderer>() != null)
+            return true;
+
         return false;
     }
 

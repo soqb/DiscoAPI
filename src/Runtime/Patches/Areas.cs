@@ -89,7 +89,7 @@ internal static class AreaPatches
             var prefabOverlays = OverlayRegistry.GetPrefabOverlaysForScene(foundArea.id);
             foreach (var prefabOverlay in prefabOverlays)
             {
-                var instantiateTask = AreaUtils.InstantiatePrefabOverlay(prefabOverlay.prefabPath, prefabOverlay.sourceGuid);
+                var instantiateTask = AreaUtils.InstantiatePrefabOverlay(prefabOverlay.prefabPath, prefabOverlay.sourceGuid, prefabOverlay.parentName);
                 yield return instantiateTask.ToCoroutine();
 
                 if (instantiateTask.Result == null)
@@ -141,7 +141,7 @@ internal static class AreaPatches
             foreach (var prefabOverlay in prefabOverlays)
             {
                 DiscoRunner.Log.LogInfo($"Instantiating prefab overlay {prefabOverlay.prefabPath} for {sceneName}");
-                var instantiateTask = AreaUtils.InstantiatePrefabOverlay(prefabOverlay.prefabPath, prefabOverlay.sourceGuid);
+                var instantiateTask = AreaUtils.InstantiatePrefabOverlay(prefabOverlay.prefabPath, prefabOverlay.sourceGuid, prefabOverlay.parentName);
                 yield return instantiateTask.ToCoroutine();
 
                 if (instantiateTask.Result == null)
