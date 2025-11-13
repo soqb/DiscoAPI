@@ -60,9 +60,11 @@ public record CharacterEffect : Asset, IAssetRef<CharacterEffect>
     public bool isSavePersistent;
     public Action<Modifier>? applyEffect;
     public Action<Modifier>? removeEffect;
+    public Func<Modifier, string>? effectName;
 
-    public CharacterEffect(string id, Action<Modifier>? applyEffect, Action<Modifier>? removeEffect = null, bool isSavePersistent = true) : base(id)
+    public CharacterEffect(string id, Action<Modifier>? applyEffect, Action<Modifier>? removeEffect = null, Func<Modifier, string>? effectName = null, bool isSavePersistent = true) : base(id)
     {
+        this.effectName = effectName;
         this.applyEffect = applyEffect;
         this.removeEffect = removeEffect;
         this.isSavePersistent = isSavePersistent;

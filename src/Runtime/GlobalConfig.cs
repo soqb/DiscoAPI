@@ -70,4 +70,5 @@ public class GlobalDiscoConfig
 	
 	public (IAssetRef<Area> area, string destinationId) newGameLocation = (Areas.Whirling_int_f2, "start");
 	public string newGameConversation = "WHIRLING / DREAM1";
+	public bool disableDiscoThoughts = false;
 }

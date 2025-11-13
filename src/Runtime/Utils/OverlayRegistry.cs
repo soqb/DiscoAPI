@@ -10,15 +10,15 @@ public static class OverlayRegistry
     private static readonly Dictionary<string, List<OverlayInfo>> _prefabOverlays = new();
     private static readonly List<GameObject> _currentOverlays = new();
 
-    public record OverlayInfo(string prefabPath, string sourceGuid, int priority);
+    public record OverlayInfo(string prefabPath, string sourceGuid, int priority, string? parentName = null);
 
-    public static void RegisterPrefabOverlay(IDiscoSource source, string baseSceneName, string prefabPath, int priority = 100)
+    public static void RegisterPrefabOverlay(IDiscoSource source, string baseSceneName, string prefabPath, int priority = 100, string? parentName = null)
     {
         if (!_prefabOverlays.ContainsKey(baseSceneName))
             _prefabOverlays[baseSceneName] = new List<OverlayInfo>();
 
-        DiscoRunner.Log.LogInfo($"Registered prefab overlay {prefabPath} for {baseSceneName}");
-        _prefabOverlays[baseSceneName].Add(new OverlayInfo(prefabPath, source.Guid, priority));
+        DiscoRunner.Log.LogInfo($"Registered prefab overlay {prefabPath} for {baseSceneName}" + (parentName != null ? $" (parent: {parentName})" : ""));
+        _prefabOverlays[baseSceneName].Add(new OverlayInfo(prefabPath, source.Guid, priority, parentName));
     }
 
     public static IEnumerable<OverlayInfo> GetPrefabOverlaysForScene(string baseSceneName)
@@ -56,5 +56,22 @@ public static class OverlayRegistry
     {
         _prefabOverlays.Clear();
         CleanupCurrentOverlays();
+    }
+
+    public static bool IsPartOfOverlay(GameObject obj)
+    {
+        if (obj == null)
+            return false;
+
+        if (_currentOverlays.Contains(obj))
+            return true;
+
+        foreach (var overlay in _currentOverlays)
+        {
+            if (overlay != null && obj.transform.IsChildOf(overlay.transform))
+                return true;
+        }
+
+        return false;
     }
 }

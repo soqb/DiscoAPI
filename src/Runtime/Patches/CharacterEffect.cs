@@ -25,6 +25,29 @@ public static class CharacterEffectPatches
         if (ModifierUtils.EffectIsVanilla(__instance.effect)) return true;
         return false;
     }
+
+    [HarmonyPatch(typeof(SM.CharacterEffect), nameof(SM.CharacterEffect.EffectName))]
+    [HarmonyPostfix]
+    public static void OnGetEffectName(ref string __result, SM.CharacterEffect __instance)
+    {
+        if (ModifierUtils.EffectIsVanilla(__instance.effect)) return;
+        var modEffect = ModifierUtils.Lookup(__instance.effect);
+
+        Skill? modSkill = null;
+        if (__instance.skillType != SM.SkillType.ALT || __instance.skillType != SM.SkillType.NONE)
+        {
+            modSkill = SkillUtils.Lookup(__instance.skillType);
+        }
+
+        AbilityType? modAbility = null;
+        if (__instance.abilityType != SM.AbilityType.Error)
+        {
+            modAbility = SkillUtils.AbilityFromSunshine(__instance.abilityType);
+        }
+        
+        __result = modEffect?.effectName?.Invoke(new Modifier(__instance.quipLine, modEffect, __instance.stringParameter,
+            __instance.parameter, modSkill, modAbility)) ?? "";
+    }
     
     [HarmonyPatch(typeof(CharacterSheetPersister), nameof(CharacterSheetPersister.ApplyEffects))]
     [HarmonyPrefix]
