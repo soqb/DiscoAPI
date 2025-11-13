@@ -272,7 +272,11 @@ public struct AsyncOperationCompletionSource<T> where T : Il2CppObjectBase
 
 	public void SetResult(T result)
 	{
-		Operation.Complete(result, true, (string?)null, false);
+		var op = Operation;
+		MainThreadExecutor.Queue(() =>
+		{
+			op.Complete(result, true, (string?)null, false);
+		}); 
 	}
 
 	public void SetException(Exception result)

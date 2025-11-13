@@ -69,7 +69,7 @@ internal static class TabulaRasa
 
             if (ShouldDisableObject(child))
             {
-                Log($"Disabling vanilla object: '{child.name}'");
+                //Log($"Disabling vanilla object: '{child.name}'");
                 child.SetActive(false);
             }
 
