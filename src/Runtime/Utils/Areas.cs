@@ -40,7 +40,7 @@ public static class AreaUtils
         return true;
     }
 
-    public static async DiscoTask<GameObject?> InstantiatePrefabOverlay(string prefabPath, string sourceGuid)
+    public static async DiscoTask<GameObject?> InstantiatePrefabOverlay(string prefabPath, string sourceGuid, string? parentName = null)
     {
         var src = DiscoRunner.GetSource(sourceGuid);
         if (src == null) return null;
@@ -55,6 +55,21 @@ public static class AreaUtils
             }
 
             var instance = GameObject.Instantiate(prefab);
+
+            if (!string.IsNullOrEmpty(parentName))
+            {
+                var parent = GameObject.Find(parentName);
+                if (parent != null)
+                {
+                    instance.transform.SetParent(parent.transform, worldPositionStays: false);
+                    DiscoRunner.Log.LogInfo($"Parented {prefabPath} to {parentName}");
+                }
+                else
+                {
+                    DiscoRunner.Log.LogWarning($"Could not find parent GameObject '{parentName}' for {prefabPath}, instantiating at scene root");
+                }
+            }
+
             OverlayRegistry.TrackInstance(instance);
             DiscoRunner.Log.LogInfo($"Instantiated prefab overlay: {prefabPath}");
             return instance;

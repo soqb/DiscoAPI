@@ -7,6 +7,7 @@ using Sunshine;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Voidforge;
 using SM = Sunshine.Metric;
 
 namespace DiscoAPI.Runtime.Patches;
@@ -129,10 +130,10 @@ internal static class ItemPatches
     private static bool OnInstantiateItemAsync(Il2CppSystem.Object key, ref AsyncOperationHandle<GameObject> __result)
     {
         if (key.GetIl2CppType() != Il2CppType.Of<string>()) return true;
-
+    
         string? keyString = IL2CPP.Il2CppStringToManaged(key.Pointer);
         if (keyString == null || !keyString.Contains("Addressables Items")) return true;
-
+    
         string itemName = keyString[49..^7];
         var modItem = DiscoRunner.manager.Assets.GetArena<Item>().FirstOrDefault(t => t.id == itemName);
         if (modItem is not EquippableItem equippable) return true;
@@ -140,6 +141,21 @@ internal static class ItemPatches
         var loadTask = DiscoRunner.manager.GetSource(modItem.source!)!.Router.Prefabs.Get(equippable.itemPrefabLocation);
         __result = loadTask.AsAddressableOperation().Handle;
         return false;
+    }
+
+    [HarmonyPatch(typeof(TequilaClothingBlendshapes), nameof(TequilaClothingBlendshapes.CheckBlendshapes))]
+    [HarmonyPrefix]
+    private static bool OnCheckBlendshapes(string itemName, Il2CppSystem.Object item, bool equipping)
+    {
+        var type = SingletonComponent<InventoryItemList>.Singleton.GetByName(itemName);
+        return true;
+    }
+
+    [HarmonyPatch(typeof(TequilaClothing), nameof(TequilaClothing.OnEquipItemLoaded))]
+    [HarmonyPrefix]
+    public static void OnEquipItemLoaded(AsyncOperationHandle<GameObject> itemHandle)
+    {
+        var res = itemHandle.Result;
     }
 
     private static Il2CppSystem.Reflection.MethodInfo SetPortraitMethod = Il2CppType.Of<InventoryTooltip>()

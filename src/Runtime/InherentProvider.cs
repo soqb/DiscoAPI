@@ -3,6 +3,7 @@ using DiscoAPI.Common.Dialogue;
 using DiscoAPI.Runtime.Assets;
 using DiscoAPI.Runtime.Components;
 using DiscoAPI.Runtime.Utils;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Newtonsoft.Json.Linq;
 using Sunshine;
 using UnityEngine;
@@ -119,14 +120,22 @@ public static class InherentProvider
 				project = project
 			};
 		}
-		
-		var baseProjectCount = baseProjectList.projects.Count;
-		var newList = baseProjectList.projects.Resize(baseProjectCount + modProjects.Length);
-		for (int i = 0; i < modProjects.Length; i++)
+
+		Il2CppReferenceArray<ThoughtListItem> newList;
+		if (DiscoRunner.globalConfig.disableDiscoThoughts)
 		{
-			newList[i + baseProjectCount] = modProjects[i];
+			newList = modProjects;
 		}
-		
+		else
+		{
+			var baseProjectCount = baseProjectList.projects.Count;
+			newList = baseProjectList.projects.Resize(baseProjectCount + modProjects.Length);
+			for (int i = 0; i < modProjects.Length; i++)
+			{
+				newList[i + baseProjectCount] = modProjects[i];
+			}
+		}
+
 		baseProjectList.projects = newList;
 		baseProjectList.RefreshCache();
 		SingletonComponent<ThoughtManager>.Singleton.ReinitializeThoughtsList();
