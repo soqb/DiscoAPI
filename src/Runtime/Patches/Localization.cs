@@ -19,17 +19,21 @@ public static class Rosetta
         }
     }
 
-    public static string CreateLangAgnosticTerm(string value)
+    /// <summary>
+    /// Generates a random term and sets the default translation. English is considered the default/fallback language.
+    /// If you want to provide your own term or set a specific language translation, use <see cref="SetTermTranslation"/>
+    /// </summary>
+    public static string CreateTerm(string translation, string lang = "English")
     {
         string fakeTerm = Guid.NewGuid().ToString();
-        foreach (var (_, terms) in TranslationCache)
-        {
-            terms.TryAdd(fakeTerm, value);
-        }
+        SetTermTranslation(fakeTerm, translation, lang);
         return fakeTerm;
     }
 
-    public static void SetTermTranslation(string term, string translation, string lang)
+    /// <summary>
+    /// Set the translation for a term. Assign the same term to an object's LocalizationString field for it to be used.
+    /// </summary>
+    public static void SetTermTranslation(string term, string translation, string lang = "English")
     {
         if (TranslationCache.TryGetValue(lang, out var langMap))
         {
@@ -83,6 +87,10 @@ public static class Rosetta
             if (langMap.TryGetValue(term, out string? value))
             {
                 return toUpper ? value.ToUpper() : value;
+            }
+            else if (TranslationCache["English"].TryGetValue(term, out string? fallback))
+            {
+                return toUpper ? fallback.ToUpper() : fallback;
             }
         }
         else
