@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Patches;
 using DiscoAPI.Runtime.SaveSystem;
 using DiscoAPI.Runtime.Utils;
 using HarmonyLib;
@@ -50,6 +51,8 @@ public static class DiscoRunner
     public static void OnLoad()
     {
         IL2CPPChainloader.Instance.Finished += () => load.Invoke();
+        
+        Rosetta.SetupLangCaches();
 
         FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad);
 

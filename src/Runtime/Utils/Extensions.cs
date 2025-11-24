@@ -1,5 +1,6 @@
 using System.Linq;
 using DiscoAPI.Common.Assets;
+using DiscoAPI.Runtime.Patches;
 using UnityEngine;
 using SM = Sunshine.Metric;
 
@@ -43,7 +44,7 @@ public static class Extensions
                 smEffect.skillType = SM.SkillType.NONE;
             }
         }
-        smEffect.quipLine = ef.quipLine;
+        smEffect.quipLineTerm = Rosetta.CreateLangAgnosticTerm(ef.quipLine);
         return smEffect;
     }
 
@@ -53,6 +54,9 @@ public static class Extensions
         tcp.completionEffects = thought.completionEffects.Select(ef => ef.AttachComponent(container)).ToArray();
         tcp.researchEffects = thought.researchEffects.Select(ef => ef.AttachComponent(container)).ToArray();
         tcp.researchTime = thought.researchMins;
+        tcp.displayNameTerm = Rosetta.CreateLangAgnosticTerm(thought.displayName);
+        tcp.completionDescriptionTerm = Rosetta.CreateLangAgnosticTerm(thought.completionDescription);
+        tcp.descriptionTerm = Rosetta.CreateLangAgnosticTerm(thought.descripton);
         return tcp;
     }
     

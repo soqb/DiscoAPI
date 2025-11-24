@@ -137,14 +137,6 @@ public static class ThoughtPatches
 
         return false;
     }
-
-    [HarmonyPatch(typeof(ThoughtCabinetTooltip), nameof(ThoughtCabinetTooltip.SetTab), typeof(bool))]
-    [HarmonyPostfix]
-    public static void OnTHCDetailsRefresh(bool showProblem, ThoughtCabinetTooltip __instance)
-    {
-	    __instance.description.text =
-		    showProblem ? __instance.thought.description : __instance.thought.completionDescription;
-    }
     
     [HarmonyPatch(typeof(Sunshine.ThoughtSlot), nameof(Sunshine.ThoughtSlot.FindAndSetThoughtImage))]
     [HarmonyPrefix]
@@ -189,68 +181,6 @@ public static class ThoughtPatches
 		    postAssignAction?.Invoke();
 	    });
 	    return false;
-    }
-
-    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayName), MethodType.Getter)]
-    [HarmonyPrefix]
-    private static bool DisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
-    {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
-        if (modProject == null) return true;
-        
-        __result = modProject.displayName;
-        return false;
-    }
-
-    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.formattedDisplayNameUpper), MethodType.Getter)]
-    [HarmonyPrefix]
-    public static bool FormattedDisplayName_get(SM.ThoughtCabinetProject __instance, ref string __result)
-    {
-	    var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
-	    if (modProject == null) return true;
-	    
-	    string text = __instance.displayName;
-	    int num = text.IndexOf('（');
-	    if (num != -1)
-	    {
-		    text = text.Insert(num, TextUtils.NewLineString);
-	    }
-
-	    __result = text.ToUpper();
-	    return false;
-    }
-    
-    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.displayNameToUpper), MethodType.Getter)]
-    [HarmonyPrefix]
-    private static bool DisplayNameUpper_get(SM.ThoughtCabinetProject __instance, ref string __result)
-    {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
-        if (modProject == null) return true;
-        
-        __result = modProject.displayName.ToUpper();
-        return false;
-    }
-    
-    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.description), MethodType.Getter)]
-    [HarmonyPrefix]
-    private static bool Description_get(SM.ThoughtCabinetProject __instance, ref string __result)
-    {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
-        if (modProject == null) return true;
-
-        __result = modProject.descripton;
-        return false;
-    }
-    
-    [HarmonyPatch(typeof(SM.ThoughtCabinetProject), nameof(SM.ThoughtCabinetProject.completionDescription), MethodType.Getter)]
-    [HarmonyPrefix]
-    private static bool CompletionDescription_get(SM.ThoughtCabinetProject __instance, ref string __result)
-    {
-        var modProject = DiscoRunner.manager.Assets.GetArena<Thought>().FirstOrDefault(t => t.id == __instance.name);
-        if (modProject == null) return true;
-
-        __result = modProject.completionDescription;
-        return false;
     }
     
     [HarmonyPatch(typeof(ThoughtCabinetViewPersister), nameof(ThoughtCabinetViewPersister.Serialize))]
