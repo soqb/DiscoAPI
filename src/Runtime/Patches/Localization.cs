@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using Il2CppSystem;
 using LocalizationCustomSystem;
+using Sunshine.Journal;
 
 namespace DiscoAPI.Runtime.Patches;
 
@@ -75,6 +76,15 @@ public static class Rosetta
         if (result == null) return true;
         __result = result;
         return false;
+    }
+
+    [HarmonyPatch(typeof(JournalTask), nameof(JournalTask.AddSubtask))]
+    [HarmonyPatch(typeof(JournalModel), nameof(JournalModel.AddTask))]
+    [HarmonyPostfix]
+    private static void OnAddTask(ref Completeable __result, string name, string description)
+    {
+        __result.LocalizedNameTerm = Rosetta.CreateTerm(name);
+        __result.LocalizedDescriptionTerm = Rosetta.CreateTerm(description);
     }
 
     /// <summary>

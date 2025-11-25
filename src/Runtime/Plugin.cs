@@ -7,7 +7,7 @@ namespace DiscoAPI.Runtime;
 [BepInPlugin(
     GUID,
     "Disco Elysium Modding API",
-    "0.1.1-indev"
+    "0.1.2-indev"
 )]
 [BepInProcess("disco.exe")]
 public class DiscoAPIPlugin : BasePlugin
