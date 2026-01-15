@@ -1,5 +1,6 @@
-/bin/
-/obj/
+/src/*/bin/
+/src/*/obj/
+/lib/
 /*.sh
 *.log
 *.meta
@@ -7,3 +8,4 @@
 /.vscode/
 /.helix/
 /.idea/
+.vscode/

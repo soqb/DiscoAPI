@@ -25,7 +25,7 @@ public class AssetRefFormat<T> : JsonConverter where T : Asset
 
 	public static IAssetRef<T> FromString(string asset)
 	{
-		string[] comps = asset.Split(":");
+		string[] comps = asset.Split(':');
 		return FromParts(comps[0], comps[1]);
 	}
 
@@ -66,7 +66,7 @@ public class AssetRefFormat<T> : JsonConverter where T : Asset
 
 	public override bool CanConvert(Type objectType)
 	{
-		if (!objectType.IsAssignableTo(typeof(IAssetRef<T>))) return false;
+		if (!objectType.IsSubclassOf(typeof(IAssetRef<T>))) return false;
 		else if (Depth != 0) return true;
 
 		Depth++;
@@ -121,15 +121,20 @@ public class AssetRefFormat<T> : JsonConverter where T : Asset
 
 public class NamingStrategyEnumFormat : JsonConverter
 {
+	private struct DbKey(Type type, string name)
+	{
+		Type type = type;
+		string name = name;
+	}
 	private NamingStrategy strategy;
-	private Dictionary<(Type, string), string> db = new();
+	private Dictionary<DbKey, string> db = new();
 
 	public NamingStrategyEnumFormat(NamingStrategy strategy)
 	{
 		this.strategy = strategy;
 	}
 
-	public override bool CanConvert(Type objectType) => objectType.IsAssignableTo(typeof(System.Enum));
+	public override bool CanConvert(Type objectType) => objectType.IsSubclassOf(typeof(System.Enum));
 
 	public override object? ReadJson(JsonReader reader, Type type, object? existingValue, JsonSerializer serializer)
 	{
@@ -137,12 +142,12 @@ public class NamingStrategyEnumFormat : JsonConverter
 		if (s == null) return null;
 
 		string? t;
-		if (db.TryGetValue((type, s), out t)) return t;
+		if (db.TryGetValue(new(type, s), out t)) return t;
 
 		foreach (var k in Enum.GetNames(type))
 		{
 			s = strategy.GetPropertyName(k, false);
-			db.Add((type, k), s);
+			db.Add(new(type, k), s);
 			if (s == k) t = s;
 		}
 

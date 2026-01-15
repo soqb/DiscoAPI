@@ -5,18 +5,65 @@ using DiscoAPI.Common.Assets;
 using UnityEngine;
 using LocalizationCustomSystem;
 using System;
+using System.Text;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Utils;
+using Il2CppSystem.Collections.Generic;
 
 namespace DiscoAPI.Runtime.Patches;
 
-public static class CharacterPatches
+internal static class CharacterPatches
 {
 	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.Recalc))]
 	[HarmonyPostfix]
 	private static void OnRecalc(SM.CharacterSheet __instance)
 	{
-		foreach (object datum in ModCharacterSheet.Of(__instance).ComponentData)
+		foreach ((_, object datum) in CharacterComponents.Of(__instance).ComponentData)
 			if (datum is IRecalculable) ((IRecalculable)datum).Recalc();
+	}
+
+	// debugging function for skill value mismatch
+	// [HarmonyPatch(typeof(SM.Modifiable), nameof(SM.Modifiable.Recalc))]
+	// [HarmonyPostfix]
+	// public static void OnSkillRecalc(SM.Modifiable __instance, SM.CharacterSheet ch)
+	// {
+	// 	PrintModifiable(__instance);
+	// }
+
+	public static void PrintModifiable(SM.Modifiable modifiable)
+	{
+		StringBuilder sb = new();
+		var maybeSkill = modifiable.TryCast<SM.Skill>();
+		var maybeAbility = modifiable.TryCast<SM.Ability>();
+		if (maybeSkill != null)
+		{
+			var modSkill = SkillUtils.Lookup(maybeSkill.skillType);
+			if (modSkill != null)
+			{
+				sb.Append($"Recalcing skill {modSkill.displayName}\n");
+			}
+			else
+			{
+				sb.Append($"Recalcing skill {maybeSkill.skillType.ToString()}\n");
+			}
+		}
+		else if (maybeAbility != null)
+		{
+			sb.Append($"Recalcing ability {maybeAbility.abilityType.ToString()}\n");
+		}
+
+		if (modifiable.modifiers != null)
+		{
+			for (int i = 0; i < modifiable.modifiers.Count; i++)
+			{
+				var mod = modifiable.modifiers[i];
+				sb.Append(
+					$"    MODIFIER {i} |  AMOUNT:{mod.Amount} TYPE:{mod.type.ToString()} CAUSE:{mod.modifierCause?.GetDisplayName() ?? "UNKNOWN"}\n");
+			}
+		}
+
+		sb.Append($"RECALC RESULTS -> CalculatedAbility:{modifiable.calculatedAbility} Value:{modifiable.value} MaxValue:{modifiable.maximumValue} Modifiers:{modifiable.modifiers?.Count}\n\n");
+		DiscoRunner.Log.LogInfo(sb.ToString());
 	}
 
 	[HarmonyPatch(typeof(ThoughtAlterant), nameof(ThoughtAlterant.PassiveSuccess))]
@@ -106,7 +153,6 @@ public static class CharacterPatches
 		if (text == null || !text.StartsWith("\0RAW\0")) return true;
 		__result = text;
 		return false;
-
 	}
 
 	[HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.GetLocalizedTermToUpper))]
@@ -209,7 +255,7 @@ public static class CharacterPatches
 	[HarmonyPrefix]
 	private static void OnInitialize(SM.CharacterSheet __instance, bool force)
 	{
-		var sheet = ModCharacterSheet.Of(__instance);
+		var sheet = CharacterComponents.Of(__instance);
 		if (__instance.intellect != null && !force && sheet.Contains(CharacterComponents.Skills)) return;
 
 		sheet.GetOrCreate(CharacterComponents.Skills, sh => new()).ReinitializeFromNativeInstance(__instance);
@@ -250,5 +296,24 @@ public static class CharacterPatches
 		__result = SkillUtils.AbilityToSunshine(SkillUtils.Lookup(skillType)!.ability);
 		return false;
 	}
+
+	[HarmonyPatch(typeof(SM.CharacterSheet), nameof(SM.CharacterSheet.MakeSkills))]
+	[HarmonyPrefix]
+	private static bool OnMakeSkills(SM.CharacterSheet __instance)
+	{
+		// nb: ensures mod skills have their modifiers reset since their lifetimes are managed separately
+		for (var i = 0; i < __instance.skills.Count; i++)
+		{
+			var smSkill = __instance.skills[i];
+			if (!SkillUtils.SkillIsVanilla(smSkill.skillType))
+			{
+				smSkill.modifiers = new List<SM.Modifier>();
+			}
+			var newMod = new SM.Modifier(SM.ModifierType.CALCULATED_ABILITY, 0, null, __instance.GetAbility(smSkill.abilityType).Cast<IModifierCause>(), smSkill.skillType);
+			smSkill.modifiers.Add(newMod);
+		}
+		return false;
+	}
+
 }
 

@@ -1,7 +1,14 @@
 using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Runtime.InteropServices;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DiscoAPI.Runtime.Components;
+using DiscoAPI.Runtime.Patches;
+using DiscoAPI.Runtime.SaveSystem;
+using DiscoAPI.Runtime.Utils;
 using HarmonyLib;
 
 namespace DiscoAPI.Runtime;
@@ -10,7 +17,9 @@ public static class DiscoRunner
 {
     public static GlobalDiscoConfig globalConfig = new();
 
-    public static ModWorld? world;
+    public static ModEntity<World>? world;
+
+    public static ModSaveSystem saveSystem = new();
 
     public static ManualLogSource Log => DiscoAPIPlugin.Instance.Log;
 
@@ -22,6 +31,8 @@ public static class DiscoRunner
     internal static DiscoHook<Action> sceneLoad = new("scene-load");
     internal static DiscoHook<Action> dialogueLoad = new("dialogue-load");
     internal static DiscoHook<Action> preDialogueLoad = new("pre-dialogue-load");
+    internal static DiscoHook<Action<ModSaveSystem>> saveGame = new("save-game");
+    internal static DiscoHook<Action<ModSaveSystem>> loadSavedGame = new("load-saved-game");
 
     public static Harmony Harmony { get; } = new Harmony(DiscoAPIPlugin.GUID);
 
@@ -40,6 +51,8 @@ public static class DiscoRunner
     public static void OnLoad()
     {
         IL2CPPChainloader.Instance.Finished += () => load.Invoke();
+        
+        Rosetta.SetupLangCaches();
 
         FortressOccident.SceneTransitionManager.readyEvent.Add((Il2CppSystem.Action)DiscoRunner.OnSceneLoad);
 
@@ -89,14 +102,14 @@ public static class DiscoRunner
     public static void OnSceneLoad()
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        DiscoAPIPlugin.Instance.Log.LogInfo($"scene '{sceneName}' loaded..");
 
         var w = global::World.Singleton;
         if (w == null) return;
-        if (world == null) world = ModWorld.Of(w);
+        if (world == null) world = WorldComponents.Of(w);
 
         sceneLoad.Invoke();
         if (sceneName == "Lobby") LobbyLoadExecutor.OnLoadLobbyPlease();
+
     }
 
     public static void OnUpdate()

@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <ModPath>DiscoAPI</ModPath>
+    </PropertyGroup>
+    
+    <Import Project="../../config.targets" />
+    <Import Project="../../disco.targets" />
+
+    <PropertyGroup>
+        <Version>0.1.0</Version>
+        <RootNamespace>DiscoAPI.Runtime</RootNamespace>
+        <AssemblyName>DiscoAPI.Runtime</AssemblyName>
+        <TargetFramework>net6.0</TargetFramework>
+        <Description>Modding API for Disco Elysium (separate runtime components only)</Description>
+        
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DefineConstants>DISCOAPI_RUNTIME</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="all" />
+        <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+        <ProjectReference Include="../Common/Common.csproj">
+            <Private>true</Private> <!-- necessary to copy common DLL to OutputFolder https://stackoverflow.com/q/26168401 -->
+        </ProjectReference>
+        <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
+    </ItemGroup>
+
+    <Target Name="CopyLooseAssets" AfterTargets="Build">
+        <ItemGroup>
+            <AssetFiles
+                    Include="../../assets/**/*"
+                    Exclude="**/*.meta"/>
+        </ItemGroup>
+
+        <Message Text="Copying loose assets to $(OutputFolder):%0A    * @(AssetFiles, '%0A    * ')" Importance="high" />
+
+        <MakeDir Directories="$(OutputFolder)/assets" />
+        <Copy SourceFiles="@(AssetFiles)" 
+              DestinationFolder="$(OutputFolder)/assets/%(RecursiveDir)" />
+    </Target>
+</Project>

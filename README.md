@@ -10,12 +10,9 @@ A work-in-progress modding framework for Disco Elysium.
   and ensure that you have run the game with it at least once.
 - Clone this repository.
 - Copy `doc/config.targets.template` to `config.targets` and edit as necessary.
-- Build the project with `dotnet build Runtime.sln`.
+- Build the project with `dotnet build`.
   * This will automatically copy the compiled plugin to the correct folder, overwriting any old version present.
 - Launch the game!
-
-# Examples
-- The best, most concise example the project provides is found [here](src/Runtime/Examples/Transgener.cs).
 
 # License
 

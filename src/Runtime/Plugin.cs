@@ -1,21 +1,19 @@
 ﻿using System;
 using BepInEx;
 using BepInEx.Unity.IL2CPP;
-using HarmonyLib;
 
 namespace DiscoAPI.Runtime;
 
 [BepInPlugin(
     GUID,
     "Disco Elysium Modding API",
-    "0.0.1"
+    "0.1.2-indev"
 )]
 [BepInProcess("disco.exe")]
 public class DiscoAPIPlugin : BasePlugin
 {
     public const string GUID = "discoapi";
     public static DiscoAPIPlugin Instance = null!;
-    private static Harmony harmony = new Harmony(GUID);
 
     public DiscoAPISettings settings = null!;
 
@@ -28,7 +26,7 @@ public class DiscoAPIPlugin : BasePlugin
     {
         try
         {
-            harmony.PatchAll(type);
+            DiscoRunner.Harmony.PatchAll(type);
         }
         catch (Exception e)
         {
@@ -49,9 +47,19 @@ public class DiscoAPIPlugin : BasePlugin
         PatchAll(typeof(Patches.CharacterPatches));
         PatchAll(typeof(Patches.MoraleHealthPatches));
         PatchAll(typeof(Patches.MiscPatches));
-        // PatchAll(typeof(Patches.VirtualTexturePatches));
+        PatchAll(typeof(Patches.PersistencePatches));
+        PatchAll(typeof(Patches.ArchetypePatches));
+        PatchAll(typeof(Patches.AreaPatches));
+        PatchAll(typeof(Patches.VirtualTexturePatches));
+        PatchAll(typeof(Patches.NewGamePatches));
+        PatchAll(typeof(Patches.CharacterEffectPatches));
+        PatchAll(typeof(Patches.ThoughtPatches));
+        PatchAll(typeof(Patches.ReputationPatches));
+        PatchAll(typeof(Patches.TabulaRasa));
+        PatchAll(typeof(Patches.Rosetta));
         DialogueBundleLoader.bundleWasLoaded.AddListener((Action)DiscoRunner.OnDialogueBundleLoad);
-
+        InjectManagedClassAttribute.InjectClasses();
+        
         DiscoRunner.OnLoad();
     }
 }

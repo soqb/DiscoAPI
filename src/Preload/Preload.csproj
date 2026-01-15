@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ModPath>DiscoAPI.Preload</ModPath>
+    </PropertyGroup>
+    
+    <Import Project="../../config.targets" />
+
+    <PropertyGroup>
+        <Version>0.1.0</Version>
+        <AssemblyName>DiscoAPI.Preload</AssemblyName>
+        <Description>Modding API for Disco Elysium (preload patch only)</Description>
+        <RootNamespace>DiscoAPI.Preload</RootNamespace>
+        <TargetFramework>net6.0</TargetFramework>
+        
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <ExcludeGeneratedDebugSymbol>False</ExcludeGeneratedDebugSymbol>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+
+        <BepInExCore>$(DiscoElysium)/BepInEx/core</BepInExCore>
+        <BepInExPatchers>$(DiscoElysium)/BepInEx/patchers</BepInExPatchers>
+        <OutputFolder Condition="'$(OutputFolder)' == ''">$(BepInExPatchers)/$(ModPath)</OutputFolder>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <Reference Include="$(BepInExCore)/BepInEx.Core.dll" Private="false"/>
+        <Reference Include="$(BepInExCore)/BepInEx.Preloader.Core.dll" Private="false"/>
+        <Compile Include="./**/*.cs" Exclude="./obj/**/*.*;./bin/**/*.*" />
+    </ItemGroup>
+    
+    <Target Name="CopyAssembliesToMods" AfterTargets="Build" Condition="Exists('$(TargetDir)$(TargetName).dll')">
+        <ItemGroup>
+            <ArtefactFiles Include="$(TargetDir)$(TargetName).dll;$(TargetDir)$(TargetName).pdb" />
+        </ItemGroup>
+    
+        <Message Text="Copying assemblies to $(OutputFolder):%0A    * @(ArtefactFiles, '%0A    * ')" Importance="high" />    
+
+        <Copy SourceFiles="@(ArtefactFiles)" 
+              DestinationFolder="$(OutputFolder)/%(RecursiveDir)" />
+    </Target>
+
+</Project>
