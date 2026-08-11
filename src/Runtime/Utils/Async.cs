@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
@@ -122,8 +123,15 @@ public partial struct DiscoTask
 		TaskCompletionSource tcs = new();
 		MainThreadExecutor.Queue(() =>
 		{
-			inner();
-			tcs.SetResult();
+			try
+			{
+				inner();
+				tcs.SetResult();
+			}
+			catch (Exception ex)
+			{
+				tcs.SetException(ex);
+			}
 		});
 
 		return new(tcs.Task);
@@ -132,7 +140,17 @@ public partial struct DiscoTask
 	public static DiscoTask<T> MainThread<T>(Func<T> inner)
 	{
 		TaskCompletionSource<T> tcs = new();
-		MainThreadExecutor.Queue(() => tcs.SetResult(inner()));
+		MainThreadExecutor.Queue(() =>
+		{
+			try
+			{
+				tcs.SetResult(inner());
+			}
+			catch (Exception ex)
+			{
+				tcs.SetException(ex);
+			}
+		});
 
 		return new(tcs.Task);
 	}
@@ -141,6 +159,34 @@ public partial struct DiscoTask
 	public async static DiscoTask Ready() { }
 	public async static DiscoTask<T> Ready<T>(T t) => t;
 #pragma warning enable
+}
+
+public partial struct DiscoTask
+{
+	public bool IsFaulted  => inner?.IsFaulted  ?? false;
+	public bool IsCanceled => inner?.IsCanceled ?? false;
+	public Exception? Exception => inner?.Exception;
+	public static Action<Exception?>? OnFaulted { get; set; }
+
+	public void FireAndForget(
+		string? context = null,
+		[CallerMemberName] string callerName = "",
+		[CallerFilePath] string callerFilePath = "",
+		[CallerLineNumber] int callerLine = 0)
+	{
+		ContinueWith(discoTask =>
+		{
+			if (!discoTask.IsFaulted)
+			{
+				return;
+			}
+			var resolvedContext = context ?? $"{Path.GetFileName(callerFilePath)}:{callerLine} ({callerName})";
+			var labeled = discoTask.Exception is null
+				? null
+				: new Exception($"DiscoTask faulted: {resolvedContext}", discoTask.Exception);
+			OnFaulted?.Invoke(labeled ?? discoTask.Exception);
+		});
+	}
 }
 
 [AsyncMethodBuilder(typeof(DiscoTaskBuilder<>))]
